@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="60dp"
+    android:layout_height="80dp"
+    android:layout_gravity="center">
+
+    <!-- Your pin-shaped background image -->
+    <ImageView
+        android:id="@+id/imgMarkerBg"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:src="@drawable/custom_marker_fm"
+        android:scaleType="fitXY" />
+
+    <!-- Profile Image shown inside pin -->
+    <de.hdodenhof.circleimageview.CircleImageView
+        android:id="@+id/imgProfile"
+        android:layout_width="20dp"
+        android:layout_height="20dp"
+        android:layout_marginTop="4dp"
+        android:layout_gravity="top|center_horizontal"
+        android:src="@drawable/marker_demmy_pic" />
+</FrameLayout>
+

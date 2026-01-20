@@ -1,0 +1,110 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical">
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:drawablePadding="@dimen/_10sdp"
+            android:fontFamily="@font/urbanist_medium"
+            android:gravity="center|start"
+            android:textStyle="bold"
+            android:layout_marginTop="@dimen/_5sdp"
+            android:text="Appointment with Joe Goldburg"
+            android:textColor="@color/black"
+            android:textSize="@dimen/_15sdp" />
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:drawablePadding="@dimen/_5sdp"
+            android:fontFamily="@font/urbanist_medium"
+            android:gravity="center|start"
+            android:layout_marginTop="@dimen/_5sdp"
+            android:text="Joe Goldburg"
+            android:textColor="#1E232C"
+            android:textSize="@dimen/_10sdp"
+            app:drawableStartCompat="@drawable/doctor_svgrepo_com" />
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:drawablePadding="@dimen/_5sdp"
+            android:fontFamily="@font/urbanist_medium"
+            android:gravity="center|start"
+            android:drawableStart="@drawable/time_svgrepo_com"
+            android:layout_marginTop="@dimen/_5sdp"
+            android:text="09:18"
+            android:textColor="#1E232C"
+            android:textSize="@dimen/_10sdp"/>
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:drawablePadding="@dimen/_5sdp"
+            android:fontFamily="@font/urbanist_medium"
+            android:gravity="center|start"
+            android:layout_marginTop="@dimen/_5sdp"
+            android:text="08/31/2024"
+            android:textColor="#1E232C"
+            android:textSize="@dimen/_10sdp"
+            app:drawableStartCompat="@drawable/calander_icon" />
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:drawablePadding="@dimen/_5sdp"
+            android:fontFamily="@font/urbanist_medium"
+            android:gravity="center|start"
+            android:layout_marginTop="@dimen/_5sdp"
+            android:text="Dad"
+            android:textColor="#1E232C"
+            android:drawableStart="@drawable/relation_icon"
+            android:textSize="@dimen/_10sdp"/>
+
+
+        <TextView
+            android:id="@+id/tv_alert"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:drawablePadding="@dimen/_5sdp"
+            android:fontFamily="@font/urbanist_medium"
+            android:gravity="center|start"
+            android:layout_marginTop="@dimen/_5sdp"
+            android:text="Alert Duration"
+            android:textColor="#1E232C"
+            android:drawableEnd="@drawable/icon_image"
+            android:drawableStart="@drawable/duration_downscale_svgrepo_com"
+            android:textSize="@dimen/_10sdp"/>
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:fontFamily="@font/urbanist_medium"
+            android:gravity="center|start"
+            android:layout_marginTop="@dimen/_5sdp"
+            android:text="Lorem Ipsum Lorem ipsum dolor sit amet, consectetur adipiscing elit. invitae non augue. Nullam interdum sem."
+            android:textColor="#1E232C"
+            android:textSize="@dimen/_10sdp"/>
+
+
+
+
+
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="@dimen/_2sdp"
+            android:layout_marginTop="@dimen/_5sdp"
+            android:layout_marginBottom="@dimen/_5sdp"
+            android:background="#8B8B8B"/>
+    </LinearLayout>
+
+
+</RelativeLayout>

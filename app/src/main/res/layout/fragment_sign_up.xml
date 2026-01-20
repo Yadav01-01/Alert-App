@@ -1,0 +1,356 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    tools:context=".fragment.auth.SignUpFragment">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:orientation="vertical">
+
+        <RelativeLayout
+            android:layout_width="match_parent"
+            android:layout_height="@dimen/_200sdp"
+            android:background="@drawable/sign_logo_main" >
+            <ImageButton
+                android:id="@+id/backBtn"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:background="@color/transparent"
+                android:contentDescription="TODO"
+                android:layout_marginTop="@dimen/_30sdp"
+                android:layout_marginStart="@dimen/_20sdp"
+                android:src="@drawable/back_white" />
+        </RelativeLayout>
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="-60dp"
+            android:background="@drawable/top_corner_radius"
+            android:orientation="vertical">
+
+            <ScrollView
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:fillViewport="true">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginHorizontal="@dimen/_25sdp"
+                    android:layout_marginBottom="@dimen/_20sdp"
+                    android:orientation="vertical">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_gravity="center"
+                        android:layout_marginTop="@dimen/_30sdp"
+                        android:fontFamily="@font/urbanist_bold"
+                        android:text="Sign Up"
+                        android:textAlignment="center"
+                        android:textColor="@color/black"
+                        android:textSize="@dimen/_22sdp" />
+
+
+                    <LinearLayout
+                        android:layout_width="wrap_content"
+                        android:layout_height="48dp"
+                        android:orientation="horizontal"
+                        android:padding="4dp"
+                        android:layout_gravity="center"
+                        android:layout_marginTop="@dimen/_15sdp"
+                        android:background="@drawable/bg_segment_container">
+
+                        <!-- Email -->
+                        <TextView
+                            android:id="@+id/tvEmail"
+                            android:layout_width="120dp"
+                            android:layout_height="match_parent"
+                            android:gravity="center"
+                            android:fontFamily="@font/urbanist_medium"
+                            android:textSize = "18.sp"
+                            android:text="Email"
+                            android:textColor="@android:color/white"
+                            android:textStyle="normal"
+                            android:background="@drawable/bg_segment_selected"/>
+
+                        <!-- Phone -->
+                        <TextView
+                            android:id="@+id/tvPhone"
+                            android:layout_width="120dp"
+                            android:layout_height="match_parent"
+                            android:gravity="center"
+                            android:text="Phone"
+                            android:textSize="18.sp"
+                            android:textColor="@android:color/black"
+                            android:textStyle="normal"
+                            android:background="@android:color/transparent"/>
+
+                    </LinearLayout>
+
+                    <RelativeLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="@dimen/_40sdp"
+                        android:layout_marginTop="@dimen/_20sdp"
+                        android:background="@drawable/circular_main_bg">
+
+                        <ImageView
+                            android:id="@+id/imageFullName"
+                            android:layout_width="@dimen/_40sdp"
+                            android:layout_height="match_parent"
+                            android:src="@drawable/full_name_icon" />
+                        <EditText
+                            android:id="@+id/etSignUpFullName"
+                            android:layout_width="match_parent"
+                            android:layout_height="match_parent"
+                            android:layout_centerVertical="true"
+                            android:paddingStart="@dimen/_10sdp"
+                            android:paddingEnd="@dimen/_10sdp"
+                            android:layout_toEndOf="@+id/imageFullName"
+                            android:fontFamily="@font/urbanist_medium"
+                            android:gravity="center_vertical"
+                            android:background="@null"
+                            android:hint="Full Name"
+                            android:singleLine="true"
+                            android:text=""
+                            android:textColorHint="@color/light_black"
+                            android:textColor="@color/light_black"
+                            android:textSize="@dimen/_14sdp" />
+                    </RelativeLayout>
+
+                    <RelativeLayout
+                        android:id="@+id/layoutEmail"
+                        android:layout_width="match_parent"
+                        android:layout_height="@dimen/_40sdp"
+                        android:layout_marginTop="@dimen/_20sdp"
+                        android:background="@drawable/circular_main_bg">
+
+                        <ImageView
+                            android:id="@+id/imageEmail"
+                            android:layout_width="@dimen/_40sdp"
+                            android:layout_height="match_parent"
+                            android:src="@drawable/group_5" />
+                        <EditText
+                            android:id="@+id/etSignUpEmail"
+                            android:layout_width="match_parent"
+                            android:layout_height="match_parent"
+                            android:layout_centerVertical="true"
+                            android:paddingStart="@dimen/_10sdp"
+                            android:paddingEnd="@dimen/_10sdp"
+                            android:layout_toEndOf="@+id/imageEmail"
+                            android:fontFamily="@font/urbanist_medium"
+                            android:gravity="center_vertical"
+                            android:hint="Email"
+                            android:background="@null"
+                            android:textColorHint="@color/light_black"
+                            android:singleLine="true"
+                            android:text=""
+                            android:textColor="@color/light_black"
+                            android:textSize="@dimen/_14sdp" />
+                    </RelativeLayout>
+
+                    <LinearLayout
+                        android:id="@+id/layoutPhone"
+                        android:layout_width="match_parent"
+                        android:layout_height="48dp"
+                        android:layout_marginTop="@dimen/_20sdp"
+                        android:orientation="horizontal"
+                        android:visibility="gone"
+                        android:gravity="center_vertical">
+
+                        <!-- Country Code Container -->
+                        <LinearLayout
+                            android:layout_width="wrap_content"
+                            android:layout_height="match_parent"
+                            android:orientation="horizontal"
+                            android:gravity="center_vertical"
+                            android:paddingHorizontal="12dp"
+                            android:background="@drawable/bg_segment_container"
+                            android:layout_marginEnd="8dp">
+
+                            <com.hbb20.CountryCodePicker
+                                android:id="@+id/ccp"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:background="@null"
+                                app:ccp_showFlag="true"
+                                app:ccp_showNameCode="false"
+                                app:ccp_showPhoneCode="false"
+                                app:ccp_showArrow="true"/>
+                        </LinearLayout>
+
+                        <!-- Phone Number Field -->
+                        <EditText
+                            android:id="@+id/etSignUpPhone"
+                            android:layout_width="0dp"
+                            android:layout_height="match_parent"
+                            android:layout_weight="1"
+                            android:background="@drawable/bg_segment_container"
+                            android:paddingHorizontal="14dp"
+                            android:fontFamily="@font/urbanist_medium"
+                            android:gravity="center_vertical"
+                            android:hint="+1 (406) 555-0120"
+                            android:maxLength="10"
+                            android:inputType="phone"
+                            android:textColor="@color/light_black"
+                            android:textColorHint="@color/light_black"
+                            android:textSize="@dimen/_14sdp"
+                            android:singleLine="true" />
+                    </LinearLayout>
+
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="@dimen/_40sdp"
+                        android:layout_marginTop="@dimen/_20sdp"
+                        android:background="@drawable/circular_main_bg">
+                        <ImageView
+                            android:id="@+id/imagePassword"
+                            android:layout_width="@dimen/_40sdp"
+                            android:layout_height="match_parent"
+                            android:src="@drawable/password_icon" />
+                        <RelativeLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="match_parent">
+                            <EditText
+                                android:id="@+id/etSignUpPassword"
+                                android:layout_width="match_parent"
+                                android:layout_height="match_parent"
+                                android:background="@null"
+                                android:layout_toLeftOf="@id/lay_hide"
+                                android:inputType="textPassword"
+                                android:fontFamily="@font/urbanist_medium"
+                                android:hint="@string/password"
+                                android:paddingStart="@dimen/_10sdp"
+                                android:paddingEnd="@dimen/_10sdp"
+                                android:textColorHint="@color/light_black"
+                                android:singleLine="true"
+                                android:text=""
+                                android:textColor="@color/light_black"
+                                android:textSize="@dimen/_14sdp" />
+                            <RelativeLayout
+                                android:id="@+id/lay_hide"
+                                android:layout_width="wrap_content"
+                                android:layout_alignParentEnd="true"
+                                android:layout_height="match_parent">
+                                <ImageView
+                                    android:id="@+id/eyeIcon"
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:src="@drawable/eye_icon"
+                                    android:visibility="gone"
+                                    android:layout_centerInParent="true"
+                                    android:layout_marginEnd="@dimen/_25sdp"
+                                    app:tint="@color/light_black" />
+
+                                <ImageView
+                                    android:id="@+id/eyehideIcon"
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:layout_centerInParent="true"
+                                    android:src="@drawable/password_hide"
+                                    android:layout_marginEnd="@dimen/_25sdp"
+                                    app:tint="@color/light_black" />
+                            </RelativeLayout>
+                        </RelativeLayout>
+                    </LinearLayout>
+
+
+                    <TextView
+                        android:id="@+id/tvSignUpButton"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Sign Up"
+                        android:layout_marginTop="@dimen/_20sdp"
+                        android:textColor="@color/white"
+                        android:fontFamily="@font/jost"
+                        android:layout_gravity="center"
+                        android:textSize="@dimen/_13sdp"
+                        android:gravity="center"
+                        android:background="@drawable/button_bg"/>
+
+                    <LinearLayout
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="@dimen/_15sdp"
+                        android:gravity="center"
+                        android:layout_gravity="center"
+                        android:orientation="horizontal">
+                        <View
+                            android:id="@+id/viewSignUpFirst"
+                            android:layout_width="@dimen/_40sdp"
+                            android:layout_height="@dimen/_1sdp"
+                            android:layout_centerVertical="true"
+                            android:background="@color/light_black"/>
+                        <TextView
+                            android:id="@+id/tvSignUpUsing"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Or Sign Up with"
+                            android:layout_centerVertical="true"
+                            android:fontFamily="@font/urbanist_medium"
+                            android:layout_toEndOf="@+id/viewSignUpFirst"
+                            android:layout_marginHorizontal="@dimen/_10sdp"
+                            android:textColor="@color/light_black"
+                            android:textSize="@dimen/_14sdp"/>
+                        <View
+                            android:layout_width="@dimen/_40sdp"
+                            android:layout_height="@dimen/_1sdp"
+                            android:layout_centerVertical="true"
+                            android:layout_toEndOf="@+id/tvSignUpUsing"
+                            android:background="@color/light_black"/>
+                    </LinearLayout>
+
+
+                    <ImageView
+                        android:id="@+id/imgGoogle"
+                        android:layout_width="@dimen/_40sdp"
+                        android:layout_height="@dimen/_40sdp"
+                        android:layout_gravity="center"
+                        android:elevation="@dimen/_10sdp"
+                        android:layout_marginTop="@dimen/_15sdp"
+                        android:src="@drawable/google" />
+
+                    <LinearLayout
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="@dimen/_20sdp"
+                        android:layout_marginBottom="@dimen/_20sdp"
+                        android:layout_gravity="center"
+                        android:orientation="horizontal">
+
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Already have an account?"
+                            android:textSize="@dimen/_14sdp"
+                            android:fontFamily="@font/urbanist_medium"
+                            android:textColor="@color/light_black"/>
+
+
+                        <TextView
+                            android:id="@+id/tv_Sign"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Sign In"
+                            android:layout_marginStart="@dimen/_8sdp"
+                            android:textSize="@dimen/_14sdp"
+                            android:fontFamily="@font/urbanist_bold"
+                            android:textColor="@color/light_blue"/>
+
+                    </LinearLayout>
+                </LinearLayout>
+            </ScrollView>
+
+        </LinearLayout>
+
+    </LinearLayout>
+
+
+</RelativeLayout>

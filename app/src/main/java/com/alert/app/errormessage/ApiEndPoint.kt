@@ -1,0 +1,65 @@
+package com.alert.app.errormessage
+
+object ApiEndPoint {
+
+    const val loginUrl="api/login_email"
+    const val loginPhoneUrl="api/login_phone_number"
+    const val signUpOtpVerifyUrl="api/verify-otp-signup"
+    const val otpVerifyUrl="api/verify-otp"
+    const val resendOtp = "api/resend_otp"
+    const val forgotPassVerify="api/otpVerifyForgotPassword"
+    const val socialLoginUrl="api/social_login"
+    const val signUpEmail="api/signup_email"
+    const val signUpPhone="api/signup_phone_number"
+    const val forgotPassUrl="api/social_login"
+    const val getUserProfileUrl="api/get_user_profile"
+    const val forgotPassword="api/forgot_password"
+    const val tutorialsVideoUrl="api/tutorials_video"
+    const val termsConditionUrl="api/terms_condition"
+    const val sendOtpForVerifyUrl="api/send_profile_update_verify_otp"
+    const val upDateProfileUrl="api/update_my_profile"
+    const val resetPasswordUrl="api/reset_password"
+    const val getContactList = "api/get_my_contacts_list"
+    const val getRelation = "api/get_relation"
+    const val getAllAlerts = "api/get_all_alerts"
+    const val manualContact = "api/manual_contact"
+    const val deleteContact = "api/delete_contact"
+    const val editManualContact = "api/edit_manual_contact"
+    const val addContact = "api/add_contact"
+    const val getAlert = "api/get_alert"
+    const val getSelfAlerts = "api/get_user_alerts"
+    const val addSelfAlert = "api/add_self_alert"
+    const val deleteUserAlert = "api/delete_user_alert"
+    const val getNearbyUser = "api/get_nearby_user"
+    const val privacyPolicy="api/privacy_policy"
+    const val aboutUs="api/about_us"
+    const val getFaq="api/get_faq"
+    const val userLogout="api/user_logout"
+    const val deleteUser="api/delete_user"
+
+    /// Dhananjay Singh has integrated the API from here.
+
+    const val checkInUserAlert="api/check-in-alerts"
+    const val responseAlert="api/response-alert"
+    const val getNeighbor="api/get-neighbour"
+    const val addNeighbor="api/add-neighbour"
+    const val neighborProfileDetails="api/get-neighbour-contact_id"
+    const val addEmergencyMessage="api/emergency-message"
+    const val addUserAddress="api/user-address"
+    const val deleteAddress="api/delete-user-address"
+    const val blockNeighbor="api/block-neighbour"
+    const val deleteNeighbor="api/delete-neighbour"
+    const val addEmergencyContact="api/add-emergency-contact"
+    const val getEmergencyContact="api/get-emergency-contacts"
+    const val getEmergencyContactProfile="api/get-emergency-contact_id"
+    const val getNeighborInviteRequest="api/get-neighbour-request"
+    const val sendEmergencyMessageRequest="api/send-emergency-message"
+
+
+    const val GET_NOTIFICATION="api/notification-list"
+    const val ASK_GPT="api/ask-gpt"
+    const val SHARE_LOCATION="api/share-location"
+    const val ADD_HEALTH_ALERT="api/add_health_alert"
+
+
+}

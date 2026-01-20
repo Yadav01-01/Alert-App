@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:orientation="vertical"
+    android:background="@drawable/bg_bottom"
+    android:layout_height="wrap_content">
+
+    <RelativeLayout
+        android:id="@+id/cancel_img"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="@dimen/_10sdp"
+        >
+        <ImageView
+            android:id="@+id/img_cross"
+            android:layout_width="@dimen/_15sdp"
+            android:layout_height="@dimen/_15sdp"
+            android:src="@drawable/cross_black"
+            android:layout_alignParentEnd="true"
+            android:layout_marginEnd="@dimen/_15sdp"
+            />
+    </RelativeLayout>
+
+
+    <TextView
+        android:id="@+id/share_code"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:gravity="center"
+        android:fontFamily="@font/urbanist_medium"
+        android:text="@string/how_do_you_wish_to_add_the_contact"
+        android:textColor="@color/black"
+        android:textSize="@dimen/_21sdp"
+        android:textStyle="bold" />
+
+    <TextView
+        android:id="@+id/tv_manually"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Manually"
+        android:layout_marginTop="@dimen/_30sdp"
+        android:textColor="@color/white"
+        android:layout_gravity="center"
+        android:gravity="center"
+        android:fontFamily="@font/urbanist_medium"
+        android:textSize="16sp"
+        android:background="@drawable/mannualy_icon"/>
+
+    <TextView
+        android:id="@+id/tv_contacts"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="@string/from_contacts"
+        android:layout_marginTop="@dimen/_10sdp"
+        android:textColor="@color/white"
+        android:fontFamily="@font/urbanist_medium"
+        android:layout_gravity="center"
+        android:gravity="center"
+        android:textSize="16sp"
+        android:background="@drawable/contact_bg"/>
+
+    <TextView
+        android:id="@+id/tv_map"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="@string/from_map"
+        android:layout_marginTop="@dimen/_10sdp"
+        android:textColor="@color/white"
+        android:layout_gravity="center"
+        android:fontFamily="@font/urbanist_medium"
+        android:gravity="center"
+        android:textSize="16sp"
+        android:layout_marginBottom="@dimen/_20sdp"
+        android:background="@drawable/mannualy_icon"/>
+
+</LinearLayout>

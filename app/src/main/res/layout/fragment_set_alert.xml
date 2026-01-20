@@ -1,0 +1,195 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:background="@drawable/bg_select"
+    tools:context=".fragment.auth.SetAlertFragment">
+
+
+    <RelativeLayout
+        android:id="@+id/lay_appbar"
+        android:layout_width="match_parent"
+        android:layout_marginTop="@dimen/_38sdp"
+        android:layout_height="wrap_content">
+
+
+        <ImageView
+            android:id="@+id/imageBack"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignParentStart="true"
+            android:layout_centerInParent="true"
+            android:layout_marginStart="@dimen/_20sdp"
+            android:src="@drawable/back_icon"/>
+
+        <TextView
+            android:id="@+id/tv_myprofile"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:padding="@dimen/_5sdp"
+            android:layout_centerInParent="true"
+            android:fontFamily="@font/urbanist_bold"
+            android:textColor="#000000"
+            android:textStyle="bold"
+            android:textSize="30sp"
+            android:text="@string/set_alerts" />
+    </RelativeLayout>
+
+    <ScrollView
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:fillViewport="true"
+        android:layout_below="@id/lay_appbar"
+        tools:ignore="UselessParent">
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/_10sdp"
+            android:layout_marginHorizontal="@dimen/_15sdp"
+            android:orientation="vertical">
+
+
+
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="@string/currently_no_contact_is_added_click_below_to_add_friends_and_family"
+                android:textColor="@color/light_black"
+                android:layout_gravity="center"
+                android:layout_marginTop="@dimen/_15sdp"
+                android:textAlignment="center"
+                android:textSize="@dimen/_13sdp"
+                android:fontFamily="@font/urbanist_medium"/>
+
+
+            <TextView
+                android:id="@+id/tvadd"
+                android:layout_width="@dimen/_180sdp"
+                android:layout_height="wrap_content"
+                android:text="@string/add_friends_amp_family"
+                android:layout_marginTop="@dimen/_30sdp"
+                android:layout_marginBottom="@dimen/_20sdp"
+                android:textColor="@color/white"
+                android:layout_gravity="center"
+                android:textSize="@dimen/_13sdp"
+                android:fontFamily="@font/urbanist_medium"
+                android:gravity="center"
+                android:background="@drawable/button_bg"/>
+
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/or"
+                android:textColor="@color/light_black"
+                android:layout_gravity="center"
+                android:textSize="@dimen/_13sdp"
+                android:layout_marginStart="@dimen/_5sdp"
+                android:textAlignment="center"
+                android:fontFamily="@font/urbanist_medium"/>
+
+
+
+          <LinearLayout
+              android:layout_width="match_parent"
+              android:layout_height="wrap_content"
+              android:gravity="center"
+              android:layout_marginTop="@dimen/_10sdp"
+              android:orientation="horizontal">
+              <TextView
+                  android:layout_width="wrap_content"
+                  android:layout_height="wrap_content"
+                  android:text="@string/invite"
+                  android:textColor="@color/light_black"
+                  android:layout_gravity="center"
+                  android:textAlignment="center"
+
+                  android:textStyle="bold"
+                  android:textSize="@dimen/_15sdp"
+                  android:fontFamily="@font/urbanist_medium"/>
+              <TextView
+                  android:layout_width="wrap_content"
+                  android:layout_height="wrap_content"
+                  android:text="@string/other_to_get_alerts"
+                  android:textColor="@color/light_black"
+                  android:layout_gravity="center"
+                  android:textSize="@dimen/_15sdp"
+                  android:layout_marginStart="@dimen/_5sdp"
+                  android:textAlignment="center"
+                  android:fontFamily="@font/urbanist_medium"/>
+          </LinearLayout>
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:layout_marginTop="@dimen/_5sdp">
+                <ImageView
+                    android:layout_width="@dimen/_30sdp"
+                    android:layout_height="@dimen/_15sdp"
+                    android:layout_marginStart="@dimen/_15sdp"
+                    android:src="@drawable/polygon_1"/>
+                <com.google.android.material.card.MaterialCardView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    app:cardElevation="4dp"
+                    app:strokeColor="#DDDDDD"
+                    android:layout_marginBottom="8dp"
+                    app:strokeWidth="@dimen/_2sdp"
+                    app:cardBackgroundColor="#FFFFFF">
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical">
+                        <TextView
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:text="@string/you_can_copy_this_link_and_share_to_your_loved_ones_to_get_the_recent_alerts"
+                            android:textColor="#58585A"
+                            android:layout_margin="@dimen/_10sdp"
+                            android:layout_gravity="center"
+                            android:textAlignment="center"
+                            android:textSize="@dimen/_13sdp"
+                            android:fontFamily="@font/urbanist_medium"/>
+                        <RelativeLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="@dimen/_50sdp"
+                            android:layout_margin="@dimen/_10sdp"
+                            android:background="@drawable/bg_border_dass">
+                            <TextView
+                                android:id="@+id/tv_link"
+                                android:layout_width="match_parent"
+                                android:layout_height="match_parent"
+                                android:layout_marginStart="@dimen/_10sdp"
+                                android:layout_marginTop="@dimen/_10sdp"
+                                android:layout_marginEnd="@dimen/_6sdp"
+                                android:layout_marginBottom="@dimen/_10sdp"
+                                android:gravity="center|start"
+                                android:layout_toStartOf="@id/img_copy"
+                                android:fontFamily="@font/urbanist_medium"
+                                android:text="@string/http_loremipsome_fghiuteris"
+                                android:textColor="#58585A"
+                                android:textSize="@dimen/_13sdp" />
+
+                            <ImageView
+                                android:id="@+id/img_copy"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+
+                                android:layout_alignParentEnd="true"
+                                android:layout_centerInParent="true"
+                                android:layout_marginEnd="@dimen/_10sdp"
+                                android:background="@drawable/copy_icon" />
+                        </RelativeLayout>
+                    </LinearLayout>
+                </com.google.android.material.card.MaterialCardView>
+            </LinearLayout>
+
+
+
+        </LinearLayout>
+    </ScrollView>
+
+</RelativeLayout>

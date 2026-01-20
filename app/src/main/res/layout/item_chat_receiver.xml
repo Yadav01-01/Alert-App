@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:gravity="start"
+    android:paddingStart="8dp"
+    android:paddingEnd="8dp"
+    android:paddingTop="4dp"
+    android:paddingBottom="4dp">
+
+    <!-- Profile image -->
+    <de.hdodenhof.circleimageview.CircleImageView
+        android:id="@+id/imgProfile"
+        android:layout_width="40dp"
+        android:layout_height="40dp"
+        android:layout_marginTop="4dp"
+        android:src="@drawable/added_contacts_icon" />
+
+    <!-- Message + Time container -->
+    <LinearLayout
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="8dp"
+        android:orientation="vertical">
+
+        <!-- Message bubble -->
+        <LinearLayout
+            android:id="@+id/layoutBubble"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:background="#F2F7FB"
+            android:padding="10dp"
+            android:maxWidth="280dp">
+
+            <TextView
+                android:id="@+id/tvMessage"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:fontFamily="@font/poppins_medium"
+                android:textColor="#000E08"
+                android:textSize="12sp"
+                android:text="Hello ! Nazrul How are you?"/>
+        </LinearLayout>
+
+        <!-- Time OUTSIDE bubble -->
+        <TextView
+            android:id="@+id/tvTime"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="4dp"
+            android:layout_marginStart="4dp"
+            android:layout_gravity="end"
+            android:fontFamily="@font/poppins_medium"
+            android:text="09:25 AM"
+            android:textSize="10sp"
+            android:textColor="#8A8A8A" />
+    </LinearLayout>
+
+</LinearLayout>

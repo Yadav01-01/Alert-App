@@ -1,0 +1,223 @@
+<?xml version="1.0" encoding="utf-8"?>
+<navigation xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/main_graph"
+    app:startDestination="@id/homeFragment">
+
+
+    <fragment
+        android:id="@+id/homeFragment"
+        android:name="com.alert.app.fragment.main.HomeFragment"
+        android:label="fragment_home"
+        tools:layout="@layout/fragment_home" />
+
+
+    <fragment
+        android:id="@+id/homeProfileFragment"
+        android:name="com.alert.app.fragment.main.HomeProfileFragment"
+        android:label="fragment_home_profile"
+        tools:layout="@layout/fragment_home_profile" >
+        <argument
+            android:name="source"
+            app:argType="string"
+            android:defaultValue="main" />
+    </fragment>
+
+    <fragment
+        android:id="@+id/settingFragment"
+        android:name="com.alert.app.fragment.main.SettingFragment"
+        android:label="fragment_setting"
+        tools:layout="@layout/fragment_setting" />
+
+    <fragment
+        android:id="@+id/mapFullScreenFragment"
+        android:name="com.alert.app.fragment.main.MapFullScreenFragment"
+        android:label="fragment_map_full_screen"
+        tools:layout="@layout/fragment_map_full_screen" />
+    <fragment
+        android:id="@+id/notificationFragment"
+        android:name="com.alert.app.fragment.main.NotificationFragment"
+        android:label="fragment_notification"
+        tools:layout="@layout/fragment_notification" />
+    <fragment
+        android:id="@+id/checkHistoryFragment"
+        android:name="com.alert.app.fragment.main.CheckHistoryFragment"
+        android:label="fragment_check_history"
+        tools:layout="@layout/fragment_check_history" />
+    <fragment
+        android:id="@+id/verificationCodeProfileFragment"
+        android:name="com.alert.app.fragment.auth.VerificationCodeProfileFragment"
+        android:label="fragment_verification_code_profile"
+        tools:layout="@layout/fragment_verification_code_profile" />
+    <fragment
+        android:id="@+id/nearByPepopleFragment"
+        android:name="com.alert.app.fragment.main.NearByPepopleFragment"
+        android:label="fragment_near_by_pepople"
+        tools:layout="@layout/fragment_near_by_pepople" />
+    <fragment
+        android:id="@+id/selfAlertFragment"
+        android:name="com.alert.app.fragment.main.SelfAlertFragment"
+        android:label="fragment_self_alert"
+        tools:layout="@layout/fragment_self_alert" />
+    <fragment
+        android:id="@+id/addAlertFragment"
+        android:name="com.alert.app.fragment.main.AddAlertFragment"
+        android:label="fragment_add_alert"
+        tools:layout="@layout/fragment_add_alert" />
+    <fragment
+        android:id="@+id/locationShareFragment"
+        android:name="com.alert.app.fragment.main.LocationShareFragment"
+        android:label="fragment_location_share"
+        tools:layout="@layout/fragment_location_share" />
+    <fragment
+        android:id="@+id/contactListFragment"
+        android:name="com.alert.app.fragment.main.ContactListFragment"
+        android:label="fragment_contact_list"
+        tools:layout="@layout/fragment_contact_list" />
+    <fragment
+        android:id="@+id/emergencyContactsFragment"
+        android:name="com.alert.app.fragment.main.EmergencyContactsFragment"
+        android:label="fragment_emergency_contacts"
+        tools:layout="@layout/fragment_emergency_contacts" />
+    <fragment
+        android:id="@+id/helpFragment"
+        android:name="com.alert.app.fragment.main.HelpFragment"
+        android:label="fragment_help"
+        tools:layout="@layout/fragment_help" />
+    <fragment
+        android:id="@+id/emergencyTextFragment"
+        android:name="com.alert.app.fragment.main.EmergencyTextFragment"
+        android:label="fragment_emergency_text"
+        tools:layout="@layout/fragment_emergency_text" />
+    <fragment
+        android:id="@+id/emergencyTextSubmitFragment"
+        android:name="com.alert.app.fragment.main.EmergencyTextSubmitFragment"
+        android:label="fragment_emergency_text_submit"
+        tools:layout="@layout/fragment_emergency_text_submit" />
+    <fragment
+        android:id="@+id/watchOverMeFragment"
+        android:name="com.alert.app.fragment.main.WatchOverMeFragment"
+        android:label="fragment_watch_over_me"
+        tools:layout="@layout/fragment_watch_over_me" />
+    <fragment
+        android:id="@+id/termsAndConditionFragment"
+        android:name="com.alert.app.fragment.main.TermsAndConditionFragment"
+        android:label="fragment_terms_and_condition"
+        tools:layout="@layout/fragment_terms_and_condition" />
+    <fragment
+        android:id="@+id/privacyPolicyFragment"
+        android:name="com.alert.app.fragment.main.PrivacyPolicyFragment"
+        android:label="fragment_privacy_policy"
+        tools:layout="@layout/fragment_privacy_policy" />
+    <fragment
+        android:id="@+id/watchovermechoosestartingpointFragment"
+        android:name="com.alert.app.fragment.main.WatchOverMeChooseStartingPointFragment"
+        android:label="fragment_watchovermechoosestartingpoint"
+        tools:layout="@layout/fragment_watchovermechoosestartingpoint" />
+    <fragment
+        android:id="@+id/helpingNeighborsFragment"
+        android:name="com.alert.app.fragment.main.HelpingNeighborsFragment"
+        android:label="fragment_helping_neighbors"
+        tools:layout="@layout/fragment_helping_neighbors" />
+    <fragment
+        android:id="@+id/neighborProfileFragment"
+        android:name="com.alert.app.fragment.main.NeighborProfileFragment"
+        android:label="fragment_neighbor_profile"
+        tools:layout="@layout/fragment_neighbor_profile" />
+    <fragment
+        android:id="@+id/sendAlertFragment"
+        android:name="com.alert.app.fragment.main.SendAlertFragment"
+        android:label="fragment_send_alert"
+        tools:layout="@layout/fragment_send_alert" />
+    <fragment
+        android:id="@+id/addedContactsFragment"
+        android:name="com.alert.app.fragment.main.AddedContactsFragment"
+        android:label="fragment_added_contacts"
+        tools:layout="@layout/fragment_added_contacts" />
+    <fragment
+        android:id="@+id/tutorialsFragment"
+        android:name="com.alert.app.fragment.main.TutorialsFragment"
+        android:label="fragment_tutorials"
+        tools:layout="@layout/fragment_tutorials" />
+    <fragment
+        android:id="@+id/knowMoreFragment"
+        android:name="com.alert.app.fragment.main.KnowMoreFragment"
+        android:label="fragment_knowm_more"
+        tools:layout="@layout/fragment_knowm_more" />
+    <fragment
+        android:id="@+id/setAlertFragment"
+        android:name="com.alert.app.fragment.auth.SetAlertFragment"
+        android:label="fragment_set_alert"
+        tools:layout="@layout/fragment_set_alert" />
+    <fragment
+        android:id="@+id/mobileContactListFragment2"
+        android:name="com.alert.app.fragment.main.MobileContactListFragment"
+        android:label="fragment_mobile_contact_list"
+        tools:layout="@layout/fragment_mobile_contact_list" />
+    <fragment
+        android:id="@+id/fromMapFragment2"
+        android:name="com.alert.app.fragment.main.FromMapFragment"
+        android:label="fragment_from_map"
+        tools:layout="@layout/fragment_from_map" />
+    <fragment
+        android:id="@+id/contactFragment"
+        android:name="com.alert.app.fragment.auth.ContactFragment"
+        android:label="fragment_contact"
+        tools:layout="@layout/fragment_contact" />
+    <fragment
+        android:id="@+id/messageFragment"
+        android:name="com.alert.app.fragment.main.MessageFragment"
+        android:label="fragment_message"
+        tools:layout="@layout/fragment_message" />
+    <fragment
+        android:id="@+id/healthFragment"
+        android:name="com.alert.app.fragment.main.HealthFragment"
+        android:label="fragment_helth"
+        tools:layout="@layout/fragment_helth" />
+    <fragment
+        android:id="@+id/supportFragment"
+        android:name="com.alert.app.fragment.main.SupportFragment"
+        android:label="fragment_support"
+        tools:layout="@layout/fragment_support" />
+    <fragment
+        android:id="@+id/setHealthFragment"
+        android:name="com.alert.app.fragment.main.SetHealthFragment"
+        android:label="fragment_set_health"
+        tools:layout="@layout/fragment_set_health" />
+    <fragment
+        android:id="@+id/healthAlertTypeFragment"
+        android:name="com.alert.app.fragment.main.HealthAlertTypeFragment"
+        android:label="fragment_health_alert_type"
+        tools:layout="@layout/fragment_health_alert_type" />
+    <fragment
+        android:id="@+id/healthAlertTypeSecondFragment"
+        android:name="com.alert.app.fragment.main.HealthAlertTypeSecondFragment"
+        android:label="HealthAlertTypeSecondFragment" />
+    <fragment
+        android:id="@+id/healthAlertCalanderFragment"
+        android:name="com.alert.app.fragment.main.HealthAlertCalanderFragment"
+        android:label="fragment_health_alert_calander"
+        tools:layout="@layout/fragment_health_alert_calander" />
+    <fragment
+        android:id="@+id/userContactListFragment"
+        android:name="com.alert.app.fragment.main.UserContactListFragment"
+        android:label="fragment_user_contact_list"
+        tools:layout="@layout/fragment_user_contact_list" />
+    <fragment
+        android:id="@+id/mobileContactListFragment"
+        android:name="com.alert.app.fragment.main.MobileContactListFragment"
+        android:label="fragment_mobile_contact_list"
+        tools:layout="@layout/fragment_mobile_contact_list" />
+    <fragment
+        android:id="@+id/fromMapFragment"
+        android:name="com.alert.app.fragment.main.FromMapFragment"
+        android:label="fragment_from_map"
+        tools:layout="@layout/fragment_from_map" />
+    <fragment
+        android:id="@+id/FAQFragment"
+        android:name="com.alert.app.fragment.main.FAQFragment"
+        android:label="fragment_f_a_q"
+        tools:layout="@layout/fragment_f_a_q" />
+
+</navigation>

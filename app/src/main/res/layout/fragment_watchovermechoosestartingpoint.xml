@@ -1,0 +1,256 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    tools:context=".fragment.main.WatchOverMeChooseStartingPointFragment">
+
+    <LinearLayout
+        android:id="@+id/lay_search"
+        android:layout_below="@id/lay_appbar"
+        android:layout_width="match_parent"
+        android:layout_margin="@dimen/_10sdp"
+        android:layout_height="@dimen/_35sdp"
+        android:visibility="gone"
+        android:background="@drawable/search_field">
+
+        <TextView
+            android:id="@+id/ed_search"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:autofillHints=""
+            android:hint="@string/choose_starting_point"
+            android:enabled="false"
+            android:drawablePadding="@dimen/_10sdp"
+            android:gravity="center_vertical"
+            android:paddingStart="@dimen/_10sdp"
+            android:singleLine="true"
+            android:textColorHint="#8E8E93"
+            android:drawableStart="@drawable/icon_search"
+            android:paddingEnd="@dimen/_10sdp"/>
+    </LinearLayout>
+
+    <RelativeLayout
+        android:id="@+id/rl_map_view"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_below="@id/lay_search"
+        android:visibility="visible">
+
+        <com.google.android.gms.maps.MapView
+            android:id="@+id/map"
+            android:name="com.google.android.gms.maps.SupportMapFragment"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent" />
+
+    </RelativeLayout>
+    <ImageView
+        android:id="@+id/img_track"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_below="@id/lay_search"
+        android:scaleType="centerCrop"
+        android:visibility="gone"
+        android:src="@drawable/overmelocation"/>
+
+    <ImageView
+        android:id="@+id/imageBack"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_margin="@dimen/_20sdp"
+        android:layout_alignParentTop="true"
+        android:layout_alignParentStart="true"
+        android:layout_centerInParent="true"
+        android:layout_below="@id/imageBack"
+        android:visibility="gone"
+        android:src="@drawable/back_icon"/>
+
+    <androidx.cardview.widget.CardView
+        android:id="@+id/lay_card"
+        android:layout_width="match_parent"
+        android:layout_below="@id/lay_search"
+        android:layout_marginStart="@dimen/_10sdp"
+        android:layout_marginEnd="@dimen/_10sdp"
+        app:cardCornerRadius="@dimen/_15sdp"
+        android:layout_marginTop="@dimen/_15sdp"
+        android:visibility="visible"
+        android:layout_height="@dimen/_140sdp">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:layout_margin="@dimen/_10sdp"
+            android:orientation="horizontal">
+
+            <LinearLayout
+                android:layout_width="@dimen/_20sdp"
+                android:layout_height="match_parent"
+                android:layout_marginTop="@dimen/_8sdp"
+                android:layout_marginBottom="@dimen/_10sdp"
+                android:orientation="vertical"
+                android:gravity="center">
+                <ImageView
+                    android:id="@+id/img_top"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:src="@drawable/color_circle_active"/>
+                <ImageView
+                    android:layout_width="wrap_content"
+                    android:layout_height="@dimen/_60sdp"
+                    android:src="@drawable/line_img"/>
+
+                <ImageView
+                    android:id="@+id/img_bottom"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginBottom="@dimen/_10sdp"
+                    android:src="@drawable/circle_inactive_image"/>
+            </LinearLayout>
+
+            <LinearLayout
+                android:id="@+id/lay_end"
+                android:layout_width="match_parent"
+                android:orientation="vertical"
+                android:layout_height="match_parent">
+
+                <LinearLayout
+                    android:id="@+id/lay_Current"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_margin="@dimen/_5sdp"
+                    android:orientation="vertical"
+                    android:padding="@dimen/_7sdp"
+                    android:background="@drawable/bg_border">
+
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="Current location"
+                        android:textSize="@dimen/_15sdp"
+                        android:fontFamily="@font/urbanist_bold"
+                        android:textColor="#000000"/>
+
+                    <AutoCompleteTextView
+                        android:id="@+id/edtCurrentAddress"
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent"
+                        android:layout_marginEnd="@dimen/_8sdp"
+                        android:drawablePadding="@dimen/_5sdp"
+                        android:background="@null"
+                        android:singleLine="true"
+                        android:textColor="#908D8D"
+                        android:textSize="@dimen/_14sdp"
+                        android:hint="@string/enter_address" />
+
+                 <!--   <EditText
+                        android:id="@+id/tvCurrent"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="123,any street, US"
+                        android:textSize="@dimen/_15sdp"
+                        android:background="@null"
+                        android:fontFamily="@font/urbanist_medium"
+                        android:textColor="#908D8D"/>-->
+
+                </LinearLayout>
+
+                <LinearLayout
+                    android:id="@+id/layDestination"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_margin="@dimen/_5sdp"
+                    android:orientation="vertical"
+                    android:padding="@dimen/_5sdp"
+                    android:background="@drawable/bg_border">
+
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="Destination"
+                        android:textSize="@dimen/_15sdp"
+                        android:fontFamily="@font/urbanist_bold"
+                        android:textColor="#000000"/>
+
+                    <AutoCompleteTextView
+                        android:id="@+id/edtDestinationAddress"
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent"
+
+                        android:layout_marginEnd="@dimen/_8sdp"
+                        android:drawablePadding="@dimen/_5sdp"
+                        android:background="@null"
+                        android:singleLine="true"
+                        android:textColor="#908D8D"
+                        android:textSize="@dimen/_14sdp"
+                        android:hint="@string/enter_address" />
+
+           <!--         <EditText
+                        android:id="@+id/edtDestination"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="Enter Destination"
+                        android:textSize="@dimen/_15sdp"
+                        android:background="@null"
+                        android:fontFamily="@font/urbanist_medium"
+                        android:textColor="#908D8D"/>
+                </LinearLayout>-->
+            </LinearLayout>
+
+        </LinearLayout>
+
+        </LinearLayout>
+    </androidx.cardview.widget.CardView>
+
+
+
+
+
+
+    <TextView
+        android:id="@+id/btnExplore"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Go Now"
+        android:layout_marginTop="@dimen/_20sdp"
+        android:layout_marginBottom="@dimen/_20sdp"
+        android:textColor="@color/white"
+        android:layout_gravity="center"
+        android:textSize="16sp"
+        android:layout_alignParentBottom="true"
+        android:layout_centerInParent="true"
+        android:gravity="center"
+        android:background="@drawable/textbg"/>
+
+    <include
+        layout="@layout/sadow_layout"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+
+        android:layout_alignParentBottom="true"/>
+    <LinearLayout
+        android:id="@+id/simulateButtons"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center"
+        android:layout_marginBottom="@dimen/_60sdp"
+        android:layout_alignParentBottom="true"
+        android:padding="16dp">
+
+        <Button
+            android:id="@+id/btnCorrectPath"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Correct Path" />
+
+        <Button
+            android:id="@+id/btnWrongPath"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Wrong Path"
+            android:layout_marginStart="16dp" />
+    </LinearLayout>
+
+
+</RelativeLayout>

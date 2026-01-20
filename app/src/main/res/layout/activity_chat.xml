@@ -1,0 +1,131 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/main"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    tools:context=".activity.ChatActivity">
+    <LinearLayout
+        android:id="@+id/img_appbar"
+        android:layout_width="match_parent"
+        android:orientation="horizontal"
+        android:layout_marginTop="@dimen/_10sdp"
+        android:layout_height="wrap_content">
+        <LinearLayout
+            android:id="@+id/img_back"
+            android:layout_width="wrap_content"
+            android:layout_gravity="center"
+            android:layout_marginStart="@dimen/_10sdp"
+            android:layout_height="wrap_content">
+
+            <ImageView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:background="@drawable/back_icon"
+                android:padding="@dimen/_5sdp" />
+        </LinearLayout>
+        <RelativeLayout
+            android:layout_width="@dimen/_50sdp"
+            android:layout_height="@dimen/_50sdp">
+
+            <de.hdodenhof.circleimageview.CircleImageView
+                android:id="@+id/user_img"
+                android:layout_width="@dimen/_40sdp"
+                android:layout_height="@dimen/_40sdp"
+                android:layout_centerInParent="true"
+                android:layout_gravity="center"
+                android:src="@drawable/user_dummy_icon" />
+            <ImageView
+                android:id="@+id/img_upload"
+                android:layout_width="@dimen/_10sdp"
+                android:layout_height="@dimen/_10sdp"
+                android:layout_alignParentBottom="true"
+                android:layout_marginBottom="@dimen/_3sdp"
+                android:layout_marginEnd="@dimen/_10sdp"
+                android:layout_alignParentEnd="true"
+                android:src="@drawable/active_icon"/>
+
+        </RelativeLayout>
+        <RelativeLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content">
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_toLeftOf="@id/img_call"
+                android:orientation="vertical">
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:fontFamily="@font/urbanist_bold"
+                    android:textColor="#000000"
+                    android:textStyle="bold"
+                    android:textSize="@dimen/_15sdp"
+                    android:text="Jhon Abraham" />
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:fontFamily="@font/urbanist_medium"
+                    android:textColor="#797C7B"
+                    android:textSize="@dimen/_12sdp"
+                    android:text="Active now" />
+            </LinearLayout>
+            <ImageView
+                android:id="@+id/img_call"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:background="@drawable/call"
+                android:layout_marginEnd="@dimen/_10sdp"
+                android:layout_centerInParent="true"
+                android:layout_alignParentEnd="true"
+                android:padding="@dimen/_5sdp" />
+        </RelativeLayout>
+    </LinearLayout>
+    <!-- ================= CHAT LIST ================= -->
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/rvMessages"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_below="@id/img_appbar"
+        android:layout_above="@id/lay_chat"
+        android:padding="@dimen/_10sdp"
+        android:clipToPadding="false"/>
+
+    <!-- ================= MESSAGE INPUT ================= -->
+    <LinearLayout
+        android:id="@+id/lay_chat"
+        android:layout_width="match_parent"
+        android:layout_height="@dimen/_60sdp"
+        android:layout_alignParentBottom="true"
+        android:orientation="horizontal"
+        android:padding="@dimen/_10sdp"
+        android:gravity="center">
+
+        <!-- Emoji -->
+        <ImageView
+            android:id="@+id/img_imogi"
+            android:layout_width="@dimen/_25sdp"
+            android:layout_height="@dimen/_25sdp"
+            android:src="@drawable/sentiment_very_satisfied"/>
+
+        <!-- Message box -->
+        <EditText
+            android:id="@+id/ed_msg"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:layout_marginStart="@dimen/_10sdp"
+            android:layout_marginEnd="@dimen/_10sdp"
+            android:background="@drawable/edit_chat_bg"
+            android:hint="Enter a message..."
+            android:padding="@dimen/_10sdp"/>
+
+        <!-- Send -->
+        <ImageView
+            android:id="@+id/btn_send"
+            android:layout_width="@dimen/_40sdp"
+            android:layout_height="@dimen/_40sdp"
+            android:src="@drawable/chat_send"/>
+    </LinearLayout>
+</RelativeLayout>

@@ -1,0 +1,129 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    tools:context=".fragment.main.SetHealthFragment">
+
+    <RelativeLayout
+        android:id="@+id/lay_appbar"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content">
+        <LinearLayout
+            android:id="@+id/img_back"
+            android:layout_width="wrap_content"
+            android:layout_centerInParent="true"
+            android:layout_alignParentStart="true"
+            android:layout_height="wrap_content">
+
+            <ImageView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_margin="@dimen/_10sdp"
+                android:background="@drawable/back_icon"
+                android:padding="@dimen/_5sdp" />
+        </LinearLayout>
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:padding="@dimen/_5sdp"
+            android:gravity="center"
+            android:layout_marginTop="@dimen/_10sdp"
+            android:fontFamily="@font/urbanist_bold"
+            android:textColor="#000000"
+            android:textSize="@dimen/_18sdp"
+            android:textStyle="bold"
+            android:layout_margin="@dimen/_10sdp"
+            android:text="@string/health_alerts" />
+    </RelativeLayout>
+
+
+    <ScrollView
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_margin="@dimen/_10sdp"
+        android:fillViewport="true"
+        android:layout_below="@id/lay_appbar">
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:gravity="center|top"
+            android:orientation="vertical"
+            android:layout_marginHorizontal="@dimen/_20sdp"
+            android:layout_height="wrap_content">
+            <ImageView
+                android:layout_width="wrap_content"
+                android:src="@drawable/bro_icon"
+                android:layout_marginTop="@dimen/_10sdp"
+                android:layout_height="wrap_content"/>
+
+            <TextView
+                android:layout_width="match_parent"
+                android:gravity="center"
+                android:textSize="@dimen/_15sdp"
+                android:fontFamily="@font/urbanist_medium"
+                android:textColor="#58585A"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/_10sdp"
+                android:text="Lorem Ipsum Lorem ipsum dolor sit \namet, consectetur adipiscing elit. \ninvitae non augue. Nullam interdum sem."/>
+
+            <TextView
+                android:layout_width="match_parent"
+                android:gravity="center"
+                android:textSize="@dimen/_15sdp"
+                android:fontFamily="@font/urbanist_medium"
+                android:textColor="#58585A"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/_10sdp"
+                android:text="Now you can have Health Related \nReminders From the Alert App NOW!!"/>
+
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="@dimen/_40sdp"
+                android:layout_marginTop="@dimen/_10sdp"
+                android:background="@drawable/bg_border">
+
+                <TextView
+                    android:id="@+id/tvMinit"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:text="Set Health Alert For"
+                    android:drawablePadding="@dimen/_10sdp"
+                    android:textColor="@color/light_black"
+                    android:gravity="center|start"
+                    android:textSize="@dimen/_12sdp"
+                    android:paddingEnd="@dimen/_15sdp"
+                    android:paddingStart="@dimen/_10sdp"
+                    android:fontFamily="@font/urbanist_medium"
+                    app:drawableEndCompat="@drawable/arrow_bottom" />
+            </LinearLayout>
+
+
+            <TextView
+                android:id="@+id/btn_next"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Next"
+                android:layout_marginTop="@dimen/_20sdp"
+                android:layout_marginBottom="@dimen/_10sdp"
+                android:textColor="@color/white"
+                android:layout_gravity="center"
+                android:gravity="center"
+                android:background="@drawable/bg_share"/>
+
+
+
+
+        </LinearLayout>
+    </ScrollView>
+
+
+    <include
+        layout="@layout/sadow_layout"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_alignParentBottom="true"/>
+
+
+</RelativeLayout>

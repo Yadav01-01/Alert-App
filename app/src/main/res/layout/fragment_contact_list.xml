@@ -1,0 +1,98 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    tools:context=".fragment.main.ContactListFragment">
+
+    <RelativeLayout
+        android:id="@+id/lay_appbar"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="@dimen/_20sdp">
+        <LinearLayout
+            android:id="@+id/img_back"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content">
+            <ImageView
+                android:layout_width="wrap_content"
+                android:padding="@dimen/_5sdp"
+                android:layout_height="wrap_content"
+                android:layout_margin="@dimen/_10sdp"
+                android:background="@drawable/back_icon"/>
+        </LinearLayout>
+
+        <TextView
+            android:id="@+id/tv_country"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:fontFamily="@font/urbanist_bold"
+            android:gravity="center"
+            android:padding="@dimen/_5sdp"
+            android:text="@string/contact_list"
+            android:textColor="#000000"
+            android:textSize="@dimen/_18sdp"
+            android:textStyle="bold" />
+    </RelativeLayout>
+
+    <LinearLayout
+        android:id="@+id/lay_search"
+        android:layout_below="@id/lay_appbar"
+        android:layout_width="match_parent"
+        android:layout_margin="@dimen/_10sdp"
+        android:layout_height="@dimen/_35sdp"
+        android:background="@drawable/search_field">
+        <EditText
+            android:id="@+id/etSearch"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:autofillHints=""
+            android:hint="@string/search"
+            android:drawablePadding="@dimen/_10sdp"
+            android:paddingStart="@dimen/_10sdp"
+            android:singleLine="true"
+            android:textColorHint="#8E8E93"
+            android:drawableStart="@drawable/icon_search"
+            android:paddingEnd="@dimen/_10sdp"
+            android:background="@null"/>
+    </LinearLayout>
+
+    <View
+        android:id="@+id/view"
+        android:layout_below="@id/lay_search"
+        android:layout_width="match_parent"
+        android:layout_height="@dimen/_2sdp"
+        android:layout_marginTop="@dimen/_5sdp"
+        android:background="#8E8E93"/>
+
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/rcy_data"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:visibility="gone"
+        android:layout_below="@id/view"
+        android:layout_margin="@dimen/_10sdp"
+        app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager"
+        android:orientation="vertical"/>
+
+    <TextView
+        android:id="@+id/tvNoData"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="@string/you_have_nt_added_any_contact_yet"
+        android:textAlignment="center"
+        android:textSize="@dimen/_15sdp"
+        android:textColor="#000000"
+        android:fontFamily="@font/urbanist_bold"
+        android:layout_centerInParent="true"/>
+
+    <include
+        layout="@layout/sadow_layout"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_alignParentBottom="true"/>
+
+
+
+</RelativeLayout>

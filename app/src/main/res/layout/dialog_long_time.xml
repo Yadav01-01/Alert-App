@@ -1,0 +1,109 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:orientation="vertical">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_centerInParent="true"
+        android:layout_margin="@dimen/_8sdp"
+        android:orientation="vertical"
+        android:background="@drawable/alert_dialog_box_bg"
+         >
+        <ImageView
+            android:id="@+id/img_close"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center|end"
+            android:layout_margin="@dimen/_10sdp"
+            android:layout_marginTop="@dimen/_20sdp"
+            android:src="@drawable/cross_icon"/>
+
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:layout_marginHorizontal="@dimen/_20sdp">
+
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/select_time"
+                android:textColor="@color/black"
+                android:layout_gravity="center"
+                android:layout_marginTop="@dimen/_15sdp"
+                android:textSize="@dimen/_20sdp"
+                android:fontFamily="@font/urbanist_bold"/>
+
+            <TextView
+                android:id="@+id/tv_text"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="@string/choose_for_how_long_you_want_to_share_your_location"
+                android:textColor="#58585A"
+                android:layout_gravity="center"
+                android:layout_marginTop="@dimen/_5sdp"
+                android:textAlignment="center"
+                android:fontFamily="@font/urbanist_medium"/>
+
+
+            <TextView
+
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="@string/select_time"
+                android:textColor="#080F18"
+                android:layout_gravity="center|start"
+                android:layout_marginTop="@dimen/_5sdp"
+                android:textStyle="bold"
+                android:fontFamily="@font/urbanist_medium"/>
+
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="@dimen/_40sdp"
+                android:layout_marginTop="@dimen/_10sdp"
+                android:background="@drawable/bg_border">
+
+                <TextView
+                    android:id="@+id/tvMinit"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:text="Select Alert"
+                    android:drawablePadding="@dimen/_10sdp"
+                    android:textColor="@color/light_black"
+                    android:gravity="center|start"
+                    android:textSize="@dimen/_12sdp"
+                    android:paddingEnd="@dimen/_15sdp"
+                    android:paddingStart="@dimen/_10sdp"
+                    android:fontFamily="@font/urbanist_medium"
+                    app:drawableEndCompat="@drawable/arrow_bottom" />
+            </LinearLayout>
+
+
+
+            <TextView
+                android:id="@+id/tvshare"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/share"
+                android:layout_marginTop="@dimen/_20sdp"
+                android:layout_marginBottom="@dimen/_20sdp"
+                android:textColor="@color/white"
+                android:layout_gravity="center"
+                android:layout_marginEnd="@dimen/_5sdp"
+                android:gravity="center"
+                android:background="@drawable/bg_share"/>
+        </LinearLayout>
+
+
+
+    </LinearLayout>
+
+
+</RelativeLayout>

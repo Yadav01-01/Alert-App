@@ -1,0 +1,100 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical">
+
+        <TextView
+            android:id="@+id/textFullName"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:drawablePadding="@dimen/_10sdp"
+            android:fontFamily="@font/urbanist_medium"
+            android:gravity="center|start"
+            android:textStyle="bold"
+            android:layout_marginTop="@dimen/_5sdp"
+            android:text=""
+            android:textColor="@color/black"
+            android:textSize="@dimen/_15sdp" />
+
+        <TextView
+            android:id="@+id/textDate"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:drawablePadding="@dimen/_5sdp"
+            android:fontFamily="@font/urbanist_medium"
+            android:gravity="center|start"
+            android:layout_marginTop="@dimen/_5sdp"
+            android:text="08/31/2024"
+            android:textColor="#1E232C"
+            android:textSize="@dimen/_10sdp"
+            app:drawableStartCompat="@drawable/calander_icon" />
+
+        <TextView
+            android:id="@+id/textTime"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:drawablePadding="@dimen/_5sdp"
+            android:fontFamily="@font/urbanist_medium"
+            android:gravity="center|start"
+            android:layout_marginTop="@dimen/_5sdp"
+            android:text=""
+            android:textColor="#1E232C"
+            android:textSize="@dimen/_10sdp"
+            app:drawableStartCompat="@drawable/time_svgrepo_com" />
+        <RelativeLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content">
+            <LinearLayout
+                android:id="@+id/lay_location"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_toStartOf="@id/tv_view_Alert"
+                android:orientation="vertical">
+
+                <TextView
+                    android:id="@+id/textAddress"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:drawablePadding="@dimen/_5sdp"
+                    android:fontFamily="@font/urbanist_medium"
+                    android:gravity="center|start"
+                    android:layout_marginTop="@dimen/_5sdp"
+                    android:text=""
+                    android:textColor="#1E232C"
+                    android:textSize="@dimen/_10sdp"
+                    app:drawableStartCompat="@drawable/location_check_in" />
+            </LinearLayout>
+
+            <TextView
+                android:id="@+id/tv_view_Alert"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_alignParentEnd="true"
+                android:layout_centerInParent="true"
+                android:layout_gravity="center"
+                android:layout_marginEnd="@dimen/_10sdp"
+                android:background="@drawable/view_alert_bg"
+                android:drawablePadding="@dimen/_10sdp"
+                android:fontFamily="@font/urbanist_medium"
+                android:gravity="center"
+                android:text="@string/view_alerts"
+                android:textColor="#FFFFFF"
+                android:textSize="@dimen/_10sdp" />
+        </RelativeLayout>
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="@dimen/_2sdp"
+            android:layout_marginTop="@dimen/_5sdp"
+            android:layout_marginBottom="@dimen/_5sdp"
+            android:background="#E5E5E5"/>
+    </LinearLayout>
+
+
+</RelativeLayout>

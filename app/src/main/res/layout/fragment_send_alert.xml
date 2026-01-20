@@ -1,0 +1,272 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    tools:context=".fragment.main.SendAlertFragment">
+
+
+
+
+    <RelativeLayout
+        android:id="@+id/appbar"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical">
+
+
+        <TextView
+            android:id="@+id/tv_title"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:gravity="center"
+            android:layout_centerInParent="true"
+            android:fontFamily="@font/urbanist_bold"
+            android:textColor="#000000"
+            android:textSize="@dimen/_18sdp"
+            android:textStyle="bold"
+            android:text="Send Alert" />
+
+        <LinearLayout
+            android:id="@+id/img_back"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_centerInParent="true"
+            android:layout_alignParentStart="true"
+            android:layout_below="@id/tv_title">
+            <ImageView
+                android:layout_width="wrap_content"
+                android:padding="@dimen/_5sdp"
+                android:layout_height="wrap_content"
+                android:layout_margin="@dimen/_10sdp"
+                android:background="@drawable/back_icon"/>
+        </LinearLayout>
+    </RelativeLayout>
+
+    <ScrollView
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_below="@id/appbar"
+        android:layout_margin="@dimen/_10sdp">
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:layout_margin="@dimen/_10sdp">
+            <TextView
+                android:id="@+id/alerts"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Select Alert"
+                android:textSize="@dimen/_15sdp"
+                android:fontFamily="@font/urbanist_bold"
+                android:textColor="#0B0202"
+                />
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="@dimen/_40sdp"
+                android:layout_marginTop="@dimen/_10sdp"
+                android:background="@drawable/bg_border">
+
+                <TextView
+                    android:id="@+id/tv_Alert"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:text="Select Alert"
+                    android:drawablePadding="@dimen/_10sdp"
+                    android:textColor="@color/light_black"
+                    android:gravity="center|start"
+                    android:textSize="@dimen/_12sdp"
+                    android:paddingEnd="@dimen/_15sdp"
+                    android:paddingStart="@dimen/_10sdp"
+                    android:fontFamily="@font/urbanist_medium"
+                    app:drawableEndCompat="@drawable/arrow_bottom" />
+            </LinearLayout>
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="OR"
+                android:layout_marginTop="@dimen/_10sdp"
+                android:layout_gravity="center"
+                android:textSize="@dimen/_15sdp"
+                android:fontFamily="@font/urbanist_bold"
+                android:textColor="#0B0202"
+                />
+
+
+
+
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="@dimen/_100sdp"
+                android:layout_marginTop="@dimen/_10sdp"
+                android:background="@drawable/bg_border">
+
+                <EditText
+                    android:id="@+id/ed_text"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:hint="Type here..."
+                    android:textColor="#333333"
+                    android:gravity="center|start|top"
+                    android:background="@null"
+                    android:textSize="@dimen/_14sdp"
+                    android:padding="@dimen/_8sdp"
+                    android:fontFamily="@font/urbanist_medium"/>
+            </LinearLayout>
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/select_time_duration"
+                android:textSize="@dimen/_15sdp"
+                android:layout_marginTop="@dimen/_10sdp"
+                android:fontFamily="@font/urbanist_bold"
+                android:textColor="#0B0202"
+                />
+
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="@dimen/_40sdp"
+                android:layout_marginTop="@dimen/_10sdp"
+                android:background="@drawable/bg_border">
+
+                <TextView
+                    android:id="@+id/tv_minit"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:text="Select Time"
+                    android:drawablePadding="@dimen/_10sdp"
+                    android:textColor="@color/light_black"
+                    android:gravity="center|start"
+                    android:textSize="@dimen/_12sdp"
+                    android:paddingEnd="@dimen/_15sdp"
+                    android:paddingStart="@dimen/_10sdp"
+                    android:fontFamily="@font/urbanist_medium"
+                    app:drawableEndCompat="@drawable/arrow_bottom" />
+            </LinearLayout>
+
+
+
+            <LinearLayout
+                android:id="@+id/layOut"
+                android:layout_width="match_parent"
+                android:orientation="vertical"
+                android:layout_height="wrap_content">
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="@dimen/_40sdp"
+                    android:layout_marginTop="@dimen/_10sdp"
+                    android:background="@drawable/bg_border">
+
+                    <TextView
+                        android:id="@+id/tvCal"
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent"
+                        android:text="Select Date"
+                        android:textColor="@color/light_black"
+                        android:gravity="center|start"
+                        android:background="@null"
+                        android:textSize="@dimen/_10sdp"
+                        android:paddingStart="@dimen/_20sdp"
+                        android:paddingEnd="@dimen/_12sdp"
+                        android:fontFamily="@font/urbanist_medium"
+                        app:drawableEndCompat="@drawable/calander_send_icon" />
+                </LinearLayout>
+
+                <androidx.cardview.widget.CardView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    app:cardCornerRadius="@dimen/_10sdp"
+                    android:layout_margin="@dimen/_10sdp"
+                    android:layout_marginStart="@dimen/_4sdp"
+                    android:layout_marginEnd="@dimen/_4sdp"
+                    android:id="@+id/cal_Card"
+                    app:cardBackgroundColor="@color/white"
+                    android:visibility="gone"
+                    android:background="#FFFFFF">
+                    <com.prolificinteractive.materialcalendarview.MaterialCalendarView
+                        android:id="@+id/calender_view"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:theme="@style/DialogTheme"
+                        android:visibility="visible"
+                        app:mcv_showOtherDates="decorated_disabled"
+                        app:mcv_selectionMode="range"/>
+                </androidx.cardview.widget.CardView>
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="@dimen/_40sdp"
+                    android:layout_marginTop="@dimen/_10sdp"
+                    android:background="@drawable/bg_border">
+                    <TextView
+                        android:id="@+id/tvStartTime"
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent"
+                        android:text="Select Start Time"
+                        android:textColor="@color/light_black"
+                        android:gravity="center|start"
+                        android:background="@null"
+                        android:textSize="@dimen/_10sdp"
+                        android:paddingStart="@dimen/_20sdp"
+                        android:paddingEnd="@dimen/_12sdp"
+                        android:fontFamily="@font/urbanist_medium"
+                        app:drawableEndCompat="@drawable/clock_send_alert_icon" />
+                </LinearLayout>
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="@dimen/_40sdp"
+                    android:layout_marginTop="@dimen/_10sdp"
+                    android:background="@drawable/bg_border">
+                    <TextView
+                        android:id="@+id/tvEndTime"
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent"
+                        android:text="Select End Time"
+                        android:textColor="@color/light_black"
+                        android:gravity="center|start"
+                        android:background="@null"
+                        android:textSize="@dimen/_10sdp"
+                        android:paddingStart="@dimen/_20sdp"
+                        android:paddingEnd="@dimen/_12sdp"
+                        android:fontFamily="@font/urbanist_medium"
+                        app:drawableEndCompat="@drawable/clock_send_alert_icon" />
+                </LinearLayout>
+            </LinearLayout>
+
+
+            <TextView
+                android:id="@+id/btn_sendAlert"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center"
+                android:layout_marginTop="@dimen/_20sdp"
+                android:layout_marginEnd="@dimen/_5sdp"
+                android:layout_marginBottom="@dimen/_20sdp"
+                android:background="@drawable/delete_bg_button"
+                android:fontFamily="@font/urbanist_medium"
+                android:gravity="center"
+                android:text="Send"
+                android:textColor="@color/white"
+                android:textSize="@dimen/_13sdp" />
+
+        </LinearLayout>
+    </ScrollView>
+
+
+
+    <include
+        android:id="@+id/shadow"
+        layout="@layout/sadow_layout"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_alignParentBottom="true"/>
+
+</RelativeLayout>

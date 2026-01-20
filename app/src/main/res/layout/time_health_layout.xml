@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
+    <androidx.cardview.widget.CardView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        app:cardCornerRadius="@dimen/_10sdp"
+        app:cardElevation="@dimen/_5sdp"
+        android:minHeight="@dimen/_60sdp"
+        android:layout_alignParentEnd="true"
+        android:layout_margin="@dimen/_5sdp"
+        android:background="#FFFFFF">
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:orientation="vertical"
+            android:layout_height="wrap_content">
+            <RelativeLayout
+                android:layout_width="match_parent"
+                android:layout_height="@dimen/_40sdp"
+                android:layout_margin="@dimen/_10sdp"
+                android:layout_marginTop="@dimen/_10sdp"
+                android:background="@drawable/bg_border">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="match_parent"
+                    android:hint="01:00 "
+                    android:textColor="#000000"
+                    android:textColorHint="#000000"
+                    android:gravity="center|start"
+                    android:inputType="number"
+                    android:background="@null"
+                    android:textSize="@dimen/_10sdp"
+                    android:drawablePadding="@dimen/_16sdp"
+                    android:paddingStart="@dimen/_20sdp"
+                    android:paddingEnd="@dimen/_12sdp"
+                    android:fontFamily="@font/urbanist_semibold"
+                    app:drawableStartCompat="@drawable/uni_o_110" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="match_parent"
+                    android:text="PM"
+                    android:textColor="#000000"
+                    android:textColorHint="#000000"
+                    android:gravity="center|start"
+                    android:layout_alignParentEnd="true"
+                    android:background="@null"
+                    android:textSize="@dimen/_10sdp"
+                    android:drawablePadding="@dimen/_16sdp"
+                    android:paddingStart="@dimen/_20sdp"
+                    android:paddingEnd="@dimen/_12sdp"
+                    android:drawableEnd="@drawable/arrow_bottom"
+                    android:fontFamily="@font/urbanist_semibold"
+                    />
+            </RelativeLayout>
+
+            <TextView
+                android:id="@+id/tvOK"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/ok"
+                android:layout_marginTop="@dimen/_5sdp"
+                android:layout_marginBottom="@dimen/_10sdp"
+                android:textColor="@color/white"
+                android:layout_gravity="center"
+                android:layout_marginEnd="@dimen/_5sdp"
+                android:gravity="center"
+                android:background="@drawable/delete_bg_button"/>
+        </LinearLayout>
+    </androidx.cardview.widget.CardView>
+</RelativeLayout>

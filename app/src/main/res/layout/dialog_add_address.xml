@@ -1,0 +1,185 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:orientation="vertical">
+
+    <androidx.cardview.widget.CardView
+        android:layout_width="match_parent"
+        android:layout_centerInParent="true"
+        app:cardCornerRadius="@dimen/_15sdp"
+        android:layout_margin="@dimen/_3sdp"
+        android:layout_height="wrap_content">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:background="@color/white"
+            android:orientation="vertical">
+
+            <RelativeLayout
+                android:id="@+id/cancel_img"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/_10sdp"
+                >
+                <ImageView
+                    android:id="@+id/img_cross"
+                    android:layout_width="@dimen/_15sdp"
+                    android:layout_height="@dimen/_15sdp"
+                    android:src="@drawable/cross_black"
+                    android:layout_alignParentEnd="true"
+                    android:layout_marginEnd="@dimen/_15sdp"
+                    />
+            </RelativeLayout>
+
+            <TextView
+                android:id="@+id/share_code"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Enter Complete Address"
+                android:fontFamily="@font/urbanist_semibold"
+                android:textColor="@color/black"
+                android:textSize="@dimen/_20sdp"
+                android:gravity="center" />
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginHorizontal="@dimen/_10sdp"
+                android:layout_marginTop="@dimen/_14sdp"
+                android:gravity="center"
+                android:orientation="horizontal">
+
+                <RelativeLayout
+                    android:id="@+id/rl_home"
+                    android:layout_width="wrap_content"
+                    android:layout_height="match_parent"
+                    android:background="@drawable/bg_four_side_corner_grey">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:paddingHorizontal="@dimen/_13sdp"
+                        android:paddingVertical="@dimen/_5sdp"
+                        android:text="Home"
+                        android:textSize="@dimen/_12sdp" />
+
+                </RelativeLayout>
+
+                <RelativeLayout
+                    android:id="@+id/rl_office"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="@dimen/_10sdp"
+                    android:background="@drawable/bg_four_side_corner_grey">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:paddingHorizontal="@dimen/_13sdp"
+                        android:paddingVertical="@dimen/_5sdp"
+                        android:text="Office"
+                        android:textSize="@dimen/_12sdp" />
+
+                </RelativeLayout>
+
+                <RelativeLayout
+                    android:id="@+id/rl_hotel"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+
+                    android:layout_marginStart="@dimen/_10sdp"
+                    android:background="@drawable/bg_four_side_corner_grey">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:paddingHorizontal="@dimen/_13sdp"
+                        android:paddingVertical="@dimen/_5sdp"
+                        android:text="Hotel"
+                        android:textSize="@dimen/_12sdp" />
+
+                </RelativeLayout>
+
+                <RelativeLayout
+                    android:id="@+id/rl_other"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="@dimen/_10sdp"
+                    android:background="@drawable/bg_four_side_corner_grey">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:paddingHorizontal="@dimen/_13sdp"
+                        android:paddingVertical="@dimen/_5sdp"
+                        android:text="Other"
+                        android:textSize="@dimen/_12sdp" />
+
+                </RelativeLayout>
+            </LinearLayout>
+
+
+             <androidx.cardview.widget.CardView
+                 android:layout_width="match_parent"
+                 android:layout_marginTop="@dimen/_5sdp"
+                 app:cardCornerRadius="@dimen/_15sdp"
+                 android:layout_marginHorizontal="@dimen/_10sdp"
+                 android:layout_height="wrap_content">
+                 <LinearLayout
+                     android:layout_width="match_parent"
+                     android:orientation="vertical"
+                     android:layout_marginBottom="@dimen/_10sdp"
+                     android:layout_height="wrap_content">
+                     <TextView
+                         android:layout_width="match_parent"
+                         android:layout_height="wrap_content"
+                         android:text="Street, City, State, Zip Code"
+                         android:fontFamily="@font/urbanist_semibold"
+                         android:textColor="@color/black"
+                         android:textSize="@dimen/_15sdp"
+                         android:layout_marginTop="@dimen/_10sdp"
+                         android:layout_marginHorizontal="@dimen/_10sdp"
+                         android:gravity="center|start" />
+
+                     <LinearLayout
+                         android:layout_width="match_parent"
+                         android:layout_height="@dimen/_40sdp"
+                         android:layout_marginTop="@dimen/_10sdp"
+                         android:background="@drawable/bg_four_side_corner_grey"
+                         android:layout_marginHorizontal="@dimen/_10sdp">
+
+                         <AutoCompleteTextView
+                             android:id="@+id/ed_text"
+                             android:layout_width="match_parent"
+                             android:layout_height="match_parent"
+                             android:hint="@string/enter_address"
+                             android:textColor="@color/light_black"
+                             android:gravity="center|start|top"
+                             android:background="@null"
+                             android:singleLine="true"
+                             android:textSize="@dimen/_14sdp"
+                             android:layout_marginBottom="@dimen/_5sdp"
+                             android:padding="@dimen/_8sdp"
+                             android:fontFamily="@font/urbanist_medium"/>
+                     </LinearLayout>
+                 </LinearLayout>
+             </androidx.cardview.widget.CardView>
+
+
+            <TextView
+                android:id="@+id/btnSave"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Save"
+                android:textColor="@color/white"
+                android:layout_gravity="center"
+                android:layout_marginTop="@dimen/_10sdp"
+                android:gravity="center"
+                android:layout_marginBottom="@dimen/_10sdp"
+                android:background="@drawable/bg_button"/>
+        </LinearLayout>
+    </androidx.cardview.widget.CardView>
+</RelativeLayout>

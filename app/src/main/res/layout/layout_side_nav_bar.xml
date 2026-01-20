@@ -1,0 +1,487 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/white">
+
+    <LinearLayout
+        android:id="@+id/lay_header"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="@dimen/_15sdp"
+        android:layout_marginEnd="@dimen/_15sdp"
+        android:layout_marginTop="@dimen/_10sdp"
+        android:gravity="center|start"
+        android:orientation="vertical">
+
+        <de.hdodenhof.circleimageview.CircleImageView
+            android:id="@+id/iv_profile_side_nav"
+            android:layout_width="@dimen/_60sdp"
+            android:layout_height="@dimen/_60sdp"
+            android:layout_marginTop="@dimen/_15sdp"
+            android:src="@drawable/user_img_icon" />
+
+        <TextView
+            android:id="@+id/tv_text"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:layout_marginTop="@dimen/_10sdp"
+            android:fontFamily="@font/urbanist_medium"
+            android:text="Sophia Rose"
+            android:textColor="#0F0F0F"
+            android:textSize="@dimen/_15sdp" />
+
+    </LinearLayout>
+
+    <View
+        android:id="@+id/view"
+        android:layout_width="match_parent"
+        android:layout_height="@dimen/_2sdp"
+        android:layout_below="@id/lay_header"
+        android:layout_marginTop="@dimen/_5sdp"
+        android:background="#E2E4E5" />
+
+    <ScrollView
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_below="@id/view"
+        android:layout_marginTop="@dimen/_5sdp">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/_10sdp"
+                android:layout_marginStart="@dimen/_15sdp"
+                android:orientation="horizontal">
+                <ImageView
+                    android:layout_width="@dimen/_20sdp"
+                    android:layout_height="@dimen/_20sdp"
+                    android:layout_gravity="center|start"
+                    android:background="@drawable/search_btn"/>
+                <TextView
+                    android:id="@+id/tv_my_profile"
+                    android:layout_width="match_parent"
+                    android:layout_height="@dimen/_40sdp"
+                    android:layout_marginStart="@dimen/_10sdp"
+                    android:fontFamily="@font/urbanist_medium"
+                    android:gravity="center|start"
+                    android:text="@string/my_profile"
+                    android:textColor="#0F0F0F"
+                    android:textSize="@dimen/_15sdp" />
+            </LinearLayout>
+
+
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:background="@drawable/button_with_hover"
+                android:orientation="vertical">
+
+                <LinearLayout
+                    android:id="@+id/lay_drop"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal">
+                    <ImageView
+                        android:layout_width="@dimen/_20sdp"
+                        android:layout_height="@dimen/_20sdp"
+                        android:layout_gravity="center|start"
+                        android:layout_marginStart="@dimen/_15sdp"
+                        android:background="@drawable/help_icon"/>
+                    <TextView
+                        android:id="@+id/tv_Help"
+                        android:layout_width="match_parent"
+                        android:layout_height="@dimen/_40sdp"
+                        android:layout_marginStart="@dimen/_15sdp"
+                        android:layout_marginTop="@dimen/_5sdp"
+                        android:layout_marginEnd="@dimen/_15sdp"
+                        android:drawableEnd="@drawable/help_icon_down"
+                        android:drawablePadding="@dimen/_14sdp"
+                        android:fontFamily="@font/urbanist_medium"
+                        android:gravity="center_vertical"
+                        android:text="@string/help"
+                        android:textColor="#0F0F0F"
+                        android:textSize="@dimen/_15sdp"
+                          />
+                </LinearLayout>
+
+
+                <LinearLayout
+                    android:id="@+id/lay_knowmore"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:visibility="gone"
+                    android:background="@drawable/button_with_hover">
+
+                    <LinearLayout
+
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="@dimen/_15sdp"
+                        android:layout_marginTop="@dimen/_5sdp"
+                        android:layout_marginEnd="@dimen/_15sdp"
+                        android:gravity="center|start">
+
+                        <ImageView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:background="@drawable/help_icon"
+                            android:visibility="invisible" />
+
+                        <TextView
+                            android:layout_width="match_parent"
+                            android:layout_height="@dimen/_40sdp"
+                            android:layout_marginStart="@dimen/_10sdp"
+                            android:fontFamily="@font/urbanist_medium"
+                            android:gravity="center_vertical"
+                            android:text="@string/know_more"
+                            android:textColor="#0F0F0F"
+                            android:textSize="@dimen/_15sdp" />
+
+                    </LinearLayout>
+                </LinearLayout>
+
+
+                <LinearLayout
+                    android:id="@+id/lay_tutorials"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:visibility="gone"
+                    android:background="@color/white">
+
+                    <LinearLayout
+
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="@dimen/_15sdp"
+                        android:layout_marginTop="@dimen/_5sdp"
+                        android:layout_marginEnd="@dimen/_15sdp"
+                        android:gravity="center|start">
+
+                        <ImageView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:background="@drawable/help_icon"
+                            android:visibility="invisible" />
+
+                        <TextView
+                            android:layout_width="match_parent"
+                            android:layout_height="@dimen/_40sdp"
+                            android:layout_marginStart="@dimen/_10sdp"
+                            android:fontFamily="@font/urbanist_medium"
+                            android:gravity="center_vertical"
+                            android:text="@string/tutorial_video"
+                            android:textColor="#0F0F0F"
+                            android:textSize="@dimen/_15sdp" />
+
+                    </LinearLayout>
+                </LinearLayout>
+
+
+            </LinearLayout>
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="@dimen/_15sdp"
+                android:layout_marginEnd="@dimen/_15sdp"
+                android:layout_marginBottom="@dimen/_25sdp"
+                android:orientation="vertical">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal">
+                    <ImageView
+                        android:layout_width="@dimen/_20sdp"
+                        android:layout_height="@dimen/_20sdp"
+                        android:layout_gravity="center|start"
+                        android:background="@drawable/location_sharing_icon"/>
+                    <TextView
+                        android:id="@+id/tv_alert"
+                        android:layout_width="match_parent"
+                        android:layout_height="@dimen/_40sdp"
+                        android:layout_marginStart="@dimen/_10sdp"
+                        android:fontFamily="@font/urbanist_medium"
+                        android:gravity="center_vertical"
+                        android:text="@string/self_alerts"
+                        android:textColor="#0F0F0F"
+                        android:textSize="@dimen/_15sdp" />
+                </LinearLayout>
+
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal">
+                    <ImageView
+                        android:layout_width="@dimen/_20sdp"
+                        android:layout_height="@dimen/_20sdp"
+                        android:layout_gravity="center|start"
+                        android:background="@drawable/location_sharing_icon"/>
+                    <TextView
+                        android:id="@+id/tv_Location_Sharing"
+                        android:layout_width="match_parent"
+                        android:layout_height="@dimen/_40sdp"
+                        android:fontFamily="@font/urbanist_medium"
+                        android:gravity="center_vertical"
+                        android:text="@string/location_sharing"
+                        android:textColor="#0F0F0F"
+                        android:layout_marginStart="@dimen/_10sdp"
+                        android:textSize="@dimen/_15sdp"
+                        />
+                </LinearLayout>
+
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal">
+                    <ImageView
+                        android:layout_width="@dimen/_20sdp"
+                        android:layout_height="@dimen/_20sdp"
+                        android:layout_gravity="center|start"
+                        android:background="@drawable/check_in_history_image"/>
+                    <TextView
+                        android:id="@+id/tv_check_in_history"
+                        android:layout_width="match_parent"
+                        android:layout_height="@dimen/_40sdp"
+                        android:fontFamily="@font/urbanist_medium"
+                        android:gravity="center_vertical"
+                        android:text="@string/check_in_history"
+                        android:textColor="#0F0F0F"
+                        android:textSize="@dimen/_15sdp"
+                        android:layout_marginStart="@dimen/_10sdp"
+                        />
+                </LinearLayout>
+
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal">
+                    <ImageView
+                        android:layout_width="@dimen/_20sdp"
+                        android:layout_height="@dimen/_20sdp"
+                        android:layout_gravity="center|start"
+                        android:background="@drawable/helping_neighbors_icon"/>
+                    <TextView
+                        android:id="@+id/tv_helping_neighbors"
+                        android:layout_width="match_parent"
+                        android:layout_height="@dimen/_40sdp"
+                        android:fontFamily="@font/urbanist_medium"
+                        android:gravity="center_vertical"
+                        android:layout_marginStart="@dimen/_10sdp"
+                        android:text="@string/helping_neighbors"
+                        android:textColor="#0F0F0F"
+                        android:textSize="@dimen/_15sdp"
+                        />
+                </LinearLayout>
+
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal">
+                    <ImageView
+                        android:layout_width="@dimen/_20sdp"
+                        android:layout_height="@dimen/_20sdp"
+                        android:layout_gravity="center|start"
+                        android:background="@drawable/added_contacts"/>
+                    <TextView
+                        android:id="@+id/tv_added_contacts"
+                        android:layout_width="match_parent"
+                        android:layout_height="@dimen/_40sdp"
+                         android:layout_marginStart="@dimen/_10sdp"
+                        android:fontFamily="@font/urbanist_medium"
+                        android:gravity="center_vertical"
+                        android:text="@string/added_contacts"
+                        android:textColor="#0F0F0F"
+                        android:textSize="@dimen/_15sdp"
+                          />
+                </LinearLayout>
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal">
+                    <ImageView
+                        android:layout_width="@dimen/_20sdp"
+                        android:layout_height="@dimen/_20sdp"
+                        android:layout_gravity="center|start"
+                        android:background="@drawable/search_btn"/>
+                    <TextView
+                        android:id="@+id/tv_emergency_contacts"
+                        android:layout_width="match_parent"
+                        android:layout_height="@dimen/_40sdp"
+                        android:layout_marginStart="@dimen/_10sdp"
+                        android:fontFamily="@font/urbanist_medium"
+                        android:gravity="center_vertical"
+                        android:text="@string/emergency_contacts"
+                        android:textColor="#0F0F0F"
+                        android:textSize="@dimen/_15sdp"
+                          />
+                </LinearLayout>
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal">
+                    <ImageView
+                        android:layout_width="@dimen/_20sdp"
+                        android:layout_height="@dimen/_20sdp"
+                        android:layout_gravity="center|start"
+                        android:background="@drawable/emergency_text_icon_main"/>
+                    <TextView
+                        android:id="@+id/tv_emergency_text"
+                        android:layout_width="match_parent"
+                        android:layout_height="@dimen/_40sdp"
+                        android:layout_marginStart="@dimen/_10sdp"
+                        android:fontFamily="@font/urbanist_medium"
+                        android:gravity="center_vertical"
+                        android:text="@string/emergency_text"
+                        android:textColor="#0F0F0F"
+                        android:textSize="@dimen/_15sdp"
+                         />
+                </LinearLayout>
+
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal">
+                    <ImageView
+                        android:layout_width="@dimen/_20sdp"
+                        android:layout_height="@dimen/_20sdp"
+                        android:layout_gravity="center|start"
+                        android:background="@drawable/health_alert_icon"/>
+                    <TextView
+                        android:id="@+id/tv_health_alert"
+                        android:layout_width="match_parent"
+                        android:layout_height="@dimen/_40sdp"
+                        android:layout_marginStart="@dimen/_10sdp"
+                        android:fontFamily="@font/urbanist_medium"
+                        android:gravity="center_vertical"
+                        android:text="@string/health_alert"
+                        android:textColor="#0F0F0F"
+                        android:textSize="@dimen/_15sdp"
+                          />
+                </LinearLayout>
+
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal">
+                    <ImageView
+                        android:layout_width="@dimen/_20sdp"
+                        android:layout_height="@dimen/_20sdp"
+                        android:layout_gravity="center|start"
+                        android:background="@drawable/check_in_history_icon"/>
+                    <TextView
+                        android:id="@+id/tv_watch_over_me"
+                        android:layout_width="match_parent"
+                        android:layout_height="@dimen/_40sdp"
+                        android:drawablePadding="@dimen/_14sdp"
+                        android:fontFamily="@font/urbanist_medium"
+                        android:gravity="center_vertical"
+                        android:text="@string/watch_over_me"
+                        android:textColor="#0F0F0F"
+                        android:layout_marginStart="@dimen/_10sdp"
+                        android:textSize="@dimen/_15sdp"
+                       />
+                </LinearLayout>
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal">
+                    <ImageView
+                        android:layout_width="@dimen/_20sdp"
+                        android:layout_height="@dimen/_20sdp"
+                        android:layout_gravity="center|start"
+                        android:background="@drawable/privacy_policy_icon"/>
+                    <TextView
+                        android:id="@+id/tv_privacy_policy"
+                        android:layout_width="match_parent"
+                        android:layout_height="@dimen/_40sdp"
+
+                        android:fontFamily="@font/urbanist_medium"
+                        android:gravity="center_vertical"
+                        android:text="@string/privacy_policy_text"
+                        android:textColor="#0F0F0F"
+                        android:layout_marginStart="@dimen/_10sdp"
+                        android:textSize="@dimen/_15sdp"
+                        />
+                </LinearLayout>
+
+
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal">
+                    <ImageView
+                        android:layout_width="@dimen/_20sdp"
+                        android:layout_height="@dimen/_20sdp"
+                        android:layout_gravity="center|start"
+                        android:background="@drawable/termsandcondition_icon"/>
+                    <TextView
+                        android:id="@+id/tv_terms_amp_conditions"
+                        android:layout_width="match_parent"
+                        android:layout_height="@dimen/_40sdp"
+                        android:fontFamily="@font/urbanist_medium"
+                        android:layout_marginStart="@dimen/_10sdp"
+                        android:gravity="center_vertical"
+                        android:text="@string/terms_amp_conditions"
+                        android:textColor="#0F0F0F"
+                        android:textSize="@dimen/_15sdp"
+                        />
+                </LinearLayout>
+
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal">
+                    <ImageView
+                        android:layout_width="@dimen/_20sdp"
+                        android:layout_height="@dimen/_20sdp"
+                        android:layout_gravity="center|start"
+                        android:background="@drawable/main_logout"/>
+                    <TextView
+                        android:id="@+id/tv_logout"
+                        android:layout_width="match_parent"
+                        android:layout_height="@dimen/_40sdp"
+                        android:layout_marginStart="@dimen/_10sdp"
+                        android:fontFamily="@font/urbanist_medium"
+                        android:gravity="center_vertical"
+                        android:text="@string/logout"
+                        android:textColor="#0F0F0F"
+                        android:textSize="@dimen/_15sdp"
+                       />
+                </LinearLayout>
+
+
+
+            </LinearLayout>
+
+        </LinearLayout>
+    </ScrollView>
+
+
+</RelativeLayout>
+
+
+
+
+
+

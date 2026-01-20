@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@drawable/instructions_screen"
+    tools:context=".fragment.auth.InstructionsFragment">
+    <ScrollView
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:fillViewport="true"
+        tools:ignore="UselessParent">
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/_18sdp"
+            android:orientation="vertical">
+
+
+            <ImageView
+                android:id="@+id/img_logo"
+                android:layout_width="@dimen/_150sdp"
+                android:layout_height="@dimen/_100sdp"
+                android:layout_gravity="center"
+                android:layout_marginTop="@dimen/_20sdp"
+                android:src="@drawable/instruction_img"/>
+
+            <TextView
+                android:id="@+id/tv_myprofile"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:padding="@dimen/_5sdp"
+                android:gravity="center"
+                android:layout_marginTop="@dimen/_20sdp"
+                android:fontFamily="@font/urbanist_bold"
+                android:textColor="#000000"
+                android:textStyle="bold"
+                android:textSize="@dimen/_18sdp"
+                android:text="@string/know_about_your_alerts_for_life_app" />
+
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="@string/lorem_ipsum_dolor_sit_amet_consectetur_adipiscing_elit_sed_vel_mauris_sed_sapien_bibendum_rutrum_vitae_non_augue_nullam_interdum_sem_ut_tincidunt_pharetra_quisque_sit_amet_elit_turpis_lorem_ipsum_dolor_sit_amet_consectetur_adipiscing_elit_sed_vel_mauris_sed_sapien_bibendum_rutrum_vitae_non_augue_nullam_interdum_sem_ut_tincidunt_pharetra_quisque_sit_amet_elit_turpis_lorem_ipsum_dolor_sit_amet"
+                android:textColor="#58585A"
+                android:layout_gravity="center"
+                android:layout_marginTop="@dimen/_20sdp"
+                android:textAlignment="center"
+                android:textSize="@dimen/_13sdp"
+                android:layout_marginHorizontal="@dimen/_35sdp"
+                android:fontFamily="@font/urbanist_medium"/>
+
+
+            <TextView
+                android:id="@+id/btn_next"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/next"
+                android:layout_marginTop="@dimen/_30sdp"
+                android:textColor="@color/white"
+                android:layout_gravity="center"
+                android:fontFamily="@font/urbanist_medium"
+                android:gravity="center"
+                android:textSize="@dimen/_13sdp"
+                android:background="@drawable/tutorials_btn_bg"/>
+
+        </LinearLayout>
+    </ScrollView>
+</RelativeLayout>

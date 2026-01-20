@@ -1,0 +1,47 @@
+{
+  "project_info": {
+    "project_number": "765657685153",
+    "project_id": "alert-app-17920",
+    "storage_bucket": "alert-app-17920.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:765657685153:android:711c14908a23a7890a64e0",
+        "android_client_info": {
+          "package_name": "com.alert.app"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "765657685153-hn9nvv3l91qcvtfeatdg1cchoi12vce5.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.alert.app",
+            "certificate_hash": "8105b1423b2f4b9b79e0c880922df0ccc7f3988f"
+          }
+        },
+        {
+          "client_id": "765657685153-kou8v37r2b9123us2irjmes7pgd9jtfv.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCB8dNKlXXydaaH_bvPzNdtIVBa65saQ7o"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "765657685153-kou8v37r2b9123us2irjmes7pgd9jtfv.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

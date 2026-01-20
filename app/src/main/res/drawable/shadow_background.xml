@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- Shadow layer -->
+    <item>
+        <shape android:shape="rectangle">
+            <solid android:color="#E7EDFAB5"/> <!-- The shadow color -->
+            <corners android:radius="8dp"/> <!-- Adjust radius as needed -->
+        </shape>
+    </item>
+
+    <!-- Main content layer -->
+    <item android:left="0dp" android:right="0dp" android:top="-25dp" android:bottom="0dp">
+        <shape android:shape="rectangle">
+            <solid android:color="@android:color/white"/> <!-- Content background color -->
+            <corners android:radius="8dp"/> <!-- Radius should match the shadow's radius -->
+        </shape>
+    </item>
+</layer-list>

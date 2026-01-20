@@ -1,0 +1,104 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@drawable/bg_select"
+    tools:context=".fragment.auth.ConfirmationFragment">
+
+    <ScrollView
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:fillViewport="true"
+        tools:ignore="UselessParent">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/_28sdp"
+            android:orientation="vertical">
+
+            <TextView
+                android:id="@+id/tv_myprofile"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:padding="@dimen/_5sdp"
+                android:gravity="center"
+                android:layout_marginTop="@dimen/_20sdp"
+                android:fontFamily="@font/urbanist_bold"
+                android:textColor="#000000"
+                android:textStyle="bold"
+                android:textSize="@dimen/_20sdp"
+                android:text="Alerts For Life\nYou’re invited" />
+
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/you_have_been_invited_from_danny_to_be_his_neighbor_on_alerts_for_life_app_please_accept"
+                android:textColor="#58585A"
+                android:layout_gravity="center"
+                android:layout_marginTop="@dimen/_20sdp"
+                android:textAlignment="center"
+                android:layout_marginHorizontal="@dimen/_35sdp"
+                android:fontFamily="@font/urbanist_medium"/>
+
+
+            <TextView
+                android:id="@+id/tvaccept"
+                android:layout_width="@dimen/_200sdp"
+                android:layout_height="wrap_content"
+                android:text="@string/accept"
+                android:layout_marginTop="@dimen/_20sdp"
+                android:textColor="@color/white"
+                android:textSize="@dimen/_13sdp"
+                android:layout_gravity="center"
+                android:fontFamily="@font/urbanist_medium"
+                android:gravity="center"
+                android:background="@drawable/button_bg"/>
+
+            <TextView
+                android:id="@+id/tvreject"
+                android:layout_width="@dimen/_200sdp"
+                android:layout_height="wrap_content"
+                android:text="@string/reject"
+                android:textSize="@dimen/_13sdp"
+                android:layout_marginTop="@dimen/_10sdp"
+                android:layout_marginBottom="@dimen/_25sdp"
+                android:textColor="@color/black"
+                android:layout_gravity="center"
+                android:gravity="center"
+                android:fontFamily="@font/urbanist_medium"
+                android:background="@drawable/circular_main_bg"/>
+
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/if_you_want_to_start_fresh_create_a_new_account"
+                android:textColor="#58585A"
+                android:layout_gravity="center"
+                android:layout_marginTop="@dimen/_10sdp"
+                android:textAlignment="center"
+                android:textSize="16sp"
+                android:layout_marginHorizontal="@dimen/_35sdp"
+                android:fontFamily="@font/urbanist_medium"/>
+
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/register_now"
+                android:textColor="#FF1A69B4"
+                android:layout_gravity="center"
+                android:layout_marginTop="@dimen/_8sdp"
+                android:textSize="16sp"
+                android:textAlignment="center"
+                android:layout_marginHorizontal="@dimen/_35sdp"
+                android:fontFamily="@font/urbanist_medium"/>
+
+        </LinearLayout>
+    </ScrollView>
+
+
+</RelativeLayout>

@@ -1,0 +1,87 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@drawable/bg_select"
+    tools:context=".fragment.main.HelpFragment">
+
+    <ScrollView
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:fillViewport="true">
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_margin="@dimen/_5sdp"
+            android:orientation="vertical">
+            <LinearLayout
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal">
+                <ImageButton
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:id="@+id/backBtn"
+                    android:src="@drawable/back_icon"
+                    android:background="@color/transparent"
+                    android:layout_marginStart="@dimen/_5sdp"
+                    android:layout_marginTop="@dimen/_10sdp"/>
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="@dimen/_10sdp"
+                    android:fontFamily="@font/urbanist_medium"
+                    android:gravity="center|start"
+                    android:text="Help"
+                    android:layout_marginStart="@dimen/_10sdp"
+                    android:textColor="@color/black"
+                    android:textSize="@dimen/_20sdp" />
+            </LinearLayout>
+
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:fontFamily="@font/urbanist_medium"
+                android:gravity="center|start"
+                android:layout_marginTop="@dimen/_10sdp"
+                android:text="Capt Smith, a seasoned leader with a rich background in commanding ships and leading highly qualified teams across diverse global geographies. His expertise spans consulting, project management, contract negotiations, compliance and auditing, asset management, and commercial operations. As a successful Mentor, Capt Smith has a proven track record of guiding individuals from multinational and multiskilled backgrounds."
+                android:textColor="#797C7B"
+                android:textSize="@dimen/_15sdp" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:fontFamily="@font/urbanist_medium"
+                android:gravity="center|start"
+                android:text="About Information"
+                android:layout_marginTop="@dimen/_10sdp"
+                android:textColor="@color/black"
+                android:textSize="@dimen/_20sdp" />
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:fontFamily="@font/urbanist_medium"
+                android:gravity="center|start"
+                android:layout_marginTop="@dimen/_10sdp"
+                android:text="Capt Smith, a seasoned leader with a rich background in commanding ships and leading highly qualified teams across diverse global geographies. His expertise spans consulting, project management, contract negotiations, compliance and auditing, asset management, and commercial operations. As a successful Mentor, Capt Smith has a proven track record of guiding individuals from multinational and multiskilled backgrounds."
+                android:textColor="#797C7B"
+                android:textSize="@dimen/_15sdp" />
+        </LinearLayout>
+    </ScrollView>
+
+
+
+
+
+
+
+    <include
+        layout="@layout/sadow_layout"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_alignParentBottom="true"/>
+
+</RelativeLayout>

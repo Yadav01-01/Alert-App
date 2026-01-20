@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:background="@drawable/bg_select"
+    android:layout_height="match_parent"
+    tools:context=".fragment.main.EmergencyTextFragment">
+
+    <ScrollView
+        android:layout_width="match_parent"
+        android:layout_height="match_parent">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:gravity="center|top">
+            <ImageView
+                android:layout_width="@dimen/_250sdp"
+                android:layout_height="@dimen/_250sdp"
+                android:background="@drawable/emergency_text_icon"
+                android:layout_marginTop="@dimen/_30sdp"/>
+
+            <TextView
+
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:padding="@dimen/_5sdp"
+                android:gravity="center"
+                android:layout_marginTop="@dimen/_20sdp"
+                android:fontFamily="@font/urbanist_bold"
+                android:textColor="#000000"
+                android:textStyle="bold"
+                android:textSize="@dimen/_18sdp"
+                android:text="@string/emergency_message" />
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:fontFamily="@font/urbanist_medium"
+                android:gravity="center"
+                android:layout_marginTop="@dimen/_10sdp"
+                android:text="Set an emergency message which \nneeds to send to any contact to cash \nof emergeny"
+                android:textColor="#797C7B"
+                android:textSize="@dimen/_15sdp" />
+
+
+            <TextView
+                android:id="@+id/btn_okay"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Create an Emergency Text"
+                android:layout_marginTop="@dimen/_20sdp"
+                android:layout_marginBottom="@dimen/_10sdp"
+                android:textColor="@color/white"
+                android:textSize="@dimen/_13sdp"
+                android:fontFamily="@font/urbanist_medium"
+                android:layout_gravity="center"
+                android:gravity="center"
+                android:background="@drawable/textbg"/>
+
+        </LinearLayout>
+    </ScrollView>
+
+    <include
+        layout="@layout/sadow_layout"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_alignParentBottom="true"/>
+
+</RelativeLayout>

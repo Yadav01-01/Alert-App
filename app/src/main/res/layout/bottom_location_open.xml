@@ -1,0 +1,161 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:orientation="vertical"
+    android:background="@drawable/bg_bottom"
+    android:layout_height="wrap_content">
+
+    <RelativeLayout
+        android:id="@+id/cancel_img"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="@dimen/_10sdp"
+        >
+        <ImageView
+            android:id="@+id/img_cross"
+            android:layout_width="@dimen/_15sdp"
+            android:layout_height="@dimen/_15sdp"
+            android:src="@drawable/cross_black"
+            android:layout_alignParentEnd="true"
+            android:layout_marginEnd="@dimen/_15sdp"
+            />
+    </RelativeLayout>
+
+    <TextView
+        android:id="@+id/share_code"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Select Location"
+        android:fontFamily="@font/urbanist_semibold"
+        android:textColor="@color/black"
+        android:textSize="@dimen/_21sdp"
+        android:gravity="center" />
+<!--
+    <LinearLayout
+        android:layout_below="@id/lay_appbar"
+        android:layout_width="match_parent"
+        android:layout_margin="@dimen/_10sdp"
+        android:layout_height="@dimen/_35sdp"
+        android:background="@drawable/search_field">-->
+
+        <LinearLayout
+            android:id="@+id/lay_search"
+            android:layout_width="match_parent"
+            android:layout_height="@dimen/_35sdp"
+            android:layout_margin="@dimen/_10sdp"
+            android:background="@drawable/search_field">
+
+<!--        <EditText
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:autofillHints=""
+            android:hint="@string/search_for_area"
+            android:drawablePadding="@dimen/_10sdp"
+            android:paddingStart="@dimen/_10sdp"
+            android:singleLine="true"
+            android:textColorHint="#8E8E93"
+            android:drawableStart="@drawable/icon_search"
+            android:paddingEnd="@dimen/_10sdp"
+            android:background="@null"/>-->
+
+        <AutoCompleteTextView
+            android:id="@+id/edtAddress"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:layout_marginEnd="@dimen/_8sdp"
+            android:background="@null"
+            android:drawableStart="@drawable/icon_search"
+            android:singleLine="true"
+            android:textSize="@dimen/_14sdp"
+            android:textColorHint="#8E8E93"
+            android:drawablePadding="@dimen/_10sdp"
+            android:paddingHorizontal="@dimen/_10sdp"
+            android:hint="@string/search_for_area" />
+    </LinearLayout>
+<!--    </LinearLayout>-->
+
+    <androidx.cardview.widget.CardView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_margin="@dimen/_10sdp"
+        app:cardCornerRadius="@dimen/_10sdp"
+        app:cardBackgroundColor="#FFFFFF">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:padding="@dimen/_10sdp">
+
+            <View
+                android:layout_width="match_parent"
+                android:background="#CCCCCC"
+                android:layout_height="@dimen/_1sdp"/>
+
+            <TextView
+                android:id="@+id/tv_current"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:fontFamily="@font/urbanist_semibold"
+                android:gravity="center|start"
+                android:layout_marginTop="@dimen/_10sdp"
+                android:drawablePadding="@dimen/_10sdp"
+                android:text="Use Your current location"
+                android:textColor="@color/black"
+                android:textSize="@dimen/_15sdp"
+                app:drawableStartCompat="@drawable/location_indicator_icon" />
+
+            <View
+                android:layout_width="match_parent"
+                android:background="#CCCCCC"
+                android:layout_marginTop="@dimen/_10sdp"
+                android:layout_height="@dimen/_1sdp"/>
+
+            <TextView
+                android:id="@+id/add_address"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/_10sdp"
+                android:fontFamily="@font/urbanist_semibold"
+                android:gravity="center|start"
+                android:drawablePadding="@dimen/_10sdp"
+                android:text="Add New Address"
+                android:textColor="@color/black"
+                android:textSize="@dimen/_15sdp"
+                app:drawableStartCompat="@drawable/add_ellipse_svgrepo_com" />
+
+            <View
+                android:layout_width="match_parent"
+                android:background="#CCCCCC"
+                android:layout_marginTop="@dimen/_10sdp"
+                android:layout_height="@dimen/_1sdp"/>
+
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/_10sdp"
+                android:fontFamily="@font/urbanist_semibold"
+                android:gravity="center|start"
+                android:text="Save Address"
+                android:textColor="@color/black"
+                android:textSize="@dimen/_15sdp" />
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_marginTop="@dimen/_5sdp"
+                android:layout_height="@dimen/_200sdp">
+                <androidx.recyclerview.widget.RecyclerView
+                    android:id="@+id/rcy_data"
+                    android:layout_margin="@dimen/_2sdp"
+                    app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager"
+                    android:orientation="vertical"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"/>
+            </LinearLayout>
+
+        </LinearLayout>
+    </androidx.cardview.widget.CardView>
+
+</LinearLayout>

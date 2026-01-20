@@ -1,0 +1,122 @@
+<?xml version="1.0" encoding="utf-8"?>
+<navigation xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/auth_graph"
+    app:startDestination="@id/homeProfileFragment2">
+    <fragment
+        android:id="@+id/signInFragment"
+        android:name="com.alert.app.fragment.auth.SignInFragment"
+        android:label="fragment_sign_in"
+        tools:layout="@layout/fragment_sign_in" />
+    <fragment
+        android:id="@+id/signUpFragment"
+        android:name="com.alert.app.fragment.auth.SignUpFragment"
+        android:label="fragment_sign_up"
+        tools:layout="@layout/fragment_sign_up" />
+    <fragment
+        android:id="@+id/verificationCode"
+        android:name="com.alert.app.fragment.auth.VerificationCode"
+        android:label="fragment_verification_code"
+        tools:layout="@layout/fragment_verification_code" />
+    <fragment
+        android:id="@+id/resetPassword"
+        android:name="com.alert.app.fragment.auth.ResetPassword"
+        android:label="fragment_resetpassword"
+        tools:layout="@layout/fragment_resetpassword" />
+    <fragment
+        android:id="@+id/forgotPassword"
+        android:name="com.alert.app.fragment.auth.ForgotPassword"
+        android:label="fragment_forgot_password"
+        tools:layout="@layout/fragment_forgot_password" />
+    <fragment
+        android:id="@+id/selectCountryFragment"
+        android:name="com.alert.app.fragment.auth.SelectCountryFragment"
+        android:label="fragment_select_country"
+        tools:layout="@layout/fragment_select_country" />
+    <fragment
+        android:id="@+id/languageFragment"
+        android:name="com.alert.app.fragment.auth.LanguageFragment"
+        android:label="fragment_language"
+        tools:layout="@layout/fragment_language" />
+    <fragment
+        android:id="@+id/profileFragment"
+        android:name="com.alert.app.fragment.auth.ProfileFragment"
+        android:label="fragment_profile"
+        tools:layout="@layout/fragment_profile" />
+    <fragment
+        android:id="@+id/confirmationFragment"
+        android:name="com.alert.app.fragment.auth.ConfirmationFragment"
+        android:label="fragment_confirmation"
+        tools:layout="@layout/fragment_confirmation" />
+    <fragment
+        android:id="@+id/knowMoreFragment"
+        android:name="com.alert.app.fragment.main.KnowMoreFragment"
+        android:label="fragment_knowm_more"
+        tools:layout="@layout/fragment_knowm_more" />
+    <fragment
+        android:id="@+id/instructionsFragment"
+        android:name="com.alert.app.fragment.auth.InstructionsFragment"
+        android:label="fragment_instructions"
+        tools:layout="@layout/fragment_instructions" />
+    <fragment
+        android:id="@+id/tutorialVideoFragment"
+        android:name="com.alert.app.fragment.auth.TutorialVideoFragment"
+        android:label="fragment_tutorial_video"
+        tools:layout="@layout/fragment_tutorial_video" />
+    <fragment
+        android:id="@+id/setAlertFragment"
+        android:name="com.alert.app.fragment.auth.SetAlertFragment"
+        android:label="fragment_set_alert"
+        tools:layout="@layout/fragment_set_alert" />
+    <fragment
+        android:id="@+id/contactFragment"
+        android:name="com.alert.app.fragment.auth.ContactFragment"
+        android:label="fragment_contact"
+        tools:layout="@layout/fragment_contact" />
+    <fragment
+        android:id="@+id/verificationCodeProfileFragment"
+        android:name="com.alert.app.fragment.auth.VerificationCodeProfileFragment"
+        android:label="fragment_verification_code_profile"
+        tools:layout="@layout/fragment_verification_code_profile" />
+    <fragment
+        android:id="@+id/mobileContactListFragment2"
+        android:name="com.alert.app.fragment.main.MobileContactListFragment"
+        android:label="fragment_mobile_contact_list"
+        tools:layout="@layout/fragment_mobile_contact_list" />
+    <fragment
+        android:id="@+id/fromMapFragment2"
+        android:name="com.alert.app.fragment.main.FromMapFragment"
+        android:label="fragment_from_map"
+        tools:layout="@layout/fragment_from_map" />
+    <fragment
+        android:id="@+id/termsAndConditionFragment2"
+        android:name="com.alert.app.fragment.main.TermsAndConditionFragment"
+        android:label="fragment_terms_and_condition"
+        tools:layout="@layout/fragment_terms_and_condition" />
+    <fragment
+        android:id="@+id/privacyPolicyFragment2"
+        android:name="com.alert.app.fragment.main.PrivacyPolicyFragment"
+        android:label="fragment_privacy_policy"
+        tools:layout="@layout/fragment_privacy_policy" />
+    <fragment
+        android:id="@+id/homeProfileFragment2"
+        android:name="com.alert.app.fragment.main.HomeProfileFragment"
+        android:label="fragment_home_profile"
+        tools:layout="@layout/fragment_home_profile" >
+        <argument
+            android:name="source"
+            app:argType="string"
+            android:defaultValue="auth" />
+    </fragment>
+    <fragment
+        android:id="@+id/tutorialsFragment2"
+        android:name="com.alert.app.fragment.main.TutorialsFragment"
+        android:label="fragment_tutorials"
+        tools:layout="@layout/fragment_tutorials" />
+    <fragment
+        android:id="@+id/knowMoreFragment2"
+        android:name="com.alert.app.fragment.main.KnowMoreFragment"
+        android:label="fragment_knowm_more"
+        tools:layout="@layout/fragment_knowm_more" />
+</navigation>
