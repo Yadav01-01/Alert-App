@@ -13,75 +13,111 @@ import okhttp3.Response
 import com.alert.app.BuildConfig
 
 class AuthInterceptor(var context: Context) : Interceptor {
-    @SuppressLint("SuspiciousIndentation")
+//    @SuppressLint("SuspiciousIndentation")
+//    override fun intercept(chain: Interceptor.Chain): Response {
+//        val requestBuilder: Request.Builder = chain.request().newBuilder()
+//        val token = getBearerToken()
+//        Log.d("@@@@@@", "token $token")
+//        /* if (token != null && token.isNotEmpty()) {
+//             requestBuilder.addHeader("Authorization", "Bearer $token")
+//             requestBuilder.addHeader("Accept", "application/json")
+//         }*/
+//        token.takeIf { it.isNotEmpty() }?.let {
+//            requestBuilder.addHeader("Authorization", "Bearer $it")
+//            requestBuilder.addHeader("Accept", "application/json")
+//        }
+//        //return chain.proceed(requestBuilder.build())
+//        val response = chain.proceed(requestBuilder.build())
+//        Log.d("response@@@@@@@", response.toString())
+//        // Check for 401 Unauthorized response
+//
+//        requestBuilder.addHeader("Accept", "application/json")
+//        val newRequest = requestBuilder.build()
+//        if (BuildConfig.DEBUG) {
+//            Log.d("API_REQUEST", "URL: ${newRequest.url}")
+//            Log.d("API_REQUEST", "Method: ${newRequest.method}")
+//            Log.d("API_REQUEST", "Headers: ${newRequest.headers}")
+//
+//            val body = newRequest.body
+//
+//            when (body) {
+//                is MultipartBody -> {
+//                    Log.d("API_REQUEST", "Multipart Form Data:")
+//                    body.parts.forEachIndexed { index, part ->
+//                        Log.d("API_REQUEST", "Part $index Headers: ${part.headers}")
+//                    }
+//                }
+//
+//                else -> {
+//                    body?.let {
+//                        val buffer = okio.Buffer()
+//                        it.writeTo(buffer)
+//                        Log.d("API_REQUEST", "Body: ${buffer.readUtf8()}")
+//                    }
+//                }
+//            }
+//        }
+//
+//
+//        val responseBody = response.body
+//        val responseBodyString = responseBody?.string()
+//
+//
+//        if (BuildConfig.DEBUG) {
+//            Log.d("API_RESPONSE", "URL: ${response.request.url}")
+//            Log.d("API_RESPONSE", "Code: ${response.code}")
+//            Log.d("API_RESPONSE", "Body: $responseBodyString")
+//        }
+//
+//
+//
+//
+//
+//
+//
+//        if (response.code == 401) {
+////            val intent = Intent("com.yourapp.LOGOUT")
+////
+////            context.sendBroadcast(intent)
+//            val sessionManagement = SessionManagement(context)
+//            handleTokenExpiration(sessionManagement)
+//        }
+//        return response
+//    }
+
+
     override fun intercept(chain: Interceptor.Chain): Response {
-        val requestBuilder: Request.Builder = chain.request().newBuilder()
         val token = getBearerToken()
-        Log.d("@@@@@@", "token $token")
-        /* if (token != null && token.isNotEmpty()) {
-             requestBuilder.addHeader("Authorization", "Bearer $token")
-             requestBuilder.addHeader("Accept", "application/json")
-         }*/
-        token.takeIf { it.isNotEmpty() }?.let {
-            requestBuilder.addHeader("Authorization", "Bearer $it")
-            requestBuilder.addHeader("Accept", "application/json")
+
+        val requestBuilder = chain.request().newBuilder()
+
+        if (token.isNotEmpty()) {
+            requestBuilder.addHeader("Authorization", "Bearer $token")
         }
-        //return chain.proceed(requestBuilder.build())
-        val response = chain.proceed(requestBuilder.build())
-        Log.d("response@@@@@@@", response.toString())
-        // Check for 401 Unauthorized response
 
         requestBuilder.addHeader("Accept", "application/json")
-        val newRequest = requestBuilder.build()
+
+        val request = requestBuilder.build()
+
         if (BuildConfig.DEBUG) {
-            Log.d("API_REQUEST", "URL: ${newRequest.url}")
-            Log.d("API_REQUEST", "Method: ${newRequest.method}")
-            Log.d("API_REQUEST", "Headers: ${newRequest.headers}")
-
-            val body = newRequest.body
-
-            when (body) {
-                is MultipartBody -> {
-                    Log.d("API_REQUEST", "Multipart Form Data:")
-                    body.parts.forEachIndexed { index, part ->
-                        Log.d("API_REQUEST", "Part $index Headers: ${part.headers}")
-                    }
-                }
-
-                else -> {
-                    body?.let {
-                        val buffer = okio.Buffer()
-                        it.writeTo(buffer)
-                        Log.d("API_REQUEST", "Body: ${buffer.readUtf8()}")
-                    }
-                }
-            }
+            Log.d("API_REQUEST", "URL: ${request.url}")
+            Log.d("API_REQUEST", "Method: ${request.method}")
+            Log.d("API_REQUEST", "Headers: ${request.headers}")
         }
 
-
-        val responseBody = response.body
-        val responseBodyString = responseBody?.string()
-
+        val response = chain.proceed(request)
 
         if (BuildConfig.DEBUG) {
-            Log.d("API_RESPONSE", "URL: ${response.request.url}")
+            val peekBody = response.peekBody(Long.MAX_VALUE)
             Log.d("API_RESPONSE", "Code: ${response.code}")
-            Log.d("API_RESPONSE", "Body: $responseBodyString")
+            Log.d("API_RESPONSE", "Body: ${peekBody.string()}")
         }
-
-
-
-
-
-
 
         if (response.code == 401) {
-//            val intent = Intent("com.yourapp.LOGOUT")
-//
-//            context.sendBroadcast(intent)
             val sessionManagement = SessionManagement(context)
             handleTokenExpiration(sessionManagement)
         }
+
         return response
     }
 

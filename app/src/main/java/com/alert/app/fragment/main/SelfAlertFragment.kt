@@ -98,11 +98,10 @@ class SelfAlertFragment : Fragment(), SelfAlertClick {
                     when (it) {
                         is NetworkResult.Success -> {
                             it.data?.let {
-                                val selfAlertsResponse =
-                                    Gson().fromJson(it, SelfAlertsResponse::class.java)
+                                val selfAlertsResponse = Gson().fromJson(it, SelfAlertsResponse::class.java)
                                 if (selfAlertsResponse.code==200) {
                                     selfAlert = selfAlertsResponse.data!!.toMutableList()
-                                    if (selfAlert.size>0){
+                                    if (selfAlert.size>0) {
                                         binding.tvTitle.visibility=View.VISIBLE
                                         binding.showData.visibility=View.VISIBLE
                                         binding.layHide.visibility=View.GONE
