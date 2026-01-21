@@ -30,6 +30,7 @@ import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
 import java.util.Calendar
 import java.util.Locale
+import androidx.core.view.isVisible
 
 @AndroidEntryPoint
 class HealthAlertCalanderFragment : Fragment() {
@@ -43,6 +44,10 @@ class HealthAlertCalanderFragment : Fragment() {
     private var selectedTimeMinutes: String? = null
     private var selectedAlertType: String? = null
     private var contactId: String? = null
+
+    private var startDate: String? = null
+    private var endDate: String? = null
+
 
     // Stored values
     private var selectedDate: String? = null
@@ -109,36 +114,46 @@ class HealthAlertCalanderFragment : Fragment() {
     }
 
     private fun setupCalendar() {
-        val today = CalendarDay.today()
 
-        binding.calenderView.state().edit()
-            .setMinimumDate(today)
-            .commit()
+        val calendarView = binding.calenderView
 
-        binding.calenderView.showOtherDates = MaterialCalendarView.SHOW_ALL
-        binding.calenderView.setDateSelected(today, true)
+        // MUST be called before selection
+        calendarView.selectionMode = MaterialCalendarView.SELECTION_MODE_RANGE
 
-        // Default selected date = today
-        selectedDate = apiDateFormat.format(Calendar.getInstance().time)
+        calendarView.showOtherDates = MaterialCalendarView.SHOW_ALL
 
+        // Clear any previous state
+        calendarView.clearSelection()
 
-        binding.calenderView.setTitleFormatter { day ->
-            val calendar = Calendar.getInstance().apply {
-                set(day.year, day.month - 1, day.day)
+        // IMPORTANT: Reset listeners before setting again
+        calendarView.setOnRangeSelectedListener(null)
+
+        calendarView.setOnRangeSelectedListener { _, dates ->
+
+            if (dates.size >= 2) {
+
+                val start = dates.first()
+                val end = dates.last()
+
+                startDate = formatDate(start)
+                endDate = formatDate(end)
+
+                binding.datetime.text = "$startDate to $endDate"
+
+                // Hide calendar after selection
+                calendarView.visibility = View.GONE
             }
-            apiDateFormat.format(calendar.time)
         }
+    }
 
-        binding.calenderView.setOnDateChangedListener { _, date, _ ->
-            val calendar = Calendar.getInstance().apply {
-                set(date.year, date.month - 1, date.day)
-            }
 
-            selectedDate = apiDateFormat.format(calendar.time)
-            binding.datetime.text = selectedDate
-            binding.calenderView.visibility = View.GONE
+
+
+    private fun formatDate(day: CalendarDay): String {
+        val calendar = Calendar.getInstance().apply {
+            set(day.year, day.month - 1, day.day)
         }
-
+        return apiDateFormat.format(calendar.time)
     }
 
     private fun setupTimePickers() {
@@ -179,9 +194,21 @@ class HealthAlertCalanderFragment : Fragment() {
                 NOTES: $notes
                 """.trimIndent()
         )
+
+        binding.llOpenCalender.setOnClickListener {
+
+            binding.calenderView.apply {
+                clearSelection() // VERY IMPORTANT
+                visibility = View.VISIBLE
+            }
+        }
+
+
+
         binding.btnSetAlert.setOnClickListener {
 
-            if (selectedDate.isNullOrEmpty() || startTime.isNullOrEmpty()) {
+            // if (selectedDate.isNullOrEmpty() || startTime.isNullOrEmpty()) {
+            if (startDate.isNullOrEmpty() || endDate.isNullOrEmpty() || startTime.isNullOrEmpty()) {
                 AlertUtils.showAlert(
                     requireContext(),
                     "Please select date and start time",
@@ -199,7 +226,8 @@ class HealthAlertCalanderFragment : Fragment() {
                     alertFor = alertFor ?: "",
                     alertDuration = selectedTimeMinutes.toString(),
                     healthAlert = selectedAlertType ?: "",
-                    date = selectedDate ?: "",     // yyyy-MM-dd
+                    startDate = startDate ?: "",
+                    endDate = endDate ?:"",
                     time = timeFormatted,          // HH:mm
                     note = notes ?: "",
                     contact = listOfNotNull(contactId)
@@ -226,13 +254,6 @@ class HealthAlertCalanderFragment : Fragment() {
                     }
                 }
             }
-
-            // All data ready for API
-
-
-
-
-
         }
     }
 

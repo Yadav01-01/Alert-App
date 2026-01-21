@@ -178,6 +178,6 @@ interface MainRepository {
     suspend fun shareLocation(contact_id: String, duration: String, lat: String, long: String): Flow<NetworkResult<JsonObject>>
 
     suspend fun addHealthAlerts(alertFor: String,alertDuration: String,healthAlert: String,
-                                date: String,time: String, note: String,contact: List<String>?) : Flow<NetworkResult<JsonObject>>
+                                startDate: String,endDate : String,time: String, note: String,contact: List<String>?) : Flow<NetworkResult<JsonObject>>
 
 }

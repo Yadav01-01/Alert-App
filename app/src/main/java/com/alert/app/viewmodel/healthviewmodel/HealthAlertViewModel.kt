@@ -24,7 +24,8 @@ class HealthAlertViewModel @Inject constructor(private val repository: MainRepos
         alertFor: String,
         alertDuration: String,
         healthAlert: String,
-        date: String,
+        startDate: String,
+        endDate: String,
         time: String,
         note: String,
         contact: List<String>?
@@ -33,7 +34,8 @@ class HealthAlertViewModel @Inject constructor(private val repository: MainRepos
             alertFor,
             alertDuration,
             healthAlert,
-            date,
+            startDate,
+            endDate,
             time,
             note,
             contact

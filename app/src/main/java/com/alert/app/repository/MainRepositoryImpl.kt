@@ -1823,14 +1823,15 @@ class MainRepositoryImpl @Inject constructor(private val apiInterface: ApiInterf
         alertFor: String,
         alertDuration: String,
         healthAlert: String,
-        date: String,
+        startDate: String,
+        endDate: String,
         time: String,
         note: String,
         contact: List<String>?
     ): Flow<NetworkResult<JsonObject>> = flow {
 
         try {
-            val response = apiInterface.addHealthAlert(alertFor, alertDuration, healthAlert, date, time, note, contact)
+            val response = apiInterface.addHealthAlert(alertFor, alertDuration, healthAlert, startDate,endDate, time, note, contact)
 
             if (response.isSuccessful) {
                 response.body()?.let { resp ->
