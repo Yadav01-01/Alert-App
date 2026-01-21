@@ -4,6 +4,7 @@ import android.app.Activity
 import android.app.Dialog
 import android.content.ContentUris
 import android.content.Context
+import android.content.ContextWrapper
 import android.content.Intent
 import android.database.Cursor
 import android.graphics.Color
@@ -90,13 +91,92 @@ object BaseApplication {
     }
 
 
+//    fun alertError(context: Context?, msg: String?, status: Boolean) {
+//
+//        if (context == null) return
+//
+//        val activity = context as? Activity ?: return
+//
+//        // 🚨 MOST IMPORTANT CHECKS
+//        if (activity.isFinishing || activity.isDestroyed) return
+//
+//        activity.runOnUiThread {
+//
+//            if (activity.isFinishing || activity.isDestroyed) return@runOnUiThread
+//
+//            val dialog = Dialog(activity, R.style.BottomSheetDialog)
+//            dialog.setCancelable(false)
+//            dialog.setContentView(R.layout.alert_box_error)
+//
+//            dialog.window?.let { window ->
+//                val layoutParams = WindowManager.LayoutParams()
+//                layoutParams.copyFrom(window.attributes)
+//                layoutParams.width = WindowManager.LayoutParams.MATCH_PARENT
+//                layoutParams.height = WindowManager.LayoutParams.MATCH_PARENT
+//                window.attributes = layoutParams
+//            }
+//
+//            val tvTitle: TextView = dialog.findViewById(R.id.tv_text)
+//            val btnOk: RelativeLayout = dialog.findViewById(R.id.btn_okay)
+//            val ltIcon: LottieAnimationView = dialog.findViewById(R.id.lt_javrvis)
+//
+//            if (msg == MessageClass.networkError) {
+//                ltIcon.setAnimation(R.raw.dotloader)
+//            } else {
+//                ltIcon.setAnimation(R.raw.loader)
+//            }
+//
+//            tvTitle.text = msg ?: ""
+//
+//            btnOk.setOnClickListener {
+//                dialog.dismiss()
+//
+//                if (status) {
+//                    val sessionManagement = SessionManagement(activity)
+//                    sessionManagement.logOut()
+//
+//                    val intent = Intent(activity, AuthActivity::class.java)
+//                    intent.addFlags(
+//                        Intent.FLAG_ACTIVITY_CLEAR_TOP or
+//                                Intent.FLAG_ACTIVITY_CLEAR_TASK or
+//                                Intent.FLAG_ACTIVITY_NEW_TASK
+//                    )
+//                    intent.putExtra("openScreen", "Login")
+//                    activity.startActivity(intent)
+//                }
+//            }
+//
+//            // ✅ FINAL SAFETY CHECK
+//            if (!activity.isFinishing && !activity.isDestroyed) {
+//                dialog.show()
+//            }
+//        }
+//    }
+//
+
     fun alertError(context: Context?, msg: String?, status: Boolean) {
 
         if (context == null) return
 
-        val activity = context as? Activity ?: return
+        // 🔥 Context se Activity nikaal lo (safe)
+        val activity = when (context) {
+            is Activity -> context
+            is ContextWrapper -> {
+                var ctx = context
+                var act: Activity? = null
+                while (ctx is ContextWrapper) {
+                    if (ctx is Activity) {
+                        act = ctx
+                        break
+                    }
+                    ctx = ctx.baseContext
+                }
+                act
+            }
+            else -> null
+        } ?: return
 
-        // 🚨 MOST IMPORTANT CHECKS
+        // 🚨 Hard safety
         if (activity.isFinishing || activity.isDestroyed) return
 
         activity.runOnUiThread {
@@ -107,13 +187,10 @@ object BaseApplication {
             dialog.setCancelable(false)
             dialog.setContentView(R.layout.alert_box_error)
 
-            dialog.window?.let { window ->
-                val layoutParams = WindowManager.LayoutParams()
-                layoutParams.copyFrom(window.attributes)
-                layoutParams.width = WindowManager.LayoutParams.MATCH_PARENT
-                layoutParams.height = WindowManager.LayoutParams.MATCH_PARENT
-                window.attributes = layoutParams
-            }
+            dialog.window?.setLayout(
+                WindowManager.LayoutParams.MATCH_PARENT,
+                WindowManager.LayoutParams.MATCH_PARENT
+            )
 
             val tvTitle: TextView = dialog.findViewById(R.id.tv_text)
             val btnOk: RelativeLayout = dialog.findViewById(R.id.btn_okay)
@@ -125,34 +202,31 @@ object BaseApplication {
                 ltIcon.setAnimation(R.raw.loader)
             }
 
-            tvTitle.text = msg ?: ""
+            tvTitle.text = msg.orEmpty()
 
             btnOk.setOnClickListener {
                 dialog.dismiss()
 
                 if (status) {
-                    val sessionManagement = SessionManagement(activity)
-                    sessionManagement.logOut()
+                    SessionManagement(activity).logOut()
 
-                    val intent = Intent(activity, AuthActivity::class.java)
-                    intent.addFlags(
-                        Intent.FLAG_ACTIVITY_CLEAR_TOP or
-                                Intent.FLAG_ACTIVITY_CLEAR_TASK or
-                                Intent.FLAG_ACTIVITY_NEW_TASK
-                    )
-                    intent.putExtra("openScreen", "Login")
+                    val intent = Intent(activity, AuthActivity::class.java).apply {
+                        addFlags(
+                            Intent.FLAG_ACTIVITY_CLEAR_TOP or
+                                    Intent.FLAG_ACTIVITY_CLEAR_TASK or
+                                    Intent.FLAG_ACTIVITY_NEW_TASK
+                        )
+                        putExtra("openScreen", "Login")
+                    }
                     activity.startActivity(intent)
                 }
             }
 
-            // ✅ FINAL SAFETY CHECK
             if (!activity.isFinishing && !activity.isDestroyed) {
                 dialog.show()
             }
         }
     }
-
-
 
 
     /*    fun  alertError(context: Context?, msg:String?,status:Boolean){

@@ -117,7 +117,7 @@ class ForgotPassword : Fragment() {
             } else {
 
                 val finalPhone =
-                    "${binding.ccp.selectedCountryCode}${binding.etPhone.text.toString().trim()}"
+                    "+${binding.ccp.selectedCountryCode}${binding.etPhone.text.toString().trim()}"
 
                 viewModel.forgotPasswordRequest(
                     { response ->

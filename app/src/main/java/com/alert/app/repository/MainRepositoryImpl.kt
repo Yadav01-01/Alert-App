@@ -385,7 +385,10 @@ class MainRepositoryImpl @Inject constructor(private val apiInterface: ApiInterf
             apiInterface.forgotPasswordRequestApi(email, phone).apply {
                 if (isSuccessful) {
                     body()?.let {
-                        successCallback(NetworkResult.Success(it.toString()))
+                        val data = it.get("data").asJsonObject
+                        val otp = data.get("otp").asInt
+
+                        successCallback(NetworkResult.Success(otp.toString()))
                     } ?: successCallback(NetworkResult.Error(MessageClass.apiError))
                 } else {
                     val errorJson = errorBody()?.string()
