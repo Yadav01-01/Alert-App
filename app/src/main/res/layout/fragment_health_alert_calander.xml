@@ -51,46 +51,47 @@
             android:layout_marginHorizontal="@dimen/_20sdp"
             android:orientation="vertical">
             <LinearLayout
-                android:id="@+id/llOpenCalender"
+                android:id="@+id/rlDt"
                 android:layout_width="match_parent"
                 android:layout_height="@dimen/_40sdp"
                 android:layout_marginTop="@dimen/_10sdp"
-                android:background="@drawable/bg_border"
-                android:clickable="true"
-                android:focusable="true"
-                android:focusableInTouchMode="true">
+                android:background="@drawable/bg_border">
 
-
-                  <TextView
-                    android:id="@+id/datetime"
+                <TextView
+                    android:id="@+id/dateTv"
                     android:layout_width="match_parent"
                     android:layout_height="match_parent"
-                    android:text="Select Date"
-                    android:textColor="@color/light_black"
-                    android:gravity="center|start"
                     android:background="@null"
-                    android:textSize="@dimen/_10sdp"
+                    android:fontFamily="@font/urbanist_medium"
+                    android:gravity="center|start"
+                    android:hint="@string/select_date"
                     android:paddingStart="@dimen/_20sdp"
                     android:paddingEnd="@dimen/_12sdp"
-                    android:fontFamily="@font/urbanist_medium"
+                    android:textColor="@color/light_black"
+                    android:textColorHint="@color/light_black"
+                    android:textSize="@dimen/_10sdp"
                     app:drawableEndCompat="@drawable/calander_send_icon" />
             </LinearLayout>
 
             <androidx.cardview.widget.CardView
+                android:id="@+id/cal"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                app:cardCornerRadius="@dimen/_10sdp"
                 android:layout_margin="@dimen/_10sdp"
                 android:layout_marginStart="@dimen/_4sdp"
                 android:layout_marginEnd="@dimen/_4sdp"
+                android:background="#FFFFFF"
+                android:visibility="gone"
                 app:cardBackgroundColor="@color/white"
-                android:background="#FFFFFF">
+                app:cardCornerRadius="@dimen/_10sdp">
+
                 <com.prolificinteractive.materialcalendarview.MaterialCalendarView
                     android:id="@+id/calender_view"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:theme="@style/DialogTheme"
-                    android:visibility="gone"
+                    android:visibility="visible"
+                    app:mcv_selectionMode="range"
                     app:mcv_showOtherDates="decorated_disabled" />
             </androidx.cardview.widget.CardView>
 

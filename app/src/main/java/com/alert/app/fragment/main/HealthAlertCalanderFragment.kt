@@ -55,6 +55,10 @@ class HealthAlertCalanderFragment : Fragment() {
     private var endTime: String? = null
     private var notes: String? = null
 
+    private var startDateApi: CalendarDay? = null
+
+    private var endDateApi: CalendarDay? = null
+
     private val apiDateFormat =
         SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
 
@@ -113,37 +117,88 @@ class HealthAlertCalanderFragment : Fragment() {
         }
     }
 
+    private fun formatCalendarDay(day: CalendarDay?): String {
+        if (day == null) return "" // or return some default value
+
+        val calendar = Calendar.getInstance().apply {
+            set(day.year, day.month - 1, day.day) // month is 0-based
+        }
+
+        return apiDateFormat.format(calendar.time)
+    }
+
+
     private fun setupCalendar() {
 
-        val calendarView = binding.calenderView
+        val today = CalendarDay.today()
+        val dateFormat = SimpleDateFormat("dd MMMM, yyyy", Locale.getDefault())
 
-        // MUST be called before selection
-        calendarView.selectionMode = MaterialCalendarView.SELECTION_MODE_RANGE
+        with(binding.calenderView) {
 
-        calendarView.showOtherDates = MaterialCalendarView.SHOW_ALL
+            // Enable RANGE selection
+            selectionMode = MaterialCalendarView.SELECTION_MODE_RANGE
 
-        // Clear any previous state
-        calendarView.clearSelection()
+            // Set minimum selectable date
+            state().edit()
+                .setMinimumDate(today)
+                .commit()
 
-        // IMPORTANT: Reset listeners before setting again
-        calendarView.setOnRangeSelectedListener(null)
+            showOtherDates = MaterialCalendarView.SHOW_ALL
 
-        calendarView.setOnRangeSelectedListener { _, dates ->
+            // Custom title formatter
+            setTitleFormatter { calendarDay ->
+                val calendar = Calendar.getInstance().apply {
+                    set(calendarDay.year, calendarDay.month - 1, calendarDay.day)
+                }
+                dateFormat.format(calendar.time)
+            }
 
-            if (dates.size >= 2) {
+            // Listen for date range selection
+            setOnRangeSelectedListener { _, dates ->
+                if (dates.isNotEmpty()) {
 
-                val start = dates.first()
-                val end = dates.last()
+                    val start = dates.first()
+                    val end = dates.last()
 
-                startDate = formatDate(start)
-                endDate = formatDate(end)
+                    // Save selected dates
+                    startDateApi = start
+                    endDateApi = end
 
-                binding.datetime.text = "$startDate to $endDate"
+                    startDate = formatCalendarDay(start, dateFormat)
+                    endDate = formatCalendarDay(end, dateFormat)
 
-                // Hide calendar after selection
-                calendarView.visibility = View.GONE
+                    binding.dateTv.text = "$startDate to $endDate"
+
+                    Log.d("CALENDAR", "Start Date: $startDate")
+                    Log.d("CALENDAR", "End Date: $endDate")
+
+
+                    //   binding.cal.visibility = View.GONE
+                }
             }
         }
+    }
+
+    // Restore previously selected range (if any)
+    private fun restoreSelectedRange() {
+        binding.calenderView.post {
+            binding.calenderView.clearSelection()
+
+            if (startDateApi != null && endDateApi != null) {
+                binding.calenderView.selectRange(startDateApi!!, endDateApi!!)
+            }
+        }
+    }
+
+
+    private fun formatCalendarDay(
+        day: CalendarDay,
+        formatter: SimpleDateFormat
+    ): String {
+        val calendar = Calendar.getInstance().apply {
+            set(day.year, day.month - 1, day.day)
+        }
+        return formatter.format(calendar.time)
     }
 
 
@@ -194,14 +249,6 @@ class HealthAlertCalanderFragment : Fragment() {
                 NOTES: $notes
                 """.trimIndent()
         )
-
-        binding.llOpenCalender.setOnClickListener {
-
-            binding.calenderView.apply {
-                clearSelection() // VERY IMPORTANT
-                visibility = View.VISIBLE
-            }
-        }
 
 
 
