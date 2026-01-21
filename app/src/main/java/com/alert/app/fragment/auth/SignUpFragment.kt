@@ -103,7 +103,7 @@ class SignUpFragment : Fragment() {
 
             if (!isValidate()) return@setOnClickListener
 
-            binding!!.tvSignUpButton.isEnabled = false
+        //    binding!!.tvSignUpButton.isEnabled = false
 
             when (signupType) {
                 SignupType.EMAIL -> {

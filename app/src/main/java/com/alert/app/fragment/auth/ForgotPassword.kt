@@ -26,6 +26,7 @@ import java.util.regex.Pattern
 @AndroidEntryPoint
 class ForgotPassword : Fragment() {
 
+
     private var _binding: FragmentForgotPasswordBinding? = null
     private val binding get() = _binding!!
     private lateinit var viewModel: ForgotPasswordViewModel
@@ -116,8 +117,9 @@ class ForgotPassword : Fragment() {
                 )
             } else {
 
-                val finalPhone =
-                    "${binding.ccp.selectedCountryCode}${binding.etPhone.text.toString().trim()}"
+//                val finalPhone =
+//                    "+"+"${binding.ccp.selectedCountryCode}${binding.etPhone.text.toString().trim()}"
+                val finalPhone = "+${binding.ccp.selectedCountryCode}${binding.etPhone.text.toString().trim()}"
 
                 viewModel.forgotPasswordRequest(
                     { response ->
@@ -155,6 +157,14 @@ class ForgotPassword : Fragment() {
                     else
                         binding.etPhone.text.toString().trim()
                 )
+                if (selectedType == "EMAIL"){
+                    bundle.putString("email",binding.etForgotEmail.text.toString().trim())
+                    bundle.putString("signUpType","EMAIL")
+                }else{
+                    bundle.putString("phone",binding.etPhone.text.toString().trim())
+                    bundle.putString("countryCode",binding.ccp.selectedCountryCode)
+                    bundle.putString("signUpType","PHONE")
+                }
 
                 bundle.putString("screenType", "Forgot")
                 findNavController().navigate(R.id.verificationCode, bundle)

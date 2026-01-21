@@ -44,9 +44,20 @@ class AddAlertFragment : Fragment() {
     private val timeFormat = SimpleDateFormat("hh:mm a", Locale.getDefault())
     private var currectDate = ""
     private var selectDate = ""
+    private var startDate: String? = null
+    private var endDate: String? = null
 
-    override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View {
-        binding = FragmentAddAlertBinding.inflate(inflater, container, false)
+    private var startDateApi: CalendarDay? = null
+
+    private var endDateApi: CalendarDay? = null
+
+
+    private val apiDateFormat =
+        SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
+
+    override fun onCreateView(inflater: LayoutInflater , container : ViewGroup?  , savedInstanceState: Bundle?): View {
+        binding = FragmentAddAlertBinding.inflate(inflater , container  , false)
+        initDefaultRange()
         return binding.root
     }
 
@@ -65,23 +76,23 @@ class AddAlertFragment : Fragment() {
             if (isValidation()) {
                 val createSelfAlertRequest = CreateSelfAlertRequest(
                     binding.alertTitle.text.toString(),
-                    convertToStandardDateyyyyMMdd(currectDate),
-                    convertToStandardDateyyyyMMdd(selectDate),
-                    convertTo24HourTime(binding.tvStartTime.text.toString()),
-                    convertTo24HourTime(binding.tvEndTime.text.toString()),
+                   formatCalendarDay(startDateApi),
+                    formatCalendarDay(endDateApi),
+                    binding.tvStartTime.text.toString(),
+                    binding.tvEndTime.text.toString(),
                     binding.edText.text.toString()
                 )
                 addSelfAlert(createSelfAlertRequest)
             }
         }
-
+        setupCalendar()
         // Show calendar when dateTv is clicked
         binding.rlDt.setOnClickListener {
             if (binding.cal.visibility == View.VISIBLE){
                 binding.cal.visibility = View.GONE
             }else{
                 binding.cal.visibility = View.VISIBLE
-                setupCalendar()
+                restoreSelectedRange()
             }
         }
 
@@ -94,9 +105,33 @@ class AddAlertFragment : Fragment() {
         }
 
         // Show time picker for End Time
-        binding.tvEndTime.setOnClickListener { showTimePickerDialog { formattedTime ->
-            binding.tvEndTime.text = formattedTime.uppercase()
-        }}
+           binding.tvEndTime.setOnClickListener { showTimePickerDialog { formattedTime ->
+                binding.tvEndTime.text = formattedTime.uppercase()
+            }
+        }
+    }
+
+    private fun initDefaultRange() {
+        val calendar = Calendar.getInstance()
+
+        // Start = today
+        startDateApi = CalendarDay.from(
+            calendar.get(Calendar.YEAR),
+            calendar.get(Calendar.MONTH) + 1, // ✅ add 1 here
+            calendar.get(Calendar.DAY_OF_MONTH)
+        )
+
+        // End = 7 days from today
+        calendar.add(Calendar.DAY_OF_YEAR, 7)
+        endDateApi = CalendarDay.from(
+            calendar.get(Calendar.YEAR),
+            calendar.get(Calendar.MONTH) + 1, // ✅ add 1 here
+            calendar.get(Calendar.DAY_OF_MONTH)
+        )
+
+        // Format dates for display
+        startDate = formatCalendarDay(startDateApi)
+        endDate = formatCalendarDay(endDateApi)
     }
 
     private fun showTimePickerDialog(onTimeSelected: (String) -> Unit) {
@@ -124,11 +159,7 @@ class AddAlertFragment : Fragment() {
                                 if (it.has(getString(R.string.apiCode)) && it.get(getString(R.string.apiCode)).asInt==200) {
                                     findNavController().navigateUp()
                                 }else{
-                                    Toast.makeText(
-                                        requireContext(),
-                                        it.get(getString(R.string.apiMessahe)).asString,
-                                        Toast.LENGTH_LONG
-                                    ).show()
+                                    Toast.makeText(requireContext(), it.get(getString(R.string.apiMessahe)).asString, Toast.LENGTH_LONG).show()
                                 }
                             }
                         }
@@ -147,29 +178,78 @@ class AddAlertFragment : Fragment() {
         }
     }
 
+//    private fun setupCalendar() {
+//        val today = CalendarDay.today()
+//        val dateFormat = SimpleDateFormat("dd MMMM, yyyy", Locale.getDefault())
+//        // Setting the minimum date and showing all other dates
+//        val localDate = DateTime()
+//        binding.calenderView.state().edit().setMinimumDate(CalendarDay.from(localDate.year,
+//            localDate.monthOfYear, localDate.dayOfMonth)).commit()
+//        binding.calenderView.showOtherDates = MaterialCalendarView.SHOW_ALL
+//        binding.calenderView.setDateSelected(CalendarDay.today(), true)
+//        val selectedDate = binding.calenderView.selectedDate
+//        selectedDate?.let {
+//            val formattedDate = SimpleDateFormat("dd MMMM, yyyy", Locale.getDefault())
+//                .format(Calendar.getInstance().apply {
+//                    set(it.year, it.month - 1, it.day)
+//                }.time)
+//
+//            Log.d("******", "Selected Date: $formattedDate")
+//            currectDate = formattedDate
+//            binding.dateTv.text = formattedDate
+//        }
+//        with(binding.calenderView) {
+//            state().edit().setMinimumDate(today).commit()
+//            showOtherDates = MaterialCalendarView.SHOW_ALL
+//            setTitleFormatter { calendarDay ->
+//                val calendar = Calendar.getInstance().apply {
+//                    set(calendarDay.year, calendarDay.month - 1, calendarDay.day)
+//                }
+//                dateFormat.format(calendar.time)
+//            }
+//
+//            // Adding the OnDateChangedListener to update the TextView with the selected date
+//            setOnDateChangedListener { widget, date, selected ->
+//                if (selected) {
+//                    val formattedDate = dateFormat.format(Date(date.year - 1900, date.month - 1, date.day)) // Date() constructor uses 1900 offset
+//                    binding.dateTv.text = formattedDate
+//                    selectDate = formattedDate
+//                    binding.cal.visibility = View.GONE
+//                }
+//            }
+//        }
+//    }
+
+
+    private fun formatCalendarDay(day: CalendarDay?): String {
+        if (day == null) return "" // or return some default value
+
+        val calendar = Calendar.getInstance().apply {
+            set(day.year, day.month - 1, day.day) // month is 0-based
+        }
+
+        return apiDateFormat.format(calendar.time)
+    }
+
+
     private fun setupCalendar() {
+
         val today = CalendarDay.today()
         val dateFormat = SimpleDateFormat("dd MMMM, yyyy", Locale.getDefault())
-        // Setting the minimum date and showing all other dates
-        val localDate = DateTime()
-        binding.calenderView.state().edit().setMinimumDate(CalendarDay.from(localDate.year,
-            localDate.monthOfYear, localDate.dayOfMonth)).commit()
-        binding.calenderView.showOtherDates = MaterialCalendarView.SHOW_ALL
-        binding.calenderView.setDateSelected(CalendarDay.today(), true)
-        val selectedDate = binding.calenderView.selectedDate
-        selectedDate?.let {
-            val formattedDate = SimpleDateFormat("dd MMMM, yyyy", Locale.getDefault())
-                .format(Calendar.getInstance().apply {
-                    set(it.year, it.month - 1, it.day)
-                }.time)
 
-            Log.d("******", "Selected Date: $formattedDate")
-            currectDate = formattedDate
-            binding.dateTv.text = formattedDate
-        }
         with(binding.calenderView) {
-            state().edit().setMinimumDate(today).commit()
+
+            // Enable RANGE selection
+            selectionMode = MaterialCalendarView.SELECTION_MODE_RANGE
+
+            // Set minimum selectable date
+            state().edit()
+                .setMinimumDate(today)
+                .commit()
+
             showOtherDates = MaterialCalendarView.SHOW_ALL
+
+            // Custom title formatter
             setTitleFormatter { calendarDay ->
                 val calendar = Calendar.getInstance().apply {
                     set(calendarDay.year, calendarDay.month - 1, calendarDay.day)
@@ -177,16 +257,52 @@ class AddAlertFragment : Fragment() {
                 dateFormat.format(calendar.time)
             }
 
-            // Adding the OnDateChangedListener to update the TextView with the selected date
-            setOnDateChangedListener { widget, date, selected ->
-                if (selected) {
-                    val formattedDate = dateFormat.format(Date(date.year - 1900, date.month - 1, date.day)) // Date() constructor uses 1900 offset
-                    binding.dateTv.text = formattedDate
-                    selectDate = formattedDate
-                    binding.cal.visibility = View.GONE
+            // Listen for date range selection
+            setOnRangeSelectedListener { _, dates ->
+                if (dates.isNotEmpty()) {
+
+                    val start = dates.first()
+                    val end = dates.last()
+
+                    // Save selected dates
+                    startDateApi = start
+                    endDateApi = end
+
+                    startDate = formatCalendarDay(start, dateFormat)
+                    endDate = formatCalendarDay(end, dateFormat)
+
+                    binding.dateTv.text = "$startDate to $endDate"
+
+                    Log.d("CALENDAR", "Start Date: $startDate")
+                    Log.d("CALENDAR", "End Date: $endDate")
+
+
+                 //   binding.cal.visibility = View.GONE
                 }
             }
         }
+    }
+
+    // Restore previously selected range (if any)
+    private fun restoreSelectedRange() {
+        binding.calenderView.post {
+            binding.calenderView.clearSelection()
+
+            if (startDateApi != null && endDateApi != null) {
+                binding.calenderView.selectRange(startDateApi!!, endDateApi!!)
+            }
+        }
+    }
+
+
+    private fun formatCalendarDay(
+        day: CalendarDay,
+        formatter: SimpleDateFormat
+    ): String {
+        val calendar = Calendar.getInstance().apply {
+            set(day.year, day.month - 1, day.day)
+        }
+        return formatter.format(calendar.time)
     }
 
     private fun createRangeSelectedListener(): OnRangeSelectedListener {

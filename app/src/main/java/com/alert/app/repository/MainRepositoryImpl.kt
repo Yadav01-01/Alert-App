@@ -35,7 +35,7 @@ class MainRepositoryImpl @Inject constructor(private val apiInterface: ApiInterf
         fcmToken: String,
         deviceType: String,
     ) {
-        try {
+//        try {
             apiInterface.loginApiRequest(email, password, fcmToken, deviceType).apply {
                 if (isSuccessful) {
                     body()?.let {
@@ -57,9 +57,9 @@ class MainRepositoryImpl @Inject constructor(private val apiInterface: ApiInterf
                     // successCallback(NetworkResult.Error(errorBody().toString()))
                 }
             }
-        } catch (e: Exception) {
-            successCallback(NetworkResult.Error(e.message.toString()))
-        }
+//        } catch (e: Exception) {
+//            successCallback(NetworkResult.Error(e.message.toString()))
+//        }
     }
 
     override suspend fun loginPhoneRequestApi(
@@ -385,7 +385,10 @@ class MainRepositoryImpl @Inject constructor(private val apiInterface: ApiInterf
             apiInterface.forgotPasswordRequestApi(email, phone).apply {
                 if (isSuccessful) {
                     body()?.let {
-                        successCallback(NetworkResult.Success(it.toString()))
+                        val data = it.get("data").asJsonObject
+                        val otp = data.get("otp").asInt
+
+                        successCallback(NetworkResult.Success(otp.toString()))
                     } ?: successCallback(NetworkResult.Error(MessageClass.apiError))
                 } else {
                     val errorJson = errorBody()?.string()
