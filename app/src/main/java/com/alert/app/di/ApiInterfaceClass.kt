@@ -299,7 +299,8 @@ interface ApiInterfaceClass {
         @Field("alertFor") alertFor: String,
         @Field("alertDuration") alertDuration: String,
         @Field("healthAlert") healthAlert: String,
-        @Field("date") date: String,
+        @Field("start_date") startDate: String,
+        @Field("end_date") endDate: String,
         @Field("time") time: String,
         @Field("note") note: String,
         @Field("contact[]") contact: List<String>?

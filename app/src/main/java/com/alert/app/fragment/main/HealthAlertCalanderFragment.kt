@@ -30,6 +30,7 @@ import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
 import java.util.Calendar
 import java.util.Locale
+import androidx.core.view.isVisible
 
 @AndroidEntryPoint
 class HealthAlertCalanderFragment : Fragment() {
@@ -44,11 +45,19 @@ class HealthAlertCalanderFragment : Fragment() {
     private var selectedAlertType: String? = null
     private var contactId: String? = null
 
+    private var startDate: String? = null
+    private var endDate: String? = null
+
+
     // Stored values
     private var selectedDate: String? = null
     private var startTime: String? = null
     private var endTime: String? = null
     private var notes: String? = null
+
+    private var startDateApi: CalendarDay? = null
+
+    private var endDateApi: CalendarDay? = null
 
     private val apiDateFormat =
         SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
@@ -108,37 +117,98 @@ class HealthAlertCalanderFragment : Fragment() {
         }
     }
 
+    private fun formatCalendarDay(day: CalendarDay?): String {
+        if (day == null) return "" // or return some default value
+
+        val calendar = Calendar.getInstance().apply {
+            set(day.year, day.month - 1, day.day) // month is 0-based
+        }
+
+        return apiDateFormat.format(calendar.time)
+    }
+
+
     private fun setupCalendar() {
+
         val today = CalendarDay.today()
+        val dateFormat = SimpleDateFormat("dd MMMM, yyyy", Locale.getDefault())
 
-        binding.calenderView.state().edit()
-            .setMinimumDate(today)
-            .commit()
+        with(binding.calenderView) {
 
-        binding.calenderView.showOtherDates = MaterialCalendarView.SHOW_ALL
-        binding.calenderView.setDateSelected(today, true)
+            // Enable RANGE selection
+            selectionMode = MaterialCalendarView.SELECTION_MODE_RANGE
 
-        // Default selected date = today
-        selectedDate = apiDateFormat.format(Calendar.getInstance().time)
+            // Set minimum selectable date
+            state().edit()
+                .setMinimumDate(today)
+                .commit()
 
+            showOtherDates = MaterialCalendarView.SHOW_ALL
 
-        binding.calenderView.setTitleFormatter { day ->
-            val calendar = Calendar.getInstance().apply {
-                set(day.year, day.month - 1, day.day)
-            }
-            apiDateFormat.format(calendar.time)
-        }
-
-        binding.calenderView.setOnDateChangedListener { _, date, _ ->
-            val calendar = Calendar.getInstance().apply {
-                set(date.year, date.month - 1, date.day)
+            // Custom title formatter
+            setTitleFormatter { calendarDay ->
+                val calendar = Calendar.getInstance().apply {
+                    set(calendarDay.year, calendarDay.month - 1, calendarDay.day)
+                }
+                dateFormat.format(calendar.time)
             }
 
-            selectedDate = apiDateFormat.format(calendar.time)
-            binding.datetime.text = selectedDate
-            binding.calenderView.visibility = View.GONE
-        }
+            // Listen for date range selection
+            setOnRangeSelectedListener { _, dates ->
+                if (dates.isNotEmpty()) {
 
+                    val start = dates.first()
+                    val end = dates.last()
+
+                    // Save selected dates
+                    startDateApi = start
+                    endDateApi = end
+
+                    startDate = formatCalendarDay(start, dateFormat)
+                    endDate = formatCalendarDay(end, dateFormat)
+
+                    binding.dateTv.text = "$startDate to $endDate"
+
+                    Log.d("CALENDAR", "Start Date: $startDate")
+                    Log.d("CALENDAR", "End Date: $endDate")
+
+
+                    //   binding.cal.visibility = View.GONE
+                }
+            }
+        }
+    }
+
+    // Restore previously selected range (if any)
+    private fun restoreSelectedRange() {
+        binding.calenderView.post {
+            binding.calenderView.clearSelection()
+
+            if (startDateApi != null && endDateApi != null) {
+                binding.calenderView.selectRange(startDateApi!!, endDateApi!!)
+            }
+        }
+    }
+
+
+    private fun formatCalendarDay(
+        day: CalendarDay,
+        formatter: SimpleDateFormat
+    ): String {
+        val calendar = Calendar.getInstance().apply {
+            set(day.year, day.month - 1, day.day)
+        }
+        return formatter.format(calendar.time)
+    }
+
+
+
+
+    private fun formatDate(day: CalendarDay): String {
+        val calendar = Calendar.getInstance().apply {
+            set(day.year, day.month - 1, day.day)
+        }
+        return apiDateFormat.format(calendar.time)
     }
 
     private fun setupTimePickers() {
@@ -179,9 +249,13 @@ class HealthAlertCalanderFragment : Fragment() {
                 NOTES: $notes
                 """.trimIndent()
         )
+
+
+
         binding.btnSetAlert.setOnClickListener {
 
-            if (selectedDate.isNullOrEmpty() || startTime.isNullOrEmpty()) {
+            // if (selectedDate.isNullOrEmpty() || startTime.isNullOrEmpty()) {
+            if (startDate.isNullOrEmpty() || endDate.isNullOrEmpty() || startTime.isNullOrEmpty()) {
                 AlertUtils.showAlert(
                     requireContext(),
                     "Please select date and start time",
@@ -199,7 +273,8 @@ class HealthAlertCalanderFragment : Fragment() {
                     alertFor = alertFor ?: "",
                     alertDuration = selectedTimeMinutes.toString(),
                     healthAlert = selectedAlertType ?: "",
-                    date = selectedDate ?: "",     // yyyy-MM-dd
+                    startDate = startDate ?: "",
+                    endDate = endDate ?:"",
                     time = timeFormatted,          // HH:mm
                     note = notes ?: "",
                     contact = listOfNotNull(contactId)
@@ -226,13 +301,6 @@ class HealthAlertCalanderFragment : Fragment() {
                     }
                 }
             }
-
-            // All data ready for API
-
-
-
-
-
         }
     }
 
