@@ -51,10 +51,10 @@ import androidx.core.graphics.drawable.toDrawable
 import androidx.core.os.bundleOf
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
+import org.json.JSONObject
 
 @AndroidEntryPoint
 class VerificationCode : Fragment() {
-
     private var binding: FragmentVerificationCodeBinding?=null
     private val startTimeInMillis: Long = 120000
     private var mTimeLeftInMillis = startTimeInMillis
@@ -76,9 +76,9 @@ class VerificationCode : Fragment() {
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View {
         binding = FragmentVerificationCodeBinding.inflate(layoutInflater, container, false)
         sessionManagement=SessionManagement(requireContext())
+
         viewModel = ViewModelProvider(this)[VerificationOtpViewModel::class.java]
 
-        // This is use for LocationServices declaration
         mFusedLocationClient = LocationServices.getFusedLocationProviderClient(requireActivity())
         locationManager = requireActivity().getSystemService(AppCompatActivity.LOCATION_SERVICE) as LocationManager
 
@@ -86,6 +86,9 @@ class VerificationCode : Fragment() {
             screenType= requireArguments().getString("screenType")
             email= requireArguments().getString("email")
             phone= requireArguments().getString("phone")
+            countryCode = requireArguments().getString("countryCode").toString()
+            signUpType = requireArguments().getString("signUpType").toString()
+            Log.d("TESTING_TYPE","Email is "+email+"\n Phone is"+phone)
         }
         if (screenType.equals("SignUp")){
             name= requireArguments().getString("name")
@@ -155,7 +158,7 @@ class VerificationCode : Fragment() {
             viewModel.resendOtpRequest({ response ->
                 BaseApplication.dismissDialog()
                 handleApiResponse(response, "signupResend")
-            }, type = "signup",email = email, phone = countryCode+phone )
+            }, type = "signup",email = email, phone = "+"+countryCode+phone )
         }
     }
 
@@ -171,7 +174,7 @@ class VerificationCode : Fragment() {
                 viewModel.resendOtpRequest({ response ->
                     BaseApplication.dismissDialog()
                     handleApiResponse(response,"forgotResend")
-                }, "forgot_password" ,null,countryCode+phone)
+                }, "forgot_password" ,null,"+"+countryCode+phone)
             }
         }
     }
@@ -297,13 +300,59 @@ class VerificationCode : Fragment() {
             if (signUpType == "EMAIL"){
                 viewModel.forGotOtpVerifyRequest({ response ->
                     BaseApplication.dismissDialog()
-                    handleApiResponse(response,"forgotPasswordOtpVerify")
+
+                    when (response) {
+                        is NetworkResult.Success -> {
+
+                            val data = response.data
+
+                            val jsonObject = JSONObject(data)
+
+                            val status = jsonObject.getBoolean("status")
+
+                            if (status) {
+                                val bundle = Bundle()
+                                bundle.putString("email", email)
+                                bundle.putString("phone", phone)
+                                bundle.putString("signUpType", signUpType)
+                                findNavController().navigate(R.id.resetPassword, bundle)
+                            }
+                        }
+                        is NetworkResult.Error -> showAlert(response.message, false)
+                    }
+
+
+
+
                 }, email,binding!!.otpVerificationBox.otp.toString(),null)
             }else{
                 viewModel.forGotOtpVerifyRequest({ response ->
                     BaseApplication.dismissDialog()
-                    handleApiResponse(response,"forgotPasswordOtpVerify")
-                }, null,binding!!.otpVerificationBox.otp.toString(),phone)
+
+                    when (response) {
+                        is NetworkResult.Success -> {
+                            val data = response.data
+
+                            val jsonObject = JSONObject(data)
+
+                            val status = jsonObject.getBoolean("status")
+
+                            if ( status) {
+                                val bundle = Bundle()
+                                bundle.putString("email", email)
+                                bundle.putString("phone", "+"+countryCode+phone)
+                                bundle.putString("signUpType", signUpType)
+                                findNavController().navigate(R.id.resetPassword, bundle)
+                            }
+                        }
+                        is NetworkResult.Error -> showAlert(response.message, false)
+                    }
+
+
+
+
+                    //handleApiResponse(response,"forgotPasswordOtpVerify")
+                }, null,binding!!.otpVerificationBox.otp.toString(),"+"+countryCode+phone)
             }
         }
     }

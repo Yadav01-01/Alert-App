@@ -151,7 +151,7 @@ class SignInFragment : Fragment() {
 
             if (!isValidate()) return@setOnClickListener
 
-            binding!!.tvSignInButton.isEnabled = false
+        //    binding!!.tvSignInButton.isEnabled = false
 
             when (signInType) {
                 SignInType.EMAIL -> {
