@@ -43,7 +43,7 @@ object AlertUtils {
     }
 
 
-    fun convertToStandardDateyyyyMMdd(input: String): String {
+    fun convertToStandardDateyyyyMMdd(input: String?): String {
         val inputFormat = SimpleDateFormat("dd MMMM, yyyy", Locale.ENGLISH)
         val outputFormat = SimpleDateFormat("yyyy-MM-dd", Locale.ENGLISH)
 
