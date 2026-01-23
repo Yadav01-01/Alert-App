@@ -127,16 +127,35 @@ import androidx.fragment.app.Fragment
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.AdapterView
+import android.widget.Toast
 import androidx.activity.OnBackPressedCallback
+import androidx.lifecycle.ViewModelProvider
+import androidx.lifecycle.lifecycleScope
 import androidx.navigation.fragment.findNavController
 import com.bumptech.glide.Glide
 import com.github.dhaval2404.imagepicker.ImagePicker
 import com.alert.app.R
+import com.alert.app.adapter.PlacesAutoCompleteAdapter
 import com.alert.app.base.BaseApplication
 import com.alert.app.databinding.FragmentProfileBinding
+import com.alert.app.di.NetworkResult
 import com.alert.app.errormessage.MessageClass
+import com.alert.app.listener.OnPlacesDetailsListener
+import com.alert.app.model.addressmodel.Place
+import com.alert.app.model.addressmodel.PlaceAPI
+import com.alert.app.model.addressmodel.PlaceDetails
+import com.alert.app.viewmodel.profileviewmodel.UserProfileViewModel
+import dagger.hilt.android.AndroidEntryPoint
+import kotlinx.coroutines.launch
+import okhttp3.MediaType.Companion.toMediaTypeOrNull
+import okhttp3.MultipartBody
+import okhttp3.RequestBody.Companion.asRequestBody
+import okhttp3.RequestBody.Companion.toRequestBody
+import java.io.File
 import java.util.regex.Pattern
 
+@AndroidEntryPoint
 class ProfileFragment : Fragment() {
 
     private var _binding: FragmentProfileBinding? = null
@@ -144,9 +163,12 @@ class ProfileFragment : Fragment() {
     private var isTermsAccepted = false
     private var phoneStatus = 0
     private var emailStatus = 0
-
+    private var countryCode :String =""
     private val emailPattern = Pattern.compile(MessageClass.emailRegulerExpression)
-
+    private var file : File? = null
+    private var latitude = ""
+    private var longitude = ""
+    private lateinit var viewModel: UserProfileViewModel
     override fun onCreateView(
         inflater: LayoutInflater,
         container: ViewGroup?,
@@ -161,11 +183,52 @@ class ProfileFragment : Fragment() {
 
         setupListeners()
         emailPhoneEvent()
-
+        viewModel = ViewModelProvider(this)[UserProfileViewModel::class.java]
+        countryCode = binding.ccp.selectedCountryCodeWithPlus
     }
 
-    private fun emailPhoneEvent() {
 
+    private fun upDateProfile() {
+        BaseApplication.openDialog()
+        var requestImage: MultipartBody.Part? = null
+
+        file?.let {
+            val requestBody = it.asRequestBody("multipart/form-data".toMediaTypeOrNull())
+            requestImage = MultipartBody.Part.createFormData("user_pic", it.name, requestBody)
+        }
+        val name = binding.edName.text.toString().trim()
+        val email = binding.edEmail.text.toString().trim()
+        val phone = binding.edPhone.text.toString().trim()
+        val address = binding.edAddress.text.toString()
+        // Convert to RequestBody
+        fun createPart(value: String) = value.toRequestBody("multipart/form-data".toMediaTypeOrNull())
+        val cusName = createPart(name)
+        val cusEmail = createPart(email)
+        val cusPhone = createPart(phone)
+        val cusAddress = createPart(address)
+        val cusLatitude = createPart(latitude)
+        val cusLongitude = createPart(longitude)
+        lifecycleScope.launch {
+            viewModel.profileUpdateRequest({ response ->
+                BaseApplication.dismissDialog()
+                handleApiResponse(response, "profileUpdate","")
+            }, cusName,cusEmail,cusPhone,cusAddress,cusLatitude,cusLongitude,requestImage)
+        }
+    }
+    private fun handleApiResponse(result: NetworkResult<String>, dataType: String,value:String) {
+
+        when (result) {
+            is NetworkResult.Success -> {
+                findNavController().navigate(R.id.confirmationFragment)
+            }
+            is NetworkResult.Error -> {
+                showAlert(result.message.toString())
+               }
+        }
+    }
+
+
+    private fun emailPhoneEvent() {
 
         binding.edEmail.addTextChangedListener(object : TextWatcher {
             override fun beforeTextChanged(charSequence: CharSequence, i: Int, i1: Int, i2: Int) {
@@ -195,7 +258,6 @@ class ProfileFragment : Fragment() {
                 }
             }
         })
-
         binding.edPhone.addTextChangedListener(object : TextWatcher {
             override fun beforeTextChanged(charSequence: CharSequence, i: Int, i1: Int, i2: Int) {
 
@@ -230,6 +292,24 @@ class ProfileFragment : Fragment() {
             }
         })
 
+    }
+
+    private fun getPlaceDetails(placeId: String, placesApi: PlaceAPI) {
+        placesApi.fetchPlaceDetails(placeId, object :
+            OnPlacesDetailsListener {
+            override fun onError(errorMessage: String) {
+                Toast.makeText(requireContext(), errorMessage, Toast.LENGTH_SHORT).show()
+            }
+
+            override fun onPlaceDetailsFetched(placeDetails: PlaceDetails) {
+                try {
+                    latitude = placeDetails.lat.toString()
+                    longitude = placeDetails.lng.toString()
+                } catch (e: java.lang.Exception) {
+                    BaseApplication.alertError(requireContext(), e.message, false)
+                }
+            }
+        })
     }
 
     private fun emailAndPhoneStatus() {
@@ -300,13 +380,26 @@ class ProfileFragment : Fragment() {
             }
         })
 
+
+        val placesApi = PlaceAPI.Builder()
+            .apiKey(getString(R.string.api_keysearch))
+            .build(requireContext())
+
+        binding.edAddress.setAdapter(PlacesAutoCompleteAdapter(requireContext(), placesApi))
+        binding.edAddress.onItemClickListener = AdapterView.OnItemClickListener { parent, _, position, _ ->
+            val place = parent.getItemAtPosition(position) as Place
+            binding.edAddress.setText(place.description)
+            getPlaceDetails(place.id, placesApi)
+        }
+
+
         binding.imgCheckUncheckRemember.setOnClickListener {
             toggleTermsAcceptance()
         }
 
         binding.btnSave.setOnClickListener {
             if (isValidInput()) {
-                findNavController().navigate(R.id.confirmationFragment)
+               upDateProfile()
             }
         }
 
@@ -371,9 +464,14 @@ class ProfileFragment : Fragment() {
             !emailMatcher.find() -> {
                 showAlert(MessageClass.emailErrorValidation)
             }
+
             binding.edPhone.text.toString().trim().isEmpty() -> {
                 showAlert(MessageClass.phoneError)
             }
+            countryCode.isNullOrEmpty() ->{
+                showAlert(MessageClass.countryCodeSelectionError)
+            }
+
             !isTermsAccepted -> {
                 showAlert(MessageClass.AgreetoacceptError)
             }
@@ -396,6 +494,12 @@ class ProfileFragment : Fragment() {
                 .placeholder(R.drawable.user_img_icon)
                 .error(R.drawable.user_img_icon)
                 .into(binding.userImg)
+
+            val path = BaseApplication.getPath(requireContext(), uri)
+            checkNotNull(path) { MessageClass.PATH_ERROR}
+            file = File(path)
+
+
         }
     }
 

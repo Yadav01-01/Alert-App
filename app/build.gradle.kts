@@ -192,7 +192,7 @@ dependencies {
 
     implementation ("com.hbb20:ccp:2.7.0")
 
-    implementation ("com.prolificinteractive:material-calendarview:1.6.1")
+
 
 
 

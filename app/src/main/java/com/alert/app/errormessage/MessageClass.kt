@@ -53,6 +53,6 @@ object MessageClass {
     const val phoneVaildStatus="invalid phone"
     const val apiError:String="Something went wrong"
     const val phoneValidationError = "Please enter a valid 10-digit phone number"
-
+    const val countryCodeSelectionError = "Please Select Country Code"
 
 }

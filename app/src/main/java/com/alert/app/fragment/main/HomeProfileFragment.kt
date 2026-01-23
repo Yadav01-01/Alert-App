@@ -109,7 +109,9 @@ class HomeProfileFragment : Fragment() {
         loadApi()
 
         setupBackButtonHandler()
+
         setupClickListeners()
+
         emailPhoneEvent()
 
     }
@@ -200,11 +202,13 @@ class HomeProfileFragment : Fragment() {
 
             data.email?.let {
                 binding.edEmail.setText(it)
+                binding.edPhone.isEnabled = false
                 sessionManagement.setUserEmail(it)
             }
 
             data.phone_number?.let {
                 binding.edPhone.setText(it)
+                binding.edPhone.isEnabled = false
                 sessionManagement.setUserPhoneNumber(it)
             }
 
@@ -213,7 +217,7 @@ class HomeProfileFragment : Fragment() {
             isPhoneVerifiedFromApi = data.phone_verified_status == true
 
 
-            /* -------- UPDATE UI BASED ON API -------- */
+            /* --- UPDATE UI BASED ON API --- */
             updateVerificationUI()
 
             /* -------- ADDRESS -------- */
@@ -267,13 +271,16 @@ class HomeProfileFragment : Fragment() {
             }
         }
 
-        /* ---------------- PHONE ---------------- */
+        /* ------ PHONE ------ */
+
         when {
             phoneText.isEmpty() -> setPhoneVisibility(false)
 
             isPhoneVerifiedFromApi -> {
+
                 setPhoneStatus(true, MessageClass.verifyStatus,
                     R.drawable.ic_green_tick, "#219653")
+
             }
 
             isPhoneValid -> {
@@ -282,8 +289,10 @@ class HomeProfileFragment : Fragment() {
             }
 
             else -> {
+
                 setPhoneStatus(true, MessageClass.phoneVaildStatus,
                     R.drawable.ic_cancel_red_icon, "#CE2127")
+
             }
         }
     }
@@ -303,20 +312,23 @@ class HomeProfileFragment : Fragment() {
             updateVerificationUI()
         }
 
+
+
         binding.edPhone.doAfterTextChanged {
-            updateVerificationUI()
+             setPhoneVisibility(true)
+        //   updateVerificationUI()
         }
     }
 
 
     private fun emailAndPhoneStatus() {
+
         val emailText = binding.edEmail.text.toString().trim()
         val phoneText = binding.edPhone.text.toString().trim()
         val emailMatcher = emailPattern.matcher(emailText)
         val isEmailValid = emailMatcher.find()
         val isPhoneValid = phoneText.replace(Regex("[^0-9]"), "").length == 10
 
-        // Email Status
         if (isEmailValid) {
             setEmailStatus(true, MessageClass.verifyStatus, R.drawable.ic_green_tick, "#219653")
         } else {
@@ -327,7 +339,7 @@ class HomeProfileFragment : Fragment() {
             }
         }
 
-        // Phone Status
+
         if (isPhoneValid ) {
             setPhoneStatus(true, MessageClass.verifyStatus, R.drawable.ic_green_tick, "#219653")
         } else {
@@ -340,17 +352,22 @@ class HomeProfileFragment : Fragment() {
     }
 
     private fun setEmailStatus(visible: Boolean, statusText: String, iconRes: Int, color: String) {
+
         binding.rlemailverified.visibility = if (visible) View.VISIBLE else View.GONE
+
         binding.emailStatus.visibility = if (visible) View.VISIBLE else View.GONE
+
         if (visible) {
             binding.tvemailstatus.text = Html.fromHtml(statusText, Html.FROM_HTML_MODE_LEGACY)
             binding.emailStatus.setImageResource(iconRes)
             binding.tvemailstatus.setTextColor(Color.parseColor(color))
         }
+
     }
 
     private fun setPhoneStatus(visible: Boolean, statusText: String, iconRes: Int, color: String) {
-        binding.rlphoneverified.visibility = if (visible) View.VISIBLE else View.GONE
+        binding.rlemailverified.visibility = if (visible) View.VISIBLE else View.GONE
+
         binding.phoneStatus.visibility = if (visible) View.VISIBLE else View.GONE
         if (visible) {
             binding.tvphonestatus.text = Html.fromHtml(statusText, Html.FROM_HTML_MODE_LEGACY)
@@ -425,7 +442,8 @@ class HomeProfileFragment : Fragment() {
         binding.tvphonestatus.setOnClickListener {
             if (binding.tvphonestatus.text.toString().trim().equals(Html.fromHtml(MessageClass.verifyNowStatus).toString().trim(), true)) {
                 if (isValidatePhone()) {
-                    verifySendOtp(binding.edPhone.text.toString())
+                    Log.d("TESTING_CURRENT",binding.ccp.defaultCountryCodeWithPlus)
+                    verifySendOtp(binding.ccp.defaultCountryCodeWithPlus+binding.edPhone.text.toString())
                 }
             }
         }
@@ -440,7 +458,6 @@ class HomeProfileFragment : Fragment() {
         }
 
         binding.termAndCondition.setOnClickListener {
-
             findNavController().navigate(R.id.termsAndConditionFragment2)
         }
 
@@ -550,7 +567,7 @@ class HomeProfileFragment : Fragment() {
         }
         val name = binding.edName.text.toString().trim()
         val email = binding.edEmail.text.toString().trim()
-        val phone = binding.edPhone.text.toString().trim()
+        val phone = "+"+binding.ccp.selectedCountryCodeWithPlus+binding.edPhone.text.toString().trim()
         val address = binding.edAddress.text.toString()
         // Convert to RequestBody
         fun createPart(value: String) = value.toRequestBody("multipart/form-data".toMediaTypeOrNull())
@@ -606,6 +623,12 @@ class HomeProfileFragment : Fragment() {
 
         val isEmailValid = emailPattern.matcher(email).matches()
 
+        if(binding.ccp.selectedCountryCode.isNullOrEmpty()){
+            showAlert("Please Select country code",false)
+            return false
+        }
+
+
         return when {
             name.isEmpty() -> {
                 showAlert(MessageClass.nameError, false)
@@ -641,6 +664,8 @@ class HomeProfileFragment : Fragment() {
                 showAlert(MessageClass.addressError, false)
                 false
             }
+
+
 
             file == null -> {
                 showAlert(MessageClass.profilePic, false)

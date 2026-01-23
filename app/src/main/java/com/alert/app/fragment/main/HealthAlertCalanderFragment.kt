@@ -48,7 +48,6 @@ class HealthAlertCalanderFragment : Fragment() {
     private var startDate: String? = null
     private var endDate: String? = null
 
-
     // Stored values
     private var selectedDate: String? = null
     private var startTime: String? = null
@@ -87,19 +86,21 @@ class HealthAlertCalanderFragment : Fragment() {
 
     @SuppressLint("MissingInflatedId")
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
-        super.onViewCreated(view, savedInstanceState)
 
+        super.onViewCreated(view, savedInstanceState)
         setupToolbar()
         setupBackPress()
         setupCalendar()
         setupTimePickers()
         setupNotes()
         setupClicks()
+
     }
 
     private fun setupToolbar() {
         (requireActivity() as MainActivity).setImageShowTv()?.visibility = View.GONE
         (requireActivity() as MainActivity).setImgChatBoot().visibility = View.GONE
+
     }
 
     private fun setupBackPress() {
