@@ -57,23 +57,9 @@ class WatchOverMeChooseStartingPointFragment : Fragment(), OnMapReadyCallback {
     private var lastCorrectPoint: LatLng? = null
 
     // Testing points - added for easier testing
-    private val testCorrectPathPoints = listOf(
-        LatLng(28.5687, 77.3507),  // Start
-        LatLng(28.5690, 77.3450),
-        LatLng(28.5695, 77.3400),
-        LatLng(28.5700, 77.3350),
-        LatLng(28.5705, 77.3300),
-        LatLng(28.5708, 77.3211)   // Destination
-    )
+    private val testCorrectPathPoints = mutableListOf<Double>()
 
-    private val testWrongPathPoints = listOf(
-        LatLng(28.5687, 77.3507),  // Start
-        LatLng(28.5690, 77.3450),  // Still on route
-        LatLng(28.5695, 77.3400),  // Still on route
-      //  LatLng(28.5800, 77.3600),  // Deviation point - wrong direction
-        //LatLng(28.5900, 77.3700),  // More deviation
-        //LatLng(28.6000, 77.3800)   // Far from route
-    )
+    private val testWrongPathPoints = mutableListOf<Double>()
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View {
         binding = FragmentWatchovermechoosestartingpointBinding.inflate(layoutInflater, container, false)
@@ -100,19 +86,16 @@ class WatchOverMeChooseStartingPointFragment : Fragment(), OnMapReadyCallback {
         binding.edtDestinationAddress.setAdapter(destinationAdapter)
 
         // Set test locations
-        binding.edtCurrentAddress.setText("Noida Special Economic Zone")
-        pickupSpotLatLng = LatLng(28.5687, 77.3507)
+
+
         currentLatLng = pickupSpotLatLng
 
-        binding.edtDestinationAddress.setText("Noida City Center")
-        destinationLatLng = LatLng(28.5708, 77.3211)
+
 
         // Draw initial route
         drawRouteToDestination()
 
-        // Updated test buttons with path simulation
-        binding.btnCorrectPath.setOnClickListener { simulatePath(testCorrectPathPoints) }
-        binding.btnWrongPath.setOnClickListener { simulatePath(testWrongPathPoints) }
+
     }
 
     // New method to simulate entire path

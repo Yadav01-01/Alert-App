@@ -208,7 +208,7 @@
                     android:layout_height="wrap_content"
                     android:layout_alignParentEnd="true"
                     android:fontFamily="@font/poppins_medium"
-                    android:text="Verified"
+                    android:text="Verify"
                     android:textColor="#000000" />
 
             </RelativeLayout>

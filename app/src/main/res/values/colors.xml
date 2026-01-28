@@ -9,4 +9,6 @@
     <color name="teal_200">#FF03DAC5</color>
     <color name="teal_700">#FF018786</color>
     <color name="teal_800">#F1F6FA</color>
+    <color name="green">#008000</color>
+    <color name="cb_errorRed">#e40000</color>
 </resources>

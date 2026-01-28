@@ -9,8 +9,9 @@ plugins {
 }
 
 android {
+
     namespace = "com.alert.app"
-    compileSdk = 34
+    compileSdk = 35
 
     defaultConfig {
         applicationId = "com.alert.app"
@@ -22,27 +23,26 @@ android {
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
-    buildTypes {
+    buildTypes   {
+
         debug {
             val BASE_URL = project.property("BASE_URL")
             buildConfigField("String", "BASE_URL", "${BASE_URL}")
-
             val OPENAI_API_KEY = project.property("OPENAI_API_KEY")
             buildConfigField("String", "OPENAI_API_KEY", "${OPENAI_API_KEY}")
-
             isMinifyEnabled = false
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
         }
+
         release {
             isMinifyEnabled = false
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
-
             val BASE_URL = project.property("BASE_URL")
             buildConfigField("String", "BASE_URL", "${BASE_URL}")
-
             val OPENAI_API_KEY = project.property("OPENAI_API_KEY")
             buildConfigField("String", "OPENAI_API_KEY", "${OPENAI_API_KEY}")
         }
+
     }
 
     buildFeatures {
@@ -71,6 +71,8 @@ dependencies {
     implementation("androidx.activity:activity:1.9.3")
     implementation("com.google.firebase:protolite-well-known-types:18.0.0")
     implementation("androidx.camera:camera-core:1.4.1")
+    implementation("androidx.navigation:navigation-fragment-ktx:2.9.6")
+    implementation("androidx.navigation:navigation-ui-ktx:2.9.6")
     testImplementation("junit:junit:4.13.2")
     androidTestImplementation("androidx.test.ext:junit:1.2.1")
     androidTestImplementation("androidx.test.espresso:espresso-core:3.6.1")

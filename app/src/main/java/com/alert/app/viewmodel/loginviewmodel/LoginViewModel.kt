@@ -1,5 +1,6 @@
 package com.alert.app.viewmodel.loginviewmodel
 
+import android.health.connect.datatypes.Device
 import androidx.lifecycle.ViewModel
 import com.alert.app.di.NetworkResult
 import com.alert.app.repository.MainRepository
@@ -21,6 +22,7 @@ class LoginViewModel @Inject constructor(private val repository: MainRepository)
     suspend fun socialLoginRequest(successCallback: (response: NetworkResult<String>) -> Unit, emailOrPhone: String, deviceType:String, token:String){
         repository.socialLoginRequestApi({ successCallback(it) }, emailOrPhone,deviceType, token)
     }
+
 
 
 }
