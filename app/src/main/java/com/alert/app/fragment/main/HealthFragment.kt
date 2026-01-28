@@ -28,6 +28,7 @@ import com.google.gson.Gson
 import com.google.gson.JsonObject
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
+import androidx.core.graphics.toColorInt
 
 @AndroidEntryPoint
 class HealthFragment : Fragment() {
@@ -36,6 +37,10 @@ class HealthFragment : Fragment() {
     private lateinit var viewModel: HealthAlertViewModel
     private lateinit var adapterSelfHealthList: SelfHealthListAdapter
     private lateinit var adapterOtherHealthList: OtherHealthListAdapter
+
+    private val selfAlertList: MutableList<SelfAlert> = mutableListOf()
+    private val otherAlertList: MutableList<SelfAlert> = mutableListOf()
+
     private val dataSelfAlert:MutableList<SelfAlert> = mutableListOf()
 
     override fun onCreateView(
@@ -55,6 +60,7 @@ class HealthFragment : Fragment() {
         initView()
     }
 
+    @SuppressLint("NotifyDataSetChanged")
     private fun initView() {
 
         (requireActivity() as MainActivity).setImageShowTv()?.visibility = View.GONE
@@ -63,7 +69,13 @@ class HealthFragment : Fragment() {
         adapterSelfHealthList = SelfHealthListAdapter(requireContext(), dataSelfAlert)
         adapterOtherHealthList = OtherHealthListAdapter(requireContext(), dataSelfAlert)
 
-        binding.rcyData.adapter = adapterSelfHealthList  // default
+       /* adapterSelfHealthList = SelfHealthListAdapter(requireContext(), selfAlertList)
+
+ adapterOtherHealthList = OtherHealthListAdapter(requireContext(), otherAlertList)*/
+     //   adapterOtherHealthList = OtherHealthListAdapter(requireContext(), mutableListOf())
+
+
+//        binding.rcyData.adapter = adapterSelfHealthList  // default
 
         getSelfAlerts("self")
 
@@ -82,8 +94,8 @@ class HealthFragment : Fragment() {
         binding.laySelf.setOnClickListener {
             binding.view1.visibility = View.VISIBLE
             binding.view2.visibility = View.GONE
-            binding.self.setTextColor(Color.parseColor("#0B0202"))
-            binding.other.setTextColor(Color.parseColor("#777777"))
+            binding.self.setTextColor("#0B0202".toColorInt())
+            binding.other.setTextColor("#777777".toColorInt())
             binding.rcyData.adapter = adapterSelfHealthList
             getSelfAlerts("self")
         }
@@ -91,8 +103,12 @@ class HealthFragment : Fragment() {
         binding.layOther.setOnClickListener {
             binding.view1.visibility = View.GONE
             binding.view2.visibility = View.VISIBLE
-            binding.self.setTextColor(Color.parseColor("#777777"))
-            binding.other.setTextColor(Color.parseColor("#0B0202"))
+            binding.self.setTextColor("#777777".toColorInt())
+            binding.other.setTextColor("#0B0202".toColorInt())
+
+            otherAlertList.clear()
+            adapterOtherHealthList.notifyDataSetChanged()
+
             binding.rcyData.adapter = adapterOtherHealthList
             getSelfAlerts("health")
         }
@@ -152,7 +168,7 @@ class HealthFragment : Fragment() {
         }
     }
 
-    private fun showDataInUI(data: MutableList<SelfAlert>,type:String) {
+ /*   private fun showDataInUI(data: MutableList<SelfAlert>,type:String) {
         dataSelfAlert.clear()
         try {
             data.let {
@@ -175,7 +191,31 @@ class HealthFragment : Fragment() {
 
         }
 
+    }*/
+
+    private fun showDataInUI(data: MutableList<SelfAlert>, type: String) {
+        try {
+            if (type.equals("self", true)) {
+                selfAlertList.clear()
+                selfAlertList.addAll(data)
+                adapterSelfHealthList.update(selfAlertList)
+                binding.rcyData.adapter = adapterSelfHealthList
+            } else {
+                otherAlertList.clear()
+                otherAlertList.addAll(data)
+                adapterOtherHealthList.refresh()
+             //   adapterOtherHealthList.update(data)
+                binding.rcyData.adapter = adapterOtherHealthList
+            }
+
+            binding.rcyData.visibility =
+                if (data.isNotEmpty()) View.VISIBLE else View.GONE
+
+        } catch (e: Exception) {
+            showAlert(e.message, false)
+        }
     }
+
 
     private fun handleError(code: Int?, message: String?) {
         if (code== MessageClass.deactivatedUser || code== MessageClass.deletedUser){

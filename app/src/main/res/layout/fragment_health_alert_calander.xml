@@ -50,6 +50,7 @@
             android:layout_height="wrap_content"
             android:layout_marginHorizontal="@dimen/_20sdp"
             android:orientation="vertical">
+
             <LinearLayout
                 android:id="@+id/rlDt"
                 android:layout_width="match_parent"
@@ -95,46 +96,49 @@
                     app:mcv_showOtherDates="decorated_disabled" />
             </androidx.cardview.widget.CardView>
 
-
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="@dimen/_40sdp"
                 android:layout_marginTop="@dimen/_10sdp"
                 android:background="@drawable/bg_border">
+
                 <TextView
                     android:id="@+id/tvStartTime"
                     android:layout_width="match_parent"
                     android:layout_height="match_parent"
-                    android:text="Select Time"
-                    android:textColor="@color/light_black"
-                    android:gravity="center|start"
                     android:background="@null"
-                    android:textSize="@dimen/_10sdp"
+                    android:fontFamily="@font/urbanist_medium"
+                    android:gravity="center|start"
+                    android:hint="@string/select_time"
                     android:paddingStart="@dimen/_20sdp"
                     android:paddingEnd="@dimen/_12sdp"
-                    android:fontFamily="@font/urbanist_medium"
+                    android:textColor="@color/light_black"
+                    android:textColorHint="@color/light_black"
+                    android:textSize="@dimen/_10sdp"
                     app:drawableEndCompat="@drawable/clock_send_alert_icon" />
             </LinearLayout>
 
-
             <LinearLayout
+                android:id="@+id/time_tv"
                 android:layout_width="match_parent"
                 android:layout_height="@dimen/_40sdp"
                 android:layout_marginTop="@dimen/_10sdp"
-                android:visibility="gone"
-                android:background="@drawable/bg_border">
+                android:background="@drawable/bg_border"
+                android:visibility="gone">
+
                 <TextView
                     android:id="@+id/tvEndTime"
                     android:layout_width="match_parent"
                     android:layout_height="match_parent"
-                    android:text="Select End Time"
-                    android:textColor="@color/light_black"
-                    android:gravity="center|start"
                     android:background="@null"
-                    android:textSize="@dimen/_10sdp"
+                    android:fontFamily="@font/urbanist_medium"
+                    android:gravity="center|start"
+                    android:hint="@string/end_time"
                     android:paddingStart="@dimen/_20sdp"
                     android:paddingEnd="@dimen/_12sdp"
-                    android:fontFamily="@font/urbanist_medium"
+                    android:textColor="@color/light_black"
+                    android:textColorHint="@color/light_black"
+                    android:textSize="@dimen/_10sdp"
                     app:drawableEndCompat="@drawable/clock_send_alert_icon" />
             </LinearLayout>
 
@@ -142,14 +146,14 @@
 
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:padding="@dimen/_5sdp"
-                android:gravity="center|start"
                 android:layout_marginTop="@dimen/_20sdp"
                 android:fontFamily="@font/urbanist_semibold"
+                android:gravity="center|start"
+                android:padding="@dimen/_5sdp"
+                android:text="Notes"
                 android:textColor="#000000"
-                android:textStyle="bold"
                 android:textSize="@dimen/_18sdp"
-                android:text="Notes" />
+                android:textStyle="bold" />
 
             <LinearLayout
                 android:layout_width="match_parent"
@@ -161,16 +165,15 @@
                     android:id="@+id/ed_text"
                     android:layout_width="match_parent"
                     android:layout_height="match_parent"
-                    android:hint="Enter Your Message here...."
-                    android:textColor="#58585A"
-                    android:gravity="center|start|top"
                     android:background="@null"
-                    android:textSize="@dimen/_14sdp"
+                    android:fontFamily="@font/urbanist_medium"
+                    android:gravity="center|start|top"
+                    android:hint="Enter Your Message here...."
                     android:padding="@dimen/_8sdp"
+                    android:textColor="#58585A"
                     android:textColorHint="#58585A"
-                    android:fontFamily="@font/urbanist_medium"/>
+                    android:textSize="@dimen/_14sdp" />
             </LinearLayout>
-
 
         </LinearLayout>
     </ScrollView>

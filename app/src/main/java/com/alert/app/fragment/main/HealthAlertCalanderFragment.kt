@@ -49,17 +49,14 @@ class HealthAlertCalanderFragment : Fragment() {
     private var endDate: String? = null
 
     // Stored values
-    private var selectedDate: String? = null
     private var startTime: String? = null
     private var endTime: String? = null
     private var notes: String? = null
 
     private var startDateApi: CalendarDay? = null
-
     private var endDateApi: CalendarDay? = null
 
-    private val apiDateFormat =
-        SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
+    private val apiDateFormat = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -81,6 +78,7 @@ class HealthAlertCalanderFragment : Fragment() {
         savedInstanceState: Bundle?
     ): View {
         binding = FragmentHealthAlertCalanderBinding.inflate(inflater, container, false)
+        initDefaultRange()
         return binding.root
     }
 
@@ -96,6 +94,7 @@ class HealthAlertCalanderFragment : Fragment() {
         setupClicks()
 
     }
+
 
     private fun setupToolbar() {
         (requireActivity() as MainActivity).setImageShowTv()?.visibility = View.GONE
@@ -180,6 +179,29 @@ class HealthAlertCalanderFragment : Fragment() {
         }
     }
 
+    private fun initDefaultRange() {
+        val calendar = Calendar.getInstance()
+
+        // Start = today
+        startDateApi = CalendarDay.from(
+            calendar.get(Calendar.YEAR),
+            calendar.get(Calendar.MONTH) + 1,
+            calendar.get(Calendar.DAY_OF_MONTH)
+        )
+
+        // End = 7 days from today
+        calendar.add(Calendar.DAY_OF_YEAR, 7)
+        endDateApi = CalendarDay.from(
+            calendar.get(Calendar.YEAR),
+            calendar.get(Calendar.MONTH) + 1, 
+            calendar.get(Calendar.DAY_OF_MONTH)
+        )
+
+        // Format dates for display
+        startDate = formatCalendarDay(startDateApi)
+        endDate = formatCalendarDay(endDateApi)
+    }
+
     // Restore previously selected range (if any)
     private fun restoreSelectedRange() {
         binding.calenderView.post {
@@ -202,15 +224,6 @@ class HealthAlertCalanderFragment : Fragment() {
         return formatter.format(calendar.time)
     }
 
-
-
-
-    private fun formatDate(day: CalendarDay): String {
-        val calendar = Calendar.getInstance().apply {
-            set(day.year, day.month - 1, day.day)
-        }
-        return apiDateFormat.format(calendar.time)
-    }
 
     private fun setupTimePickers() {
         binding.tvStartTime.setOnClickListener {
@@ -236,25 +249,17 @@ class HealthAlertCalanderFragment : Fragment() {
     }
 
     private fun setupClicks() {
-        Log.d(
-            "AlertData",
-            """
-                CONTACT_ID: $contactId
-                TYPE: $type
-                ALERT_FOR: $alertFor
-                ALERT_TYPE: $selectedAlertType
-                Duration : $selectedTimeMinutes
-                DATE: $selectedDate
-                START_TIME: $startTime
-                END_TIME: $endTime
-                NOTES: $notes
-                """.trimIndent()
-        )
 
-
+        binding.rlDt.setOnClickListener {
+            if (binding.cal.visibility == View.VISIBLE){
+                binding.cal.visibility = View.GONE
+            }else{
+                binding.cal.visibility = View.VISIBLE
+                restoreSelectedRange()
+            }
+        }
 
         binding.btnSetAlert.setOnClickListener {
-
             // if (selectedDate.isNullOrEmpty() || startTime.isNullOrEmpty()) {
             if (startDate.isNullOrEmpty() || endDate.isNullOrEmpty() || startTime.isNullOrEmpty()) {
                 AlertUtils.showAlert(
@@ -264,9 +269,7 @@ class HealthAlertCalanderFragment : Fragment() {
                 )
                 return@setOnClickListener
             }
-
             val timeFormatted = convertTimeToHourMinute(startTime)
-
 
             lifecycleScope.launch {
                 BaseApplication.openDialog()
@@ -274,8 +277,8 @@ class HealthAlertCalanderFragment : Fragment() {
                     alertFor = alertFor ?: "",
                     alertDuration = selectedTimeMinutes.toString(),
                     healthAlert = selectedAlertType ?: "",
-                    startDate = startDate ?: "",
-                    endDate = endDate ?:"",
+                    startDate =  formatCalendarDay(startDateApi),
+                    endDate = formatCalendarDay(endDateApi),
                     time = timeFormatted,          // HH:mm
                     note = notes ?: "",
                     contact = listOfNotNull(contactId)
@@ -305,6 +308,7 @@ class HealthAlertCalanderFragment : Fragment() {
         }
     }
 
+    @SuppressLint("DefaultLocale")
     private fun convertTimeToHourMinute(time: String?): String {
         if (time.isNullOrEmpty()) return "00:00"
 
@@ -320,9 +324,6 @@ class HealthAlertCalanderFragment : Fragment() {
             else -> "00:00"
         }
     }
-
-
-
 
     private fun showTimePicker(onTimeSelected: (String) -> Unit) {
         val calendar = Calendar.getInstance()

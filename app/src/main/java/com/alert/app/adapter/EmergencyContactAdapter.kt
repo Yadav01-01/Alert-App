@@ -1,30 +1,28 @@
 package com.alert.app.adapter
 
 import android.annotation.SuppressLint
-
 import android.content.Context
 import android.graphics.drawable.Drawable
-
-import android.view.*
-
+import android.view.LayoutInflater
+import android.view.View
+import android.view.ViewGroup
 import androidx.recyclerview.widget.RecyclerView
 import com.alert.app.BuildConfig
 import com.alert.app.R
-
+import com.alert.app.model.EmergencyContact
 import com.alert.app.databinding.ItememergencycontactBinding
-
 import com.alert.app.listener.OnClickContact
-import com.alert.app.model.emergencycontact.EmergencyContact
 import com.bumptech.glide.Glide
 import com.bumptech.glide.load.DataSource
 import com.bumptech.glide.load.engine.GlideException
 import com.bumptech.glide.request.RequestListener
 import com.bumptech.glide.request.target.Target
 
-class EmergencyContactAdapter(var context: Context,private var getEmergencyContactList: MutableList<EmergencyContact>,
-                              private var onClickContact: OnClickContact
-) :
-    RecyclerView.Adapter<EmergencyContactAdapter.ViewHolder>() {
+class EmergencyContactAdapter(
+    private val context: Context,
+    private val list: MutableList<EmergencyContact>,
+    private val onClickContact: OnClickContact
+) : RecyclerView.Adapter<EmergencyContactAdapter.ViewHolder>() {
 
 
     class ViewHolder(var binding: ItememergencycontactBinding) :
@@ -39,17 +37,17 @@ class EmergencyContactAdapter(var context: Context,private var getEmergencyConta
     @SuppressLint("SetTextI18n", "NotifyDataSetChanged")
     override fun onBindViewHolder(holder: ViewHolder, @SuppressLint("RecyclerView") position: Int) {
 
-        val data=getEmergencyContactList[position]
+        val data=list[position]
 
         data.let { data ->
             // Set full name if available
-            val fullName = listOfNotNull(data.first_name, data.last_name).joinToString(" ")
+            val fullName = listOfNotNull(data.firstName, data.lastName).joinToString(" ")
             if (fullName.isNotBlank()) {
                 holder.binding.tvName.text = fullName
             }
 
             // Set distance if available
-            data.distance_miles?.let {
+            data.distanceMiles?.let {
                 holder.binding.textMilesAway.text = it.toString()
             }
 
@@ -64,7 +62,7 @@ class EmergencyContactAdapter(var context: Context,private var getEmergencyConta
             }
 
             // Load profile picture using Glide
-            data.profile_pic?.let { profilePic ->
+            data.profilePic?.let { profilePic ->
                 Glide.with(context)
                     .load("${BuildConfig.BASE_URL}$profilePic")
                     .error(R.drawable.no_image)
@@ -98,28 +96,35 @@ class EmergencyContactAdapter(var context: Context,private var getEmergencyConta
 
 
         holder.binding.imgChat.setOnClickListener {
-            onClickContact.onClick("chat","1")
+            onClickContact.onClick("chat",data.contactId.toString())
         }
 
         holder.binding.imgCall.setOnClickListener {
-            onClickContact.onClick("call","1")
+            onClickContact.onClick("call",data.contactId.toString())
         }
 
         holder.itemView.setOnClickListener {
-            onClickContact.onClick("view","1")
+            onClickContact.onClick("view",data.contactId.toString())
         }
     }
 
 
 
     override fun getItemCount(): Int {
-        return getEmergencyContactList.size
+        return list.size
     }
 
-    fun update(emergencyContactList: MutableList<EmergencyContact>) {
+   /* fun update(emergencyContactList: MutableList<EmergencyContact>) {
         getEmergencyContactList=emergencyContactList
         notifyDataSetChanged()
 
-    }
+    }*/
+   @SuppressLint("NotifyDataSetChanged")
+   fun update(newList: List<EmergencyContact>) {
+       list.clear()
+       list.addAll(newList)
+       notifyDataSetChanged()
+   }
+
 
 }
