@@ -38,8 +38,10 @@ import androidx.core.graphics.drawable.toDrawable
 import androidx.core.os.bundleOf
 import androidx.core.view.GravityCompat
 import androidx.drawerlayout.widget.DrawerLayout
+import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.lifecycleScope
+import androidx.lifecycle.repeatOnLifecycle
 import androidx.navigation.findNavController
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
@@ -490,7 +492,7 @@ class MainActivity : AppCompatActivity() {
     }
 
 
-    private fun alertBoxChatBox() {
+    /*private fun alertBoxChatBox() {
         val dialog = Dialog(this)
         dialog.setContentView(R.layout.dialog_chat_boot)
         dialog.window?.setBackgroundDrawable(Color.TRANSPARENT.toDrawable())
@@ -505,7 +507,8 @@ class MainActivity : AppCompatActivity() {
         val recyclerView = dialog.findViewById<RecyclerView>(R.id.rv_messages)
 
         val chatMessages = mutableListOf<ChatMessage>()
-        val adapter = ChatAdapter("3")
+        val adapter = ChatAdapter(sessionManagement.getUserId().toString())
+
         recyclerView.layoutManager = LinearLayoutManager(this)
         recyclerView.adapter = adapter
 
@@ -516,28 +519,32 @@ class MainActivity : AppCompatActivity() {
         }
 
         // Observe chatbot response only once
-        if (BaseApplication.isOnline(this)){
-            BaseApplication.openDialog()
-            lifecycleScope.launch {
-                viewModel.chatBotResponse.collect { result ->
-                    BaseApplication.dismissDialog()
-                    when (result) {
-                        is NetworkResult.Success -> {
-                            BaseApplication.dismissDialog()
-                            val reply = result.data?.get("response")?.asString ?: "How can i help you?"
-                            chatMessages.add(ChatMessage(reply, isUser = false))
-                            adapter.notifyItemInserted(chatMessages.size - 1)
-                            recyclerView.scrollToPosition(chatMessages.size - 1)
-                        }
-                        is NetworkResult.Error -> {
-                            BaseApplication.dismissDialog()
-                            Toast.makeText(this@MainActivity, result.message, Toast.LENGTH_SHORT).show()
-                        }
+        lifecycleScope.launch {
+            viewModel.chatBotResponse.collect { result ->
+
+                when (result) {
+                    is NetworkResult.Success -> {
+                        val reply =
+                            result.data?.get("response")?.asString ?: "How can I help you?"
+                        chatMessages.add(ChatMessage(reply, isUser = false))
+                        adapter.notifyItemInserted(chatMessages.size - 1)
+                        recyclerView.scrollToPosition(chatMessages.size - 1)
+                    }
+
+                    is NetworkResult.Error -> {
+                        Toast.makeText(
+                            this@MainActivity,
+                            result.message ?: "Unknown error",
+                            Toast.LENGTH_SHORT
+                        ).show()
                     }
                 }
-            }
 
+                //  only once
+                BaseApplication.dismissDialog()
+            }
         }
+
 
         imgSend.setOnClickListener {
             val userMsg = edText.text.toString().trim()
@@ -554,7 +561,103 @@ class MainActivity : AppCompatActivity() {
                 Toast.makeText(this, "Please enter a message", Toast.LENGTH_SHORT).show()
             }
         }
+    }*/
+
+    private fun alertBoxChatBox() {
+
+        val dialog = Dialog(this)
+        dialog.setContentView(R.layout.dialog_chat_boot)
+        dialog.window?.setBackgroundDrawable(Color.TRANSPARENT.toDrawable())
+        dialog.window?.setLayout(
+            WindowManager.LayoutParams.MATCH_PARENT,
+            WindowManager.LayoutParams.WRAP_CONTENT
+        )
+        dialog.window?.setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE)
+
+        val imgClose = dialog.findViewById<ImageView>(R.id.img_close)
+        val imgSend = dialog.findViewById<ImageView>(R.id.img_send)
+        val edText = dialog.findViewById<EditText>(R.id.ed_text)
+        val recyclerView = dialog.findViewById<RecyclerView>(R.id.rv_messages)
+
+        val currentUserId = sessionManagement.getUserId().toString()
+
+        val chatMessages = mutableListOf<ChatMessage>()
+        val adapter = ChatAdapter(currentUserId)
+
+        recyclerView.layoutManager = LinearLayoutManager(this)
+        recyclerView.adapter = adapter
+
+        dialog.show()
+
+        imgClose.setOnClickListener { dialog.dismiss() }
+
+        //  SAFE FLOW COLLECTOR
+        lifecycleScope.launch {
+            repeatOnLifecycle(Lifecycle.State.STARTED) {
+                viewModel.chatBotResponse.collect { result ->
+
+                    when (result) {
+                        is NetworkResult.Success -> {
+                            val reply = result.data
+                                ?.getAsJsonObject("data")
+                                ?.get("reply")
+                                ?.asString
+                                ?: "How can I help you?"
+
+                            chatMessages.add(
+                                ChatMessage(
+                                    message = reply,
+                                    senderId = "BOT"
+                                )
+                            )
+
+                            adapter.submitList(chatMessages)
+                            recyclerView.scrollToPosition(chatMessages.size - 1)
+                        }
+
+                        is NetworkResult.Error -> {
+                            Toast.makeText(
+                                this@MainActivity,
+                                result.message ?: "Unknown error",
+                                Toast.LENGTH_SHORT
+                            ).show()
+                        }
+                    }
+
+                    BaseApplication.dismissDialog() // ✅ only once
+                }
+            }
+        }
+
+        imgSend.setOnClickListener {
+            val userMsg = edText.text.toString().trim()
+
+            if (userMsg.isEmpty()) {
+                Toast.makeText(this, "Please enter a message", Toast.LENGTH_SHORT).show()
+                return@setOnClickListener
+            }
+
+            //  Add user message
+            chatMessages.add(
+                ChatMessage(
+                    message = userMsg,
+                    senderId = currentUserId
+                )
+            )
+
+            adapter.submitList(chatMessages)
+            recyclerView.scrollToPosition(chatMessages.size - 1)
+            edText.text.clear()
+
+            if (BaseApplication.isOnline(this)) {
+                BaseApplication.openDialog()
+                viewModel.fetchChatBotResponse(userMsg)
+            } else {
+                Toast.makeText(this, "No internet connection", Toast.LENGTH_SHORT).show()
+            }
+        }
     }
+
 
     @SuppressLint("WrongViewCast")
     fun setImageShowTv(): ImageView? {

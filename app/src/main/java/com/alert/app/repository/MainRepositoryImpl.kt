@@ -1767,11 +1767,11 @@ class MainRepositoryImpl @Inject constructor(private val apiInterface: ApiInterf
 
             if (response.isSuccessful) {
                 val body = response.body()
-                if (body != null && body.get("status")?.asString == "success") {
+                if (body != null && body["status"].asBoolean) {
                     emit(NetworkResult.Success(body))
                 } else {
-                    val message = body?.get("response")?.asString ?: "Unknown error"
-                    emit(NetworkResult.Error(message))
+                    val errorMsg = body?.get("message")?.asString ?: AppConstant.unKnownError
+                    emit(NetworkResult.Error(errorMsg))
                 }
             } else {
                 val errorMsg = response.errorBody()?.string() ?: "Something went wrong"

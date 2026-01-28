@@ -7,7 +7,6 @@ import android.graphics.Color
 import android.graphics.drawable.ColorDrawable
 import android.os.Bundle
 import android.util.Log
-import androidx.fragment.app.Fragment
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -18,10 +17,11 @@ import android.widget.ImageView
 import android.widget.TextView
 import android.widget.Toast
 import androidx.activity.OnBackPressedCallback
+import androidx.fragment.app.Fragment
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.lifecycleScope
 import androidx.navigation.fragment.findNavController
-import com.google.android.material.bottomsheet.BottomSheetDialog
+import androidx.recyclerview.widget.LinearLayoutManager
 import com.alert.app.R
 import com.alert.app.activity.CallActivity
 import com.alert.app.activity.ChatActivity
@@ -34,13 +34,13 @@ import com.alert.app.di.NetworkResult
 import com.alert.app.errormessage.AlertUtils
 import com.alert.app.errormessage.MessageClass
 import com.alert.app.listener.OnClickContact
+import com.alert.app.model.EmergencyContact
+import com.alert.app.model.EmergencyContactResponse
 import com.alert.app.model.contact.AlertsResponse
 import com.alert.app.model.contact.RelationResponse
-import com.alert.app.model.emergencycontact.EmergencyContact
-import com.alert.app.model.emergencycontact.GetEmergencyContactModel
-import com.alert.app.model.emergencycontact.GetEmergencyContactModelData
 import com.alert.app.model.helpingneighbormodel.CreateHelpingNeighbor
 import com.alert.app.viewmodel.addemergencycontactviewmodel.AddEmergencyContactViewModel
+import com.google.android.material.bottomsheet.BottomSheetDialog
 import com.google.android.material.textfield.MaterialAutoCompleteTextView
 import com.google.gson.Gson
 import com.google.gson.JsonObject
@@ -54,6 +54,7 @@ class EmergencyContactsFragment : Fragment(), OnClickContact {
     private lateinit var openBottomSheetDialog: BottomSheetDialog
     private lateinit var viewModel: AddEmergencyContactViewModel
     private val getEmergencyContactList: MutableList<EmergencyContact> = mutableListOf()
+
     private lateinit var adapter: EmergencyContactAdapter
     private var selectedAlertId = -1
     private var selectedRelationId = -1
@@ -76,15 +77,17 @@ class EmergencyContactsFragment : Fragment(), OnClickContact {
 
         viewModel = ViewModelProvider(this)[AddEmergencyContactViewModel::class.java]
 
-        adapter=  EmergencyContactAdapter(requireContext(), getEmergencyContactList,this)
-        binding.rcyData.adapter= adapter
+        adapter = EmergencyContactAdapter(requireContext(), getEmergencyContactList, this)
+        binding.rcyData.layoutManager = LinearLayoutManager(requireContext())
+        binding.rcyData.adapter = adapter
 
-     /*   binding.btnAddNowShow.visibility=View.GONE
-        Handler().postDelayed({
-            binding.lay1.visibility=View.GONE
-            binding.lay2.visibility=View.VISIBLE
-            binding.btnAddNowShow.visibility=View.VISIBLE
-        }, 3000)*/
+
+        /*   binding.btnAddNowShow.visibility=View.GONE
+           Handler().postDelayed({
+               binding.lay1.visibility=View.GONE
+               binding.lay2.visibility=View.VISIBLE
+               binding.btnAddNowShow.visibility=View.VISIBLE
+           }, 3000)*/
 
         binding.btnAddNow.setOnClickListener {
             openAlertBox("add")
@@ -141,12 +144,10 @@ class EmergencyContactsFragment : Fragment(), OnClickContact {
     @SuppressLint("SetTextI18n")
     private fun handleSuccessApiResponse(data: String) {
         try {
-            val apiModel = Gson().fromJson(data, GetEmergencyContactModel::class.java)
+            val apiModel = Gson().fromJson(data, EmergencyContactResponse::class.java)
             Log.d("@@@ addMea List ", "message :- $data")
             if (apiModel.code == 200 && apiModel.status == true) {
-                if (apiModel.data != null) {
-                    showDataInUI(apiModel.data)
-                }
+                showDataInUI(apiModel.data)
             } else {
                 handleError(apiModel.code,apiModel.message)
             }
@@ -155,31 +156,32 @@ class EmergencyContactsFragment : Fragment(), OnClickContact {
         }
     }
 
-    private fun showDataInUI(data: GetEmergencyContactModelData) {
+    private fun showDataInUI(data: List<EmergencyContact>?) {
         try {
             getEmergencyContactList.clear()
 
-            data.contactList?.let {
+            data?.let {
                 getEmergencyContactList.addAll(it)
             }
 
-            if (getEmergencyContactList.size > 0) {
-                binding.lay1.visibility=View.GONE
-                binding.lay2.visibility=View.VISIBLE
-                binding.btnAddNowShow.visibility=View.VISIBLE
+            if (getEmergencyContactList.isNotEmpty()) {
+                binding.lay1.visibility = View.GONE
+                binding.lay2.visibility = View.VISIBLE
+                binding.btnAddNowShow.visibility = View.VISIBLE
                 binding.rcyData.visibility = View.VISIBLE
                 adapter.update(getEmergencyContactList)
             } else {
                 binding.rcyData.visibility = View.GONE
-                binding.lay1.visibility=View.VISIBLE
-                binding.lay2.visibility=View.GONE
-                binding.btnAddNowShow.visibility=View.GONE
+                binding.lay1.visibility = View.VISIBLE
+                binding.lay2.visibility = View.GONE
+                binding.btnAddNowShow.visibility = View.GONE
             }
 
-        }catch (e:Exception){
+        } catch (e: Exception) {
             showAlert(e.message, false)
         }
     }
+
 
     private fun handleError(code: Int?, message: String?) {
         if (code== MessageClass.deactivatedUser || code== MessageClass.deletedUser){
@@ -206,15 +208,25 @@ class EmergencyContactsFragment : Fragment(), OnClickContact {
 
     private fun handleApiResponse1(it: NetworkResult<JsonObject>) {
         when (it) {
-            is NetworkResult.Success -> {
-                getEmergencyContacts()
-
-            }
+            is NetworkResult.Success -> handleSaveSuccessApi(it.data.toString())
             is NetworkResult.Error -> showAlert(it.message, false)
             else -> showAlert(it.message, false)
         }
     }
 
+    private fun handleSaveSuccessApi(data: String) {
+        try {
+            val apiModel = Gson().fromJson(data, EmergencyContactResponse::class.java)
+            Log.d("@@@ addMea List ", "message :- $data")
+            if (apiModel.code == 200 && apiModel.status == true) {
+                Toast.makeText(requireContext(), apiModel.message, Toast.LENGTH_LONG).show()
+            } else {
+                handleError(apiModel.code,apiModel.message)
+            }
+        } catch (e: Exception) {
+            showAlert(e.message, false)
+        }
+    }
 
     private fun alertBottom() {
         openBottomSheetDialog = BottomSheetDialog(requireContext(), R.style.BottomSheetDialog)

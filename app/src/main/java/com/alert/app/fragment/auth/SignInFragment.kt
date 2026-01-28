@@ -642,8 +642,7 @@ class SignInFragment : Fragment() {
             if (task.isSuccessful) {
                 Log.w(ContentValues.TAG, "Fetching FCM registration token failed", task.exception)
                 token = task.result
-                // Log and toast
-                Log.d(ContentValues.TAG, "Fcm token$token")
+                Log.d(ContentValues.TAG, "Fcm token  $token")
             }
         }
     }
@@ -652,6 +651,8 @@ class SignInFragment : Fragment() {
         super.onStart()
         getDeviceToken()
     }
+
+    
 
     fun payment(){
        /* val payUPaymentParams = PayUPaymentParams.Builder()

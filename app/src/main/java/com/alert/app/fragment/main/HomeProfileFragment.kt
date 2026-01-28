@@ -98,13 +98,15 @@ class HomeProfileFragment : Fragment() {
             binding.backBtn.visibility=View.GONE
             binding.layPrivacy.visibility=View.GONE
             isTermsAccepted=true
-        }else{
+        }
+        else{
+
             binding.backBtn.visibility=View.VISIBLE
             binding.layPrivacy.visibility=View.VISIBLE
             isTermsAccepted=false
             checkEditable(true)
-        }
 
+        }
 
         loadApi()
 
@@ -202,13 +204,11 @@ class HomeProfileFragment : Fragment() {
 
             data.email?.let {
                 binding.edEmail.setText(it)
-                binding.edPhone.isEnabled = false
                 sessionManagement.setUserEmail(it)
             }
 
             data.phone_number?.let {
                 binding.edPhone.setText(it)
-                binding.edPhone.isEnabled = false
                 sessionManagement.setUserPhoneNumber(it)
             }
 
@@ -295,6 +295,7 @@ class HomeProfileFragment : Fragment() {
 
             }
         }
+
     }
 
 
@@ -338,8 +339,6 @@ class HomeProfileFragment : Fragment() {
                 setEmailStatus(true, if (isEmailValid) MessageClass.verifyNowStatus else MessageClass.emailVaildStatus, R.drawable.ic_cancel_red_icon, "#CE2127")
             }
         }
-
-
         if (isPhoneValid ) {
             setPhoneStatus(true, MessageClass.verifyStatus, R.drawable.ic_green_tick, "#219653")
         } else {
@@ -440,12 +439,15 @@ class HomeProfileFragment : Fragment() {
         }
 
         binding.tvphonestatus.setOnClickListener {
-            if (binding.tvphonestatus.text.toString().trim().equals(Html.fromHtml(MessageClass.verifyNowStatus).toString().trim(), true)) {
-                if (isValidatePhone()) {
-                    Log.d("TESTING_CURRENT",binding.ccp.defaultCountryCodeWithPlus)
-                    verifySendOtp(binding.ccp.defaultCountryCodeWithPlus+binding.edPhone.text.toString())
-                }
+            if (isValidatePhone()) {
+                verifySendOtp(binding.ccp.defaultCountryCodeWithPlus + binding.edPhone.text.toString())
+
             }
+  //          if (binding.tvphonestatus.text.toString().trim().equals(Html.fromHtml(MessageClass.verifyNowStatus).toString().trim(), true)) {
+//                if (isValidatePhone()) {
+//                    Log.d("TESTING_CURRENT",binding.ccp.defaultCountryCodeWithPlus)
+//                }
+//            }
         }
 
 

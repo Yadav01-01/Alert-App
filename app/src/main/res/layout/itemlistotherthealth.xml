@@ -11,6 +11,7 @@
         android:orientation="vertical">
 
         <TextView
+            android:id="@+id/title"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:drawablePadding="@dimen/_10sdp"
@@ -23,6 +24,7 @@
             android:textSize="@dimen/_15sdp" />
 
         <TextView
+            android:id="@+id/contactName"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:drawablePadding="@dimen/_5sdp"
@@ -34,6 +36,7 @@
             android:textSize="@dimen/_10sdp"
             app:drawableStartCompat="@drawable/doctor_svgrepo_com" />
         <TextView
+            android:id="@+id/time"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:drawablePadding="@dimen/_5sdp"
@@ -46,6 +49,7 @@
             android:textSize="@dimen/_10sdp"/>
 
         <TextView
+            android:id="@+id/date"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:drawablePadding="@dimen/_5sdp"
@@ -58,6 +62,7 @@
             app:drawableStartCompat="@drawable/calander_icon" />
 
         <TextView
+            android:id="@+id/relation"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:drawablePadding="@dimen/_5sdp"
@@ -85,6 +90,7 @@
             android:textSize="@dimen/_10sdp"/>
 
         <TextView
+            android:id="@+id/description"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:fontFamily="@font/urbanist_medium"
