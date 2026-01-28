@@ -87,6 +87,8 @@ class HealthAlertTypeSecondFragment : Fragment() , OnClickEventDropDownType {
         data.add(TimeModel("X-Ray Appointment",false))
         data.add(TimeModel("Ultra-Sound Appointment",false))
         data.add(TimeModel("Appointment with Joe Goldburg",false))
+        data.add(TimeModel("Other",false))
+
 
         binding.tvMinit.text="Select Health Alert"
 
@@ -100,7 +102,6 @@ class HealthAlertTypeSecondFragment : Fragment() , OnClickEventDropDownType {
             val rcyData = popupView?.findViewById<RecyclerView>(R.id.rcy_data)
 
             rcyData?.adapter= TimeArrayCustomListAdapter(requireContext(),data,this,"time")
-
 
             binding.tvMinit.setCompoundDrawablesWithIntrinsicBounds(0, 0, R.drawable.left_arrow_top, 0)
             // Set the dismiss listener
