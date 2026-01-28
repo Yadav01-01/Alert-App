@@ -71,8 +71,8 @@ class AddAlertFragment : Fragment() {
         activity.setImageShowTv()?.visibility = View.GONE
         activity.setImgChatBoot().visibility = View.GONE
 
-        binding.imgBack.setOnClickListener { findNavController().navigateUp() }
         binding.btnSetAlert.setOnClickListener {
+        binding.imgBack.setOnClickListener { findNavController().navigateUp() }
             if (isValidation()) {
                 val createSelfAlertRequest = CreateSelfAlertRequest(
                     binding.alertTitle.text.toString(),

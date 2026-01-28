@@ -176,7 +176,7 @@ class SignInFragment : Fragment() {
             if (hasFocus && isFirstTimeTouched) { // Only trigger on first touch
                 val data: String = sessionManagement.getRememberMe().toString()
                 if (data.isNotEmpty()) {
-                    showRememberDialog()
+                  //  showRememberDialog()
                 }
                 isFirstTimeTouched = false // Set flag to false so it doesn't trigger again
             }
@@ -406,7 +406,7 @@ class SignInFragment : Fragment() {
     private fun openRemember() {
         val data: String = sessionManagement.getRememberMe().toString()
         if (data.isNotEmpty()){
-            showRememberDialog()
+          //  showRememberDialog()
         }
     }
 

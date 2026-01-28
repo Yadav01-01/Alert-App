@@ -42,9 +42,7 @@ class KnowMoreFragment : Fragment() {
 
 
     override fun onCreateView(
-        inflater: LayoutInflater,
-        container: ViewGroup?,
-        savedInstanceState: Bundle?
+        inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?
     ): View {
         _binding = FragmentKnowmMoreBinding.inflate(inflater, container, false)
         return binding.root
@@ -53,8 +51,8 @@ class KnowMoreFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-
         sessionManagement = SessionManagement(requireContext())
+
         viewModel = ViewModelProvider(this)[TutorialsViewModel::class.java]
 
         if (!sessionManagement.getProfileScreen().toString().equals("signup",true)){
@@ -154,4 +152,5 @@ class KnowMoreFragment : Fragment() {
         super.onDestroyView()
         _binding = null // Avoid memory leaks
     }
+
 }

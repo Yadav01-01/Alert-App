@@ -136,39 +136,71 @@
                     android:textColor="#219653" />
 
             </RelativeLayout>
-            <RelativeLayout
+
+            <LinearLayout
+                android:id="@+id/layoutPhone"
                 android:layout_width="match_parent"
-                android:layout_height="@dimen/_45sdp"
-                android:layout_margin="@dimen/_8sdp"
-                android:background="@drawable/bg_border">
-                <EditText
-                    android:id="@+id/ed_phone"
-                    android:layout_width="match_parent"
-                    android:layout_height="match_parent"
-                    android:hint="@string/enter_phone"
-                    android:singleLine="true"
-                    android:textSize="@dimen/_14sdp"
-                    android:inputType="number"
-                    android:maxLength="10"
-                    android:layout_toLeftOf="@+id/phone_status"
-                    android:paddingHorizontal="@dimen/_10sdp"
-                    android:background="@null" />
-                <ImageView
-                    android:id="@+id/phone_status"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/_5sdp"
+                android:orientation="horizontal"
+                android:visibility="visible"
+                android:gravity="center_vertical">
+
+                <!-- Country Code Container -->
+                <LinearLayout
                     android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_alignParentEnd="true"
-                    android:layout_marginHorizontal="@dimen/_5sdp"
-                    android:layout_centerInParent="true"
-                    android:src="@drawable/ic_cancel_red_icon"
-                    android:visibility="gone" />
-            </RelativeLayout>
+                    android:layout_height="@dimen/_42sdp"
+                    android:orientation="horizontal"
+                    android:gravity="center_vertical"
+                    android:paddingHorizontal="12dp"
+                    android:background="@drawable/bg_segment_container"
+                    android:layout_marginEnd="2dp">
+
+                    <com.hbb20.CountryCodePicker
+                        android:id="@+id/ccp"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:background="@null"
+                        app:ccp_showFlag="true"
+                        app:ccp_showNameCode="false"
+                        app:ccp_showPhoneCode="false"
+                        app:ccp_showArrow="true" />
+                </LinearLayout>
+
+                <RelativeLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="@dimen/_45sdp"
+                    android:layout_margin="@dimen/_8sdp"
+                    android:background="@drawable/bg_border">
+
+                    <EditText
+                        android:id="@+id/ed_phone"
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent"
+                        android:hint="@string/enter_phone"
+                        android:textSize="@dimen/_14sdp"
+                        android:layout_toLeftOf="@+id/phone_status"
+                        android:paddingStart="@dimen/_10sdp"
+                        android:singleLine="true"
+                        android:paddingEnd="@dimen/_10sdp"
+                        android:background="@null"/>
+                    <ImageView
+                        android:id="@+id/phone_status"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_alignParentEnd="true"
+                        android:layout_marginHorizontal="@dimen/_5sdp"
+                        android:layout_centerInParent="true"
+                        android:src="@drawable/ic_cancel_red_icon"
+                        android:visibility="visible" />
+                </RelativeLayout>
+            </LinearLayout>
             <RelativeLayout
                 android:id="@+id/rlphoneverified"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginHorizontal="@dimen/_8sdp"
-                android:visibility="gone">
+                android:visibility="visible">
 
                 <TextView
                     android:id="@+id/tvphonestatus"
@@ -177,9 +209,37 @@
                     android:layout_alignParentEnd="true"
                     android:fontFamily="@font/poppins_medium"
                     android:text="Verified"
-                    android:textColor="#219653" />
+                    android:textColor="#000000" />
 
             </RelativeLayout>
+<!--            <RelativeLayout-->
+<!--                android:layout_width="match_parent"-->
+<!--                android:layout_height="@dimen/_45sdp"-->
+<!--                android:layout_margin="@dimen/_8sdp"-->
+<!--                android:background="@drawable/bg_border">-->
+<!--                <EditText-->
+<!--                    android:id="@+id/ed_phone"-->
+<!--                    android:layout_width="match_parent"-->
+<!--                    android:layout_height="match_parent"-->
+<!--                    android:hint="@string/enter_phone"-->
+<!--                    android:singleLine="true"-->
+<!--                    android:textSize="@dimen/_14sdp"-->
+<!--                    android:inputType="number"-->
+<!--                    android:maxLength="10"-->
+<!--                    android:layout_toLeftOf="@+id/phone_status"-->
+<!--                    android:paddingHorizontal="@dimen/_10sdp"-->
+<!--                    android:background="@null" />-->
+<!--                <ImageView-->
+<!--                    android:id="@+id/phone_status"-->
+<!--                    android:layout_width="wrap_content"-->
+<!--                    android:layout_height="wrap_content"-->
+<!--                    android:layout_alignParentEnd="true"-->
+<!--                    android:layout_marginHorizontal="@dimen/_5sdp"-->
+<!--                    android:layout_centerInParent="true"-->
+<!--                    android:src="@drawable/ic_cancel_red_icon"-->
+<!--                    android:visibility="gone" />-->
+<!--            </RelativeLayout>-->
+
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="@dimen/_45sdp"

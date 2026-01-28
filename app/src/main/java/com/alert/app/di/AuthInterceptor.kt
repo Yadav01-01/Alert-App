@@ -124,19 +124,14 @@ class AuthInterceptor(var context: Context) : Interceptor {
     private fun getBearerToken(): String {
         val sessionManagement = SessionManagement(context)
         val token: String = sessionManagement.getUserToken()!!
-
         return token
     }
 
     private fun handleTokenExpiration(sessionManager: SessionManagement) {
-
         sessionManager.logOut()
-
         val intent  = Intent(context, AuthActivity::class.java)
         intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK)
-
         context.startActivity(intent)
-
     }
 
 }
