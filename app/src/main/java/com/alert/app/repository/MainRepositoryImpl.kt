@@ -277,6 +277,7 @@ class MainRepositoryImpl @Inject constructor(private val apiInterface: ApiInterf
         }
     }
 
+
     override suspend fun profileUpdateRequestApi(
         successCallback: (response: NetworkResult<String>) -> Unit,
         cusName: RequestBody,
@@ -1863,6 +1864,88 @@ class MainRepositoryImpl @Inject constructor(private val apiInterface: ApiInterf
         }
     }
 
+    override suspend fun verifyProfileUpdateOtp(
+        otp: String,
+        email: String?,
+        phoneNumber: String?
+    ): Flow<NetworkResult<String>> =flow{
+
+        try {
+            apiInterface.verifyProfileUpdateOtp(otp,email,phoneNumber).apply {
+                if (isSuccessful) {
+                    body()?.let { resp ->
+                        if (resp.has("status") && resp.get("status").asBoolean) {
+                            emit(NetworkResult.Success("Otp Verified Succesfully"))
+                        } else {
+                            emit(NetworkResult.Error(resp.get("message").asString))
+                        }
+                    } ?: emit(NetworkResult.Error(AppConstant.unKnownError))
+                }
+                else {
+                    try {
+                        val jsonObj = this.errorBody()?.string()?.let { JSONObject(it) }
+                        emit(
+                            NetworkResult.Error(
+                                jsonObj?.getString("message")
+                                    ?: AppConstant.unKnownError
+                            )
+                        )
+                    } catch (e: JSONException) {
+                        e.printStackTrace()
+                        emit(NetworkResult.Error(AppConstant.unKnownError))
+                    }
+                }
+            }
+        }
+        catch (e: HttpException) {
+            emit(NetworkResult.Error(e.message ?: ""))
+        } catch (e: IOException) {
+            emit(NetworkResult.Error(e.message ?: ""))
+        } catch (e: Exception) {
+            emit(NetworkResult.Error(e.message ?: ""))
+        }
+
+    }
+
+    override suspend fun sendProfileUpdateVerifyOtp(emailOrPhone: String): Flow<NetworkResult<String>> = flow {
+
+        try {
+            apiInterface.sendProfileUpdateVerifyOtp(emailOrPhone).apply {
+                if (isSuccessful) {
+                    body()?.let { resp ->
+                        if (resp.has("status") && resp.get("status").asBoolean) {
+                            val obj = resp.get("data").asJsonObject
+                             val otp = obj.get("otp").asInt
+                            emit(NetworkResult.Success(otp.toString()))
+                        } else {
+                            emit(NetworkResult.Error(resp.get("message").asString))
+                        }
+                    } ?: emit(NetworkResult.Error(AppConstant.unKnownError))
+                }
+                else {
+                    try {
+                        val jsonObj = this.errorBody()?.string()?.let { JSONObject(it) }
+                        emit(
+                            NetworkResult.Error(
+                                jsonObj?.getString("message")
+                                    ?: AppConstant.unKnownError
+                            )
+                        )
+                    } catch (e: JSONException) {
+                        e.printStackTrace()
+                        emit(NetworkResult.Error(AppConstant.unKnownError))
+                    }
+                }
+            }
+        }
+        catch (e: HttpException) {
+            emit(NetworkResult.Error(e.message ?: ""))
+        } catch (e: IOException) {
+            emit(NetworkResult.Error(e.message ?: ""))
+        } catch (e: Exception) {
+            emit(NetworkResult.Error(e.message ?: ""))
+        }
+    }
 
 
     override suspend fun addEmergencyContact(createHelpingNeighbor: CreateHelpingNeighbor): Flow<NetworkResult<JsonObject>> = flow {
@@ -1876,7 +1959,8 @@ class MainRepositoryImpl @Inject constructor(private val apiInterface: ApiInterf
                                 emit(NetworkResult.Error(resp.get("message").asString))
                             }
                         } ?: emit(NetworkResult.Error(AppConstant.unKnownError))
-                    } else {
+                    }
+                    else {
                         try {
                             val jsonObj = this.errorBody()?.string()?.let { JSONObject(it) }
                             emit(

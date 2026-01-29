@@ -58,7 +58,6 @@ class HomeProfileFragment : Fragment() {
     private val emailPattern = Pattern.compile(MessageClass.emailRegulerExpression)
     private var isEmailVerifiedFromApi = false
     private var isPhoneVerifiedFromApi = false
-
     private var latitude = ""
     private var longitude = ""
     private var isTermsAccepted = false
@@ -83,7 +82,6 @@ class HomeProfileFragment : Fragment() {
             Log.d("checkSource",source)
         }
         if (source == "auth") {
-
             binding.layPrivacy.visibility = View.VISIBLE
         } else {
             binding.layPrivacy.visibility = View.GONE
@@ -100,7 +98,6 @@ class HomeProfileFragment : Fragment() {
             isTermsAccepted=true
         }
         else{
-
             binding.backBtn.visibility=View.VISIBLE
             binding.layPrivacy.visibility=View.VISIBLE
             isTermsAccepted=false
@@ -440,6 +437,30 @@ class HomeProfileFragment : Fragment() {
 
         binding.tvphonestatus.setOnClickListener {
             if (isValidatePhone()) {
+
+                lifecycleScope.launch {
+                    BaseApplication.openDialog()
+                    viewModel.sendProfileUpdateVerifyOtp(binding.ccp.defaultCountryCodeWithPlus + binding.edPhone.text.toString())
+                        .collect { result->
+                         when(result){
+                            is NetworkResult.Success ->{
+                                BaseApplication.dismissDialog()
+                                val otpData = result.data
+                                navigateToVerificationCodeProfile(binding.ccp.defaultCountryCodeWithPlus + binding.edPhone.text.toString())
+                             }
+
+                             is NetworkResult.Error ->{
+                                 BaseApplication.dismissDialog()
+
+                             }
+                             else ->{
+                                 BaseApplication.dismissDialog()
+                             }
+                         }
+
+                        }
+                }
+
                 verifySendOtp(binding.ccp.defaultCountryCodeWithPlus + binding.edPhone.text.toString())
 
             }

@@ -26,9 +26,11 @@ import com.alert.app.di.NetworkResult
 import com.alert.app.errormessage.MessageClass
 import com.alert.app.viewmodel.profileviewmodel.UserProfileViewModel
 import com.alert.app.viewmodel.profileviewmodel.apiresponse.UserProfileModel
+import com.google.firebase.perf.v1.NetworkRequestMetricOrBuilder
 import com.google.gson.Gson
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
+import kotlinx.serialization.builtins.ByteArraySerializer
 import java.util.Locale
 
 @AndroidEntryPoint
@@ -37,9 +39,10 @@ class VerificationCodeProfileFragment : Fragment() {
     private lateinit var binding: FragmentVerificationCodeProfileBinding
     private val startTimeInMillis: Long = 120000
     private var mTimeLeftInMillis = startTimeInMillis
-    private var emailOrPhone:String?=""
+    private var emailOrPhone: String? = ""
     private lateinit var sessionManagement: SessionManagement
     private lateinit var viewModel: UserProfileViewModel
+    private var screenType: String? = ""
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
@@ -53,18 +56,20 @@ class VerificationCodeProfileFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
         viewModel = ViewModelProvider(this)[UserProfileViewModel::class.java]
-        sessionManagement=SessionManagement(requireContext())
+        sessionManagement = SessionManagement(requireContext())
 
-        if (arguments!=null){
-            emailOrPhone= requireArguments().getString("emailOrPhone")
+        if (arguments != null) {
+            emailOrPhone = requireArguments().getString("emailOrPhone")
+            screenType =
+                if (requireArguments().containsKey("screenType")) requireArguments().getString("screenType") else ""
         }
 
-        if (!sessionManagement.getProfileScreen().toString().equals("signup",true)){
-            binding.shadow.root.visibility=View.VISIBLE
-            binding.imgBack.visibility=View.GONE
-        }else{
-            binding.shadow.root.visibility=View.GONE
-            binding.imgBack.visibility=View.VISIBLE
+        if (!sessionManagement.getProfileScreen().toString().equals("signup", true)) {
+            binding.shadow.root.visibility = View.VISIBLE
+            binding.imgBack.visibility = View.GONE
+        } else {
+            binding.shadow.root.visibility = View.GONE
+            binding.imgBack.visibility = View.VISIBLE
         }
 
 
@@ -76,29 +81,31 @@ class VerificationCodeProfileFragment : Fragment() {
             binding.imgBack.visibility=View.VISIBLE
         }*/
 
-        binding.tvVerificationButton.setOnClickListener{
+        binding.tvVerificationButton.setOnClickListener {
             if (BaseApplication.isOnline(requireContext())) {
                 if (binding.otpVerificationBox.otp!!.isEmpty()) {
                     BaseApplication.alertError(requireContext(), MessageClass.emptyOtp, false)
-                } else if (binding.otpVerificationBox.otp!!.length != 4){
-                    BaseApplication.alertError(context, MessageClass.correctOtp,false)
-                }else {
+                } else if (binding.otpVerificationBox.otp!!.length != 4) {
+                    BaseApplication.alertError(context, MessageClass.correctOtp, false)
+                } else {
                     verificationApi()
                 }
-            }else{
+            } else {
                 BaseApplication.alertError(requireContext(), MessageClass.networkError, false)
             }
         }
 
-        requireActivity().onBackPressedDispatcher.addCallback(requireActivity(), object : OnBackPressedCallback(true) {
-            override fun handleOnBackPressed() {
-//                sessionManagement.setUserEditable(false)
-                findNavController().navigateUp()
-            }
-        })
+//        requireActivity().onBackPressedDispatcher.addCallback(
+//            requireActivity(),
+//            object : OnBackPressedCallback(true) {
+//                override fun handleOnBackPressed() {
+//
+//              //      findNavController().navigateUp()
+//                }
+//            })
 
 
-        binding.tvResendVerification.setOnClickListener{
+        binding.tvResendVerification.setOnClickListener {
             reSendOtp()
         }
 
@@ -121,22 +128,55 @@ class VerificationCodeProfileFragment : Fragment() {
         val phone: String? = if (!isEmail) input else null
 
         BaseApplication.openDialog()
+        Log.d("TESTING_VERIFICATION","I am here outside Verification" + email +" "+phone)
 
-        lifecycleScope.launch {
-            viewModel.forGotOtpVerifyRequest(
-                { response ->
-                    BaseApplication.dismissDialog()
-                    handleApiResponseVerifyOtp(response)
-                },
-                email,
-                binding.otpVerificationBox.otp.toString(),
-                phone
-            )
+        if (screenType.equals("HomeProfile", true)) {
+            lifecycleScope.launch {
+                BaseApplication.openDialog()
+
+                viewModel.verifyProfileUpdateOtp(
+                    binding.otpVerificationBox.otp.toString(),
+                    email,
+                    phone
+                ).collect { result ->
+
+                    when (result) {
+                        is NetworkResult.Success -> {
+                            Log.d("TESTING_VERIFICATION","I am here inside Verification" + email +" "+phone)
+                            findNavController().navigate(R.id.homeProfileFragment)
+                        }
+                        is NetworkResult.Error -> {
+                            BaseApplication.dismissDialog()
+                            BaseApplication.alertError(requireContext(),result.message.toString(),false)
+                            // show error
+                        }
+                        else ->{
+
+                        }
+                    }
+                }
+
+            }
+
+        } else {
+            lifecycleScope.launch {
+                viewModel.forGotOtpVerifyRequest(
+                    { response ->
+                        BaseApplication.dismissDialog()
+                        handleApiResponseVerifyOtp(response)
+                    },
+                    email,
+                    binding.otpVerificationBox.otp.toString(),
+                    phone
+                )
+            }
         }
+
     }
 
 
-    private fun reSendOtp(){
+    private fun reSendOtp() {
+
         val input = emailOrPhone.toString().trim()
 
         val isEmail = android.util.Patterns.EMAIL_ADDRESS
@@ -144,24 +184,52 @@ class VerificationCodeProfileFragment : Fragment() {
             .matches()
 
         val email: String? = if (isEmail) input else null
+
         val phone: String? = if (!isEmail) input else null
 
-        if (BaseApplication.isOnline(requireContext())){
+        if (BaseApplication.isOnline(requireContext())) {
             BaseApplication.openDialog()
+
+            Log.d("TESTING_VERIFICATION","I am here outside" + emailOrPhone)
+            if(screenType.equals("HomeProfile",true)){
+                Log.d("TESTING_VERIFICATION","I am here Indise" + emailOrPhone)
+
+                lifecycleScope.launch {
+                    viewModel.sendProfileUpdateVerifyOtp(emailOrPhone?:"").collect { result->
+                        when(result){
+                            is NetworkResult.Success ->{
+                                BaseApplication.dismissDialog()
+                            }
+                            is NetworkResult.Error ->{
+                                BaseApplication.dismissDialog()
+                                BaseApplication.alertError(requireContext(),result.message.toString()?:"",false)
+                            }
+                            else ->{
+                                BaseApplication.dismissDialog()
+                            }
+                        }
+                    }
+
+                }
+            }
+            else {
+
+            }
+
             lifecycleScope.launch {
                 viewModel.resendOtp({ response ->
                     BaseApplication.dismissDialog()
                     handleApiResponse(response, "reSend")
-                }, email = email, phone = phone, type = "profile_verify" )
+                }, email = email, phone = phone, type = "profile_verify")
             }
-        }else{
-            BaseApplication.alertError(context, MessageClass.networkError,false)
+        } else {
+            BaseApplication.alertError(context, MessageClass.networkError, false)
         }
     }
 
     private fun handleApiResponse(result: NetworkResult<String>, dataType: String) {
         when (result) {
-            is NetworkResult.Success -> handleSuccessResponse(result.data.toString(),dataType)
+            is NetworkResult.Success -> handleSuccessResponse(result.data.toString(), dataType)
             is NetworkResult.Error -> showAlert(result.message.toString(), false)
         }
     }
@@ -184,19 +252,22 @@ class VerificationCodeProfileFragment : Fragment() {
                     if (apiModel.code == 200 && apiModel.status) {
                         startTime()
                     } else {
-                        handleError(apiModel.code,apiModel.message)
+                        handleError(apiModel.code, apiModel.message)
                     }
                 }
+
                 "verify" -> {
                     val apiModel = Gson().fromJson(data, UserProfileModel::class.java)
                     if (apiModel.code == 200 && apiModel.status) {
-                        if (!sessionManagement.getProfileScreen().toString().equals("signup",true)){
+                        if (!sessionManagement.getProfileScreen().toString()
+                                .equals("signup", true)
+                        ) {
                             findNavController().navigateUp()
-                        }else{
+                        } else {
                             openAlertBoxSuccess()
                         }
                     } else {
-                        handleError(apiModel.code,apiModel.message)
+                        handleError(apiModel.code, apiModel.message)
                     }
                 }
             }
@@ -209,22 +280,22 @@ class VerificationCodeProfileFragment : Fragment() {
     @SuppressLint("SetTextI18n")
     private fun handleSuccessResponseVerifyOtp(data: String) {
         try {
-                    val apiModel = Gson().fromJson(data, UserProfileModel::class.java)
-                    if (apiModel.code == 200 && apiModel.status) {
-                        findNavController().popBackStack(R.id.homeProfileFragment, false)
+            val apiModel = Gson().fromJson(data, UserProfileModel::class.java)
+            if (apiModel.code == 200 && apiModel.status) {
+                findNavController().popBackStack(R.id.homeProfileFragment, false)
 
-                    } else {
-                        handleError(apiModel.code,apiModel.message)
-                    }
+            } else {
+                handleError(apiModel.code, apiModel.message)
+            }
         } catch (e: Exception) {
             showAlert(e.message.toString(), false)
         }
     }
 
-    private fun handleError(code:Int,msg:String){
-        if (code==MessageClass.deactivatedUser || code==MessageClass.deletedUser){
+    private fun handleError(code: Int, msg: String) {
+        if (code == MessageClass.deactivatedUser || code == MessageClass.deletedUser) {
             showAlert(msg, true)
-        }else{
+        } else {
             showAlert(msg, false)
         }
     }
@@ -249,13 +320,13 @@ class VerificationCodeProfileFragment : Fragment() {
         dialog.show()
         dialog.window!!.setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_STATE_ALWAYS_VISIBLE)
 
-        if (emailOrPhone!!.contains("@")){
+        if (emailOrPhone!!.contains("@")) {
             tvText.text = "Your Email is changed Successfully."
-        }else{
+        } else {
             tvText.text = "Your Phone is changed Successfully."
         }
 
-        imgClose.visibility=View.VISIBLE
+        imgClose.visibility = View.VISIBLE
 
         tvPwdChangeOK.setOnClickListener {
             dialog.dismiss()

@@ -307,5 +307,20 @@ interface ApiInterfaceClass {
     ): Response<JsonObject>
 
 
+    @FormUrlEncoded
+    @POST("api/verify_profile_update_otp")
+    suspend fun verifyProfileUpdateOtp(
+        @Field("otp") otp :String,
+        @Field("email") email :String?,
+        @Field("phone_number") phoneNumber :String?
+    ) : Response<JsonObject>
+
+    @FormUrlEncoded
+    @POST("api/send_profile_update_verify_otp")
+    suspend fun sendProfileUpdateVerifyOtp(
+        @Field("emailOrPhone") emailOrPhone :String
+    ) : Response<JsonObject>
+
+
 
 }

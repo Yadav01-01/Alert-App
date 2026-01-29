@@ -1,6 +1,5 @@
 package com.alert.app.repository
 
-
 import com.alert.app.di.NetworkResult
 import com.alert.app.model.contact.UserContactRequest
 import com.alert.app.model.contact.UserEditContactRequest
@@ -11,10 +10,11 @@ import com.google.gson.JsonObject
 import kotlinx.coroutines.flow.Flow
 import okhttp3.MultipartBody
 import okhttp3.RequestBody
+import retrofit2.Response
+import retrofit2.http.Field
 
 
 interface MainRepository {
-
 
     suspend fun loginRequestApi(
         successCallback: (response: NetworkResult<String>) -> Unit,
@@ -179,5 +179,14 @@ interface MainRepository {
 
     suspend fun addHealthAlerts(alertFor: String,alertDuration: String,healthAlert: String,
                                 startDate: String,endDate : String,time: String, note: String,contact: List<String>?) : Flow<NetworkResult<JsonObject>>
+
+    suspend fun verifyProfileUpdateOtp(
+         otp :String, email :String?,
+         phoneNumber :String?
+    ) :Flow<NetworkResult<String>>
+
+    suspend fun sendProfileUpdateVerifyOtp(
+        @Field("emailOrPhone") emailOrPhone :String
+    ) : Flow<NetworkResult<String>>
 
 }

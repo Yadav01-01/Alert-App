@@ -54,18 +54,17 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
     @RequiresPermission(Manifest.permission.POST_NOTIFICATIONS)
     private fun callphoneWithRing(remoteMessage: RemoteMessage) {
 
+        startIncomingCallService("Nikunj","122")
 
-        //shrawan sir code
+        // older code
 
-
-    //  startIncomingCallService("Nikunj","122")
-        showIncomingCallNotification("Nikunj","122")
-//        if(remoteMessage.data.isNotEmpty() && remoteMessage.data["type"] == "incoming_call") {
-//            val callerName = remoteMessage.data["caller_name"] ?: "APWL Connect Calling"
-//            val callSessionId = remoteMessage.data["caller_id"] ?: ""
-//            Log.d("testing_notification","Call SessionId is"+callSessionId);
-//            startIncomingCallService(callerName,callSessionId)
-//        }
+        // showIncomingCallNotification("Nikunj","122")
+        //        if(remoteMessage.data.isNotEmpty() && remoteMessage.data["type"] == "incoming_call") {
+        //            val callerName = remoteMessage.data["caller_name"] ?: "APWL Connect Calling"
+        //            val callSessionId = remoteMessage.data["caller_id"] ?: ""
+        //            Log.d("testing_notification","Call SessionId is"+callSessionId);
+        //            startIncomingCallService(callerName,callSessionId)
+         //        }
 
     }
 

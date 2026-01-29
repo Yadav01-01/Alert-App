@@ -5,6 +5,9 @@ import com.alert.app.di.NetworkResult
 import com.alert.app.repository.MainRepository
 import com.alert.app.viewmodel.profileviewmodel.apiresponse.UserProfileModel
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.onEach
 import okhttp3.MultipartBody
 import okhttp3.RequestBody
 import javax.inject.Inject
@@ -25,6 +28,13 @@ class UserProfileViewModel @Inject constructor(private val repository: MainRepos
         repository.resendOtp({ successCallback(it) }, type,email,phone)
     }
 
+    suspend fun sendProfileUpdateVerifyOtp(emailOrPhone: String): Flow<NetworkResult<String>> {
+        return repository.sendProfileUpdateVerifyOtp(emailOrPhone).onEach {
+
+        }
+    }
+
+
 
 
     suspend fun profileUpdateRequest(
@@ -43,5 +53,19 @@ class UserProfileViewModel @Inject constructor(private val repository: MainRepos
     suspend fun forGotOtpVerifyRequest(successCallback: (response: NetworkResult<String>) -> Unit, email: String?, otp:String,phone : String?){
         repository.forGotOtpVerifyRequestApi({ successCallback(it) }, email,otp,phone)
     }
+
+    suspend fun verifyProfileUpdateOtp(
+        otp: String,
+        email: String?,
+        phoneNumber: String?
+    ): Flow<NetworkResult<String>> {
+        return repository.verifyProfileUpdateOtp(
+            otp,email,phoneNumber
+        ).onEach {
+
+        }
+    }
+
+
 
 }
