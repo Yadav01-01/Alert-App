@@ -3,6 +3,7 @@ package com.alert.app.fragment.main
 import android.Manifest
 import android.annotation.SuppressLint
 import android.app.Dialog
+import android.content.Context
 import android.content.pm.PackageManager
 import android.graphics.Color
 import android.graphics.drawable.ColorDrawable
@@ -10,12 +11,15 @@ import android.os.Bundle
 import android.provider.ContactsContract
 import android.text.Editable
 import android.text.TextWatcher
+import android.util.Log
 import androidx.fragment.app.Fragment
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.view.WindowManager
 import android.widget.ArrayAdapter
+import android.widget.Button
+import android.widget.EditText
 import android.widget.ImageView
 import android.widget.PopupWindow
 import android.widget.TextView
@@ -43,9 +47,11 @@ import com.alert.app.model.contact.AddContactResponse
 import com.alert.app.model.contact.AlertsResponse
 import com.alert.app.model.contact.RelationResponse
 import com.alert.app.model.contact.UserContactRequest
+import com.alert.app.model.helpingneighbormodel.CreateHelpingNeighbor
 import com.alert.app.viewmodel.contactsviewmodel.MobileContactsViewModel
 import com.google.android.material.textfield.MaterialAutoCompleteTextView
 import com.google.gson.Gson
+import com.hbb20.CountryCodePicker
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
 
@@ -303,20 +309,74 @@ class MobileContactListFragment : Fragment() , OnClickEventMobileContact, OnClic
                 if (it.number.isNullOrEmpty()){
                     alertError(requireContext(), MessageClass.phoneError,false)
                 }
+
                 else if (selectedRelationId==-1){
                     alertError(requireContext(), MessageClass.relation,false)
                 }
                 else if (selectedAlertId==-1){
                     alertError(requireContext(), MessageClass.alert,false)
-                }else{
-                    val userContactRequest = UserContactRequest(it.name?:"",
-                       "",
-                        it.email?:"",
-                       it.number,
-                        selectedRelationId,
-                        selectedAlertId,
-                        "device")
-                    addContact(userContactRequest,dialog)
+                }  else  if (!hasCountryCode(it.number.toString())) {
+                // ❗ country code missing
+                showCountryCodeDialog(requireContext(), it.number.toString()) { updatedNumber ->
+                    it.number = updatedNumber
+                    if (type== "addEmergency"){
+                        val fullName = it.name?.trim().orEmpty()
+
+                        val nameParts = fullName.split("\\s+".toRegex(), limit = 2)
+
+                        val firstName = nameParts.getOrNull(0) ?: ""
+                        val lastName = nameParts.getOrNull(1) ?: ""
+                        val createHelpingNeighbor = CreateHelpingNeighbor(firstName,
+                            lastName,
+                            it.email?:"",
+                            it.number,
+                            selectedRelationId.toString(),
+                            selectedAlertId.toString(),
+                            "device")
+                        Log.d("createHelpingNeighbor","$createHelpingNeighbor")
+                        addContact1(createHelpingNeighbor,dialog)
+                    }else{
+                        val userContactRequest = UserContactRequest(it.name?:"",
+                            "",
+                            it.email?:"",
+                            it.number.toString(),
+                            selectedRelationId,
+                            selectedAlertId,
+                            "device")
+                        addContact(userContactRequest,dialog)
+                    }
+
+                }
+                return@setOnClickListener
+            }
+                else{
+                    if (type== "addEmergency"){
+                        val fullName = it.name?.trim().orEmpty()
+
+                        val nameParts = fullName.split("\\s+".toRegex(), limit = 2)
+
+                        val firstName = nameParts.getOrNull(0) ?: ""
+                        val lastName = nameParts.getOrNull(1) ?: ""
+                        val createHelpingNeighbor = CreateHelpingNeighbor(firstName,
+                            lastName,
+                            it.email?:"",
+                            it.number,
+                            selectedRelationId.toString(),
+                            selectedAlertId.toString(),
+                            "device")
+                        Log.d("createHelpingNeighbor","$createHelpingNeighbor")
+                        addContact1(createHelpingNeighbor,dialog)
+                    }else{
+                        val userContactRequest = UserContactRequest(it.name?:"",
+                            "",
+                            it.email?:"",
+                            it.number!!,
+                            selectedRelationId,
+                            selectedAlertId,
+                            "device")
+                        addContact(userContactRequest,dialog)
+                    }
+
                 }
             }
         }
@@ -356,6 +416,49 @@ class MobileContactListFragment : Fragment() , OnClickEventMobileContact, OnClic
                                     }else{
                                         findNavController().navigate(R.id.contactFragment)
                                     }
+                                    dialog.dismiss()
+                                    alertBoxSuccess()
+                                }else{
+                                    Toast.makeText(
+                                        requireContext(),
+                                        addContactResponse.message,
+                                        Toast.LENGTH_LONG
+                                    ).show()
+                                }
+                            }
+                        }
+                        is NetworkResult.Error -> {
+                            Toast.makeText(
+                                requireContext(),
+                                it.message.toString(),
+                                Toast.LENGTH_LONG
+                            ).show()
+                        }
+                    }
+                }
+            }
+        }else{
+            showAlert(requireContext(), MessageClass.networkError,false)
+        }
+    }
+    private fun addContact1(userContactRequest: CreateHelpingNeighbor, dialog: Dialog) {
+        if (BaseApplication.isOnline(requireContext())) {
+            BaseApplication.openDialog()
+            lifecycleScope.launch {
+                viewModel.addEmergencyContact(userContactRequest).collect {
+                    BaseApplication.dismissDialog()
+                    when (it) {
+                        is NetworkResult.Success -> {
+                            it.data?.let {
+                                val addContactResponse =
+                                    Gson().fromJson(it, AddContactResponse::class.java)
+                                if (addContactResponse.code==200) {
+                                /*    if (type.equals("helpingNeighbors",true) ||
+                                        type.equals("addContact",true)){*/
+                                        findNavController().navigateUp()
+                                  /*  }else{
+                                        findNavController().navigate(R.id.contactFragment)
+                                    }*/
                                     dialog.dismiss()
                                     alertBoxSuccess()
                                 }else{
@@ -527,5 +630,44 @@ class MobileContactListFragment : Fragment() , OnClickEventMobileContact, OnClic
         }*/
         popupWindow.dismiss()
     }
+    fun showCountryCodeDialog(
+        context: Context,
+        phone: String,
+        onResult: (String) -> Unit
+    ) {
+        val dialog = Dialog(context)
+        dialog.setContentView(R.layout.dialog_country_code)
+        dialog.setCancelable(false)
+        val window = dialog.window
+        window?.setLayout(
+            WindowManager.LayoutParams.MATCH_PARENT,
+            WindowManager.LayoutParams.MATCH_PARENT
+        )
 
+        // Optional: Background transparent करें
+        window?.setBackgroundDrawable(ColorDrawable(Color.TRANSPARENT))
+        val ccp = dialog.findViewById<CountryCodePicker>(R.id.ccp)
+        val etPhone = dialog.findViewById<EditText>(R.id.etPhone)
+        val btnSubmit = dialog.findViewById<Button>(R.id.btnSubmit)
+
+        etPhone.setText(phone)
+
+        btnSubmit.setOnClickListener {
+            val countryCode = ccp.selectedCountryCodeWithPlus
+            val number = etPhone.text.toString().trim()
+
+            if (number.isEmpty()) {
+                Toast.makeText(context, "Enter phone number", Toast.LENGTH_SHORT).show()
+            } else {
+                val finalNumber = "$countryCode$number"
+                dialog.dismiss()
+                onResult(finalNumber)
+            }
+        }
+
+        dialog.show()
+    }
+    fun hasCountryCode(number: String): Boolean {
+        return number.trim().startsWith("+")
+    }
 }

@@ -260,7 +260,7 @@ interface ApiInterfaceClass {
     @POST(ApiEndPoint.deleteAddress)
     suspend fun deleteAddress(@Field("address_id") addressId:String?): Response<JsonObject>
 
-    @FormUrlEncoded
+  //  @FormUrlEncoded
     @POST(ApiEndPoint.addEmergencyContact)
     suspend fun addEmergencyContact(@Body createHelpingNeighbor: CreateHelpingNeighbor): Response<JsonObject>
 

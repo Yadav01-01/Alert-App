@@ -3,6 +3,7 @@ package com.alert.app.adapter
 import android.annotation.SuppressLint
 import android.content.Context
 import android.graphics.drawable.Drawable
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -30,13 +31,13 @@ class EmergencyContactAdapter(
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
         val layoutInflater = LayoutInflater.from(parent.context)
-        val ItememergencycontactBinding = ItememergencycontactBinding.inflate(layoutInflater, parent, false)
-        return ViewHolder(ItememergencycontactBinding)
+        val binding = ItememergencycontactBinding.inflate(layoutInflater, parent, false)
+        return ViewHolder(binding)
     }
 
     @SuppressLint("SetTextI18n", "NotifyDataSetChanged")
     override fun onBindViewHolder(holder: ViewHolder, @SuppressLint("RecyclerView") position: Int) {
-
+        Log.d("EmergencyAdapter", "onBindViewHolder position = $position")
         val data=list[position]
 
         data.let { data ->
@@ -62,7 +63,7 @@ class EmergencyContactAdapter(
             }
 
             // Load profile picture using Glide
-            data.profilePic?.let { profilePic ->
+          /*  data.profilePic?.let { profilePic ->
                 Glide.with(context)
                     .load("${BuildConfig.BASE_URL}$profilePic")
                     .error(R.drawable.no_image)
@@ -90,7 +91,46 @@ class EmergencyContactAdapter(
                         }
                     })
                     .into(holder.binding.userImg)
+            }*/
+            // Load profile picture using Glide - ONLY if profilePic is not null/empty
+            if (!data.profilePic.isNullOrEmpty()) {
+                // Progress bar दिखाएं जब image load हो रही है
+                holder.binding.layProgess.root.visibility = View.VISIBLE
+
+                Glide.with(context)
+                    .load("${BuildConfig.BASE_URL}${data.profilePic}")
+                    .error(R.drawable.no_image)
+                    .placeholder(R.drawable.no_image)
+                    .listener(object : RequestListener<Drawable> {
+                        override fun onLoadFailed(
+                            e: GlideException?,
+                            model: Any?,
+                            target: Target<Drawable>?,
+                            isFirstResource: Boolean
+                        ): Boolean {
+                            holder.binding.layProgess.root.visibility = View.GONE
+                            holder.binding.userImg.setImageResource(R.drawable.no_image)
+                            return false
+                        }
+
+                        override fun onResourceReady(
+                            resource: Drawable?,
+                            model: Any?,
+                            target: Target<Drawable>?,
+                            dataSource: DataSource?,
+                            isFirstResource: Boolean
+                        ): Boolean {
+                            holder.binding.layProgess.root.visibility = View.GONE
+                            return false
+                        }
+                    })
+                    .into(holder.binding.userImg)
+            } else {
+                // अगर profilePic null/empty है, तो default image set करें
+                holder.binding.userImg.setImageResource(R.drawable.no_image)
+                holder.binding.layProgess.root.visibility = View.GONE
             }
+
         }
 
 
@@ -111,6 +151,7 @@ class EmergencyContactAdapter(
 
 
     override fun getItemCount(): Int {
+        Log.d("EmergencyAdapter", "ITEM COUNT = ${list.size}")
         return list.size
     }
 
@@ -122,7 +163,7 @@ class EmergencyContactAdapter(
    @SuppressLint("NotifyDataSetChanged")
    fun update(newList: List<EmergencyContact>) {
        list.clear()
-       list.addAll(newList)
+       list.addAll(newList.toList())
        notifyDataSetChanged()
    }
 
