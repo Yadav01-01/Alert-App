@@ -92,7 +92,7 @@
 
             </LinearLayout>
 
-            <RelativeLayout
+            <!--<RelativeLayout
                 android:id="@+id/lay2"
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
@@ -124,12 +124,13 @@
                 <androidx.recyclerview.widget.RecyclerView
                     android:id="@+id/rcy_data"
                     android:layout_width="match_parent"
-                    android:layout_height="0dp"
+                    android:layout_height="match_parent"
                     android:layout_margin="@dimen/_15sdp"
                     android:orientation="vertical"
                     android:layout_alignBottom="@+id/view"
                     android:layout_alignTop="@+id/btn_add_now_show"
-                    app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager" />
+                    />
+
 
                 <TextView
                     android:id="@+id/btn_add_now_show"
@@ -154,7 +155,131 @@
                     android:layout_height="wrap_content"
                     android:layout_alignParentBottom="true" />
 
-            </RelativeLayout>
+            </RelativeLayout>-->
+            <!--<LinearLayout
+                android:id="@+id/lay2"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:orientation="vertical"
+                android:visibility="gone">
+
+                <TextView
+                    android:id="@+id/tvTitle"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="@dimen/_20sdp"
+                    android:text="@string/emergency_contacts" />
+
+                <View
+                    android:id="@+id/view"
+                    android:layout_width="match_parent"
+                    android:layout_height="@dimen/_2sdp"
+                    android:layout_marginTop="@dimen/_10sdp"
+                    android:background="#C0C0C0" />
+
+                <androidx.recyclerview.widget.RecyclerView
+                    android:id="@+id/rcy_data"
+                    android:layout_width="match_parent"
+                    android:layout_height="0dp"
+                    android:layout_weight="1"
+                    android:layout_margin="@dimen/_15sdp"
+                    android:orientation="vertical" />
+
+                <TextView
+                    android:id="@+id/btn_add_now_show"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_gravity="center_horizontal"
+                    android:layout_marginTop="@dimen/_10sdp"
+                    android:layout_marginBottom="@dimen/_30sdp"
+                    android:background="@drawable/button_bg"
+                    android:text="Add More contacts"
+                    android:visibility="visible" />
+
+                <include
+                    android:id="@+id/shadow"
+                    layout="@layout/sadow_layout"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content" />
+
+            </LinearLayout>-->
+            <androidx.constraintlayout.widget.ConstraintLayout
+                android:id="@+id/lay2"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:visibility="gone"
+                android:orientation="vertical">
+
+                <!-- Title Text -->
+                <TextView
+                    android:id="@+id/tvTitle"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="@dimen/_20sdp"
+                    android:fontFamily="@font/urbanist_bold"
+                    android:gravity="center"
+                    android:padding="@dimen/_5sdp"
+                    android:text="@string/emergency_contacts"
+                    android:textColor="#000000"
+                    android:textSize="@dimen/_18sdp"
+                    android:textStyle="bold"
+                    app:layout_constraintEnd_toEndOf="parent"
+                    app:layout_constraintStart_toStartOf="parent"
+                    app:layout_constraintTop_toTopOf="parent" />
+
+                <!-- Separator View -->
+                <View
+                    android:id="@+id/view"
+                    android:layout_width="0dp"
+                    android:layout_height="@dimen/_2sdp"
+                    android:layout_marginTop="@dimen/_10sdp"
+                    android:background="#C0C0C0"
+                    app:layout_constraintEnd_toEndOf="parent"
+                    app:layout_constraintStart_toStartOf="parent"
+                    app:layout_constraintTop_toBottomOf="@id/tvTitle" />
+
+                <!-- RecyclerView -->
+                <androidx.recyclerview.widget.RecyclerView
+                    android:id="@+id/rcy_data"
+                    android:layout_width="0dp"
+                    android:layout_height="0dp"
+                    android:layout_margin="@dimen/_15sdp"
+                    android:orientation="vertical"
+                    app:layout_constraintBottom_toTopOf="@id/btn_add_now_show"
+                    app:layout_constraintEnd_toEndOf="parent"
+                    app:layout_constraintStart_toStartOf="parent"
+                    app:layout_constraintTop_toBottomOf="@id/view" />
+
+                <!-- Add More Button -->
+                <TextView
+                    android:id="@+id/btn_add_now_show"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="@dimen/_10sdp"
+                    android:layout_marginBottom="@dimen/_30sdp"
+                    android:background="@drawable/button_bg"
+                    android:fontFamily="@font/urbanist_medium"
+                    android:gravity="center"
+                    android:text="Add More contacts"
+                    android:textColor="@color/white"
+                    android:textSize="@dimen/_13sdp"
+                    android:visibility="visible"
+                    app:layout_constraintBottom_toTopOf="@id/shadow"
+                    app:layout_constraintEnd_toEndOf="parent"
+                    app:layout_constraintStart_toStartOf="parent"
+                    app:layout_constraintTop_toBottomOf="@id/rcy_data" />
+
+                <!-- Shadow Layout -->
+                <include
+                    android:id="@+id/shadow"
+                    layout="@layout/sadow_layout"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    app:layout_constraintBottom_toBottomOf="parent"
+                    app:layout_constraintEnd_toEndOf="parent"
+                    app:layout_constraintStart_toStartOf="parent" />
+
+            </androidx.constraintlayout.widget.ConstraintLayout>
         </LinearLayout>
     </ScrollView>
 

@@ -97,6 +97,38 @@
                     android:textSize="@dimen/_14sdp" />
             </LinearLayout>
 
+        <LinearLayout
+            android:id="@+id/layoutPhone"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/_5sdp"
+            android:orientation="horizontal"
+            android:layout_marginStart="10dp"
+            android:visibility="visible"
+            android:gravity="center_vertical">
+
+
+
+            <!-- Country Code Container -->
+            <LinearLayout
+                android:layout_width="wrap_content"
+                android:layout_height="@dimen/_42sdp"
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:paddingHorizontal="12dp"
+                android:background="@drawable/bg_segment_container"
+                android:layout_marginEnd="2dp">
+
+                <com.hbb20.CountryCodePicker
+                    android:id="@+id/ccp"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:background="@null"
+                    app:ccp_showFlag="true"
+                    app:ccp_showNameCode="false"
+                    app:ccp_showPhoneCode="false"
+                    app:ccp_showArrow="true" />
+            </LinearLayout>
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="@dimen/_45sdp"
@@ -110,13 +142,12 @@
                     android:background="@null"
                     android:hint="@string/enter_phone_number"
                     android:inputType="number"
-                    android:maxLength="10"
                     android:paddingStart="@dimen/_10sdp"
                     android:paddingEnd="@dimen/_10sdp"
                     android:singleLine="true"
                     android:textSize="@dimen/_14sdp" />
             </LinearLayout>
-
+        </LinearLayout>
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"

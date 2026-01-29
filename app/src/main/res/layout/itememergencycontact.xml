@@ -48,7 +48,7 @@
                 android:orientation="vertical">
 
                 <TextView
-                    android:id="@+id/tv_name"
+                    android:id="@+id/tvName"
                     android:layout_width="match_parent"
                     android:layout_height="match_parent"
                     android:drawablePadding="@dimen/_10sdp"
@@ -118,14 +118,14 @@
                     tools:ignore="UselessParent">
 
                     <ImageView
-                        android:id="@+id/img_chat"
+                        android:id="@+id/imgChat"
                         android:layout_width="@dimen/_20sdp"
                         android:layout_height="@dimen/_20sdp"
                         android:layout_marginEnd="@dimen/_5sdp"
                         android:src="@drawable/chat_round_line_svgrepo_com" />
 
                     <ImageView
-                        android:id="@+id/img_call"
+                        android:id="@+id/imgCall"
                         android:layout_width="@dimen/_20sdp"
                         android:layout_height="@dimen/_20sdp"
                         android:layout_marginStart="@dimen/_5sdp"

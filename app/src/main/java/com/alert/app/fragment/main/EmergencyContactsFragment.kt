@@ -44,6 +44,7 @@ import com.google.android.material.bottomsheet.BottomSheetDialog
 import com.google.android.material.textfield.MaterialAutoCompleteTextView
 import com.google.gson.Gson
 import com.google.gson.JsonObject
+import com.hbb20.CountryCodePicker
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
 
@@ -55,7 +56,7 @@ class EmergencyContactsFragment : Fragment(), OnClickContact {
     private lateinit var viewModel: AddEmergencyContactViewModel
     private val getEmergencyContactList: MutableList<EmergencyContact> = mutableListOf()
 
-    private lateinit var adapter: EmergencyContactAdapter
+    private  var emergencyContactAdapter: EmergencyContactAdapter? = null
     private var selectedAlertId = -1
     private var selectedRelationId = -1
     override fun onCreateView(
@@ -63,7 +64,9 @@ class EmergencyContactsFragment : Fragment(), OnClickContact {
         savedInstanceState: Bundle?
     ): View {
         binding = FragmentEmergencyContactsBinding.inflate(layoutInflater, container, false)
+        viewModel = ViewModelProvider(this)[AddEmergencyContactViewModel::class.java]
 
+        emergencyContactAdapter = EmergencyContactAdapter(requireContext(), mutableListOf(), this)
         return binding.root
     }
 
@@ -72,14 +75,12 @@ class EmergencyContactsFragment : Fragment(), OnClickContact {
 
   /*      binding.lay1.visibility=View.VISIBLE
         binding.lay2.visibility=View.GONE*/
-        (requireActivity() as MainActivity).setImageShowTv()?.visibility=View.GONE
-        (requireActivity() as MainActivity).setImgChatBoot().visibility =View.VISIBLE
+     (requireActivity() as MainActivity).setImageShowTv()?.visibility=View.GONE
+       (requireActivity() as MainActivity).setImgChatBoot().visibility =View.VISIBLE
 
-        viewModel = ViewModelProvider(this)[AddEmergencyContactViewModel::class.java]
 
-        adapter = EmergencyContactAdapter(requireContext(), getEmergencyContactList, this)
         binding.rcyData.layoutManager = LinearLayoutManager(requireContext())
-        binding.rcyData.adapter = adapter
+        binding.rcyData.adapter = emergencyContactAdapter
 
 
         /*   binding.btnAddNowShow.visibility=View.GONE
@@ -90,7 +91,8 @@ class EmergencyContactsFragment : Fragment(), OnClickContact {
            }, 3000)*/
 
         binding.btnAddNow.setOnClickListener {
-            openAlertBox("add")
+           // openAlertBox("add")
+            alertBottom()
         }
 
         binding.backBtn.setOnClickListener {
@@ -112,7 +114,11 @@ class EmergencyContactsFragment : Fragment(), OnClickContact {
 
         getEmergencyContacts()
 
+
     }
+
+
+
 
     private fun getEmergencyContacts() {
         if (BaseApplication.isOnline(requireContext())) {
@@ -169,7 +175,7 @@ class EmergencyContactsFragment : Fragment(), OnClickContact {
                 binding.lay2.visibility = View.VISIBLE
                 binding.btnAddNowShow.visibility = View.VISIBLE
                 binding.rcyData.visibility = View.VISIBLE
-                adapter.update(getEmergencyContactList)
+                emergencyContactAdapter?.update(getEmergencyContactList)
             } else {
                 binding.rcyData.visibility = View.GONE
                 binding.lay1.visibility = View.VISIBLE
@@ -209,8 +215,15 @@ class EmergencyContactsFragment : Fragment(), OnClickContact {
     private fun handleApiResponse1(it: NetworkResult<JsonObject>) {
         when (it) {
             is NetworkResult.Success -> handleSaveSuccessApi(it.data.toString())
-            is NetworkResult.Error -> showAlert(it.message, false)
-            else -> showAlert(it.message, false)
+            is NetworkResult.Error -> {
+                Log.d("saveEmergencyContacts", "saveEmergencyContacts2")
+                Log.d("saveEmergencyContacts", "${it.message}")
+                showAlert(it.message, false)
+            }
+            else -> {
+                Log.d("saveEmergencyContacts", "saveEmergencyContacts1")
+                showAlert(it.message, false)
+            }
         }
     }
 
@@ -243,20 +256,20 @@ class EmergencyContactsFragment : Fragment(), OnClickContact {
 
         tvManually?.setOnClickListener {
             openBottomSheetDialog.dismiss()
-            openAlertBox("add")
+            openAlertBox("emergency")
         }
 
         tvContacts?.setOnClickListener {
             openBottomSheetDialog.dismiss()
             val bundle=Bundle()
-            bundle.putString("type","addContact")
+            bundle.putString("type","addEmergency")
             findNavController().navigate(R.id.mobileContactListFragment,bundle)
         }
 
         tvMap?.setOnClickListener {
             openBottomSheetDialog.dismiss()
             val bundle=Bundle()
-            bundle.putString("type","addContact")
+            bundle.putString("type","addEmergency")
             findNavController().navigate(R.id.fromMapFragment,bundle)
         }
     }
@@ -283,6 +296,7 @@ class EmergencyContactsFragment : Fragment(), OnClickContact {
         val edFullName = dialog.findViewById<EditText>(R.id.ed_full_name)
         val edLastName = dialog.findViewById<EditText>(R.id.ed_last_name)
         val edEmail = dialog.findViewById<EditText>(R.id.ed_email)
+        val ccp = dialog.findViewById<CountryCodePicker>(R.id.ccp)
         val edPhone = dialog.findViewById<EditText>(R.id.ed_phone)
         val tvRelation = dialog.findViewById<MaterialAutoCompleteTextView>(R.id.tvRelation)
         val tvAlerts = dialog.findViewById<MaterialAutoCompleteTextView>(R.id.tvAlerts)
@@ -310,10 +324,10 @@ class EmergencyContactsFragment : Fragment(), OnClickContact {
             val createHelpingNeighbor = CreateHelpingNeighbor(edFullName.text.toString(),
                 edLastName.text.toString(),
                 edEmail.text.toString(),
-                edPhone.text.toString(),
+                ccp.selectedCountryCodeWithPlus+ edPhone.text.toString(),
                 selectedRelationId.toString(),
                 selectedAlertId.toString(),
-                null)
+                type)
             saveEmergencyContacts(createHelpingNeighbor)
             dialog.dismiss()
         }
@@ -442,4 +456,39 @@ class EmergencyContactsFragment : Fragment(), OnClickContact {
             startActivity(intent)
         }
     }
+
+    /*private fun alertBottom() {
+        openBottomSheetDialog = BottomSheetDialog(requireContext(), R.style.BottomSheetDialog)
+        openBottomSheetDialog.setContentView(R.layout.bottom_sheet_scanner)
+        val cancel: ImageView? = openBottomSheetDialog.findViewById(R.id.img_cross)
+        val tvManually: TextView? = openBottomSheetDialog.findViewById(R.id.tv_manually)
+        val tvContacts: TextView? = openBottomSheetDialog.findViewById(R.id.tv_contacts)
+        val tvMap: TextView? = openBottomSheetDialog.findViewById(R.id.tv_map)
+
+        cancel?.setOnClickListener {
+            openBottomSheetDialog.dismiss()
+        }
+        openBottomSheetDialog.show()
+
+        tvManually?.setOnClickListener {
+            openBottomSheetDialog.dismiss()
+            openAlertBox("add")
+        }
+
+        tvContacts?.setOnClickListener {
+            openBottomSheetDialog.dismiss()
+            val bundle=Bundle()
+            bundle.putString("type","addContact")
+            findNavController().navigate(R.id.mobileContactListFragment,bundle)
+
+        }
+
+        tvMap?.setOnClickListener {
+            openBottomSheetDialog.dismiss()
+            val bundle=Bundle()
+            bundle.putString("type","addContact")
+            findNavController().navigate(R.id.fromMapFragment,bundle)
+        }
+
+    }*/
 }

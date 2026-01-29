@@ -26,6 +26,14 @@ android {
     buildTypes   {
 
         debug {
+            // Debug में भी Crashlytics enable करें
+         //   isMinifyEnabled = false
+            isDebuggable = true
+            // Crashlytics को debug में भी चलने दें
+            //noinspection WrongGradleMethod
+            firebaseCrashlytics {
+                mappingFileUploadEnabled = false
+            }
             val BASE_URL = project.property("BASE_URL")
             buildConfigField("String", "BASE_URL", "${BASE_URL}")
             val OPENAI_API_KEY = project.property("OPENAI_API_KEY")

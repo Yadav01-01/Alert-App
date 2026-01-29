@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import com.alert.app.di.NetworkResult
 import com.alert.app.model.contact.UserContactRequest
 import com.alert.app.model.contact.UserEditContactRequest
+import com.alert.app.model.helpingneighbormodel.CreateHelpingNeighbor
 import com.alert.app.repository.MainRepository
 import com.google.gson.JsonObject
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -32,5 +33,8 @@ class MobileContactsViewModel @Inject constructor(private val repository: MainRe
         }
     }
 
-
+    suspend fun addEmergencyContact(createHelpingNeighbor: CreateHelpingNeighbor): Flow<NetworkResult<JsonObject>> {
+        return repository.addEmergencyContact(createHelpingNeighbor).onEach {
+        }
+    }
 }
