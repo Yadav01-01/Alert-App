@@ -1,4 +1,4 @@
-package com.alert.app.fragment.auth
+package com.alert.app.fragment.main
 
 import android.annotation.SuppressLint
 import android.app.Dialog
@@ -7,36 +7,35 @@ import android.graphics.drawable.ColorDrawable
 import android.os.Bundle
 import android.os.CountDownTimer
 import android.util.Log
+import androidx.fragment.app.Fragment
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.view.WindowManager
 import android.widget.ImageView
 import android.widget.TextView
-import androidx.activity.OnBackPressedCallback
-import androidx.fragment.app.Fragment
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.lifecycleScope
 import androidx.navigation.fragment.findNavController
 import com.alert.app.R
 import com.alert.app.base.BaseApplication
 import com.alert.app.base.SessionManagement
-import com.alert.app.databinding.FragmentVerificationCodeProfileBinding
+import com.alert.app.databinding.FragmentVerifyProfileBinding
 import com.alert.app.di.NetworkResult
 import com.alert.app.errormessage.MessageClass
 import com.alert.app.viewmodel.profileviewmodel.UserProfileViewModel
 import com.alert.app.viewmodel.profileviewmodel.apiresponse.UserProfileModel
-import com.google.firebase.perf.v1.NetworkRequestMetricOrBuilder
 import com.google.gson.Gson
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
-import kotlinx.serialization.builtins.ByteArraySerializer
 import java.util.Locale
+import androidx.activity.OnBackPressedCallback
 
 @AndroidEntryPoint
-class VerificationCodeProfileFragment : Fragment() {
+class VerifyProfileFragment : Fragment() {
 
-    private lateinit var binding: FragmentVerificationCodeProfileBinding
+    private lateinit var binding:FragmentVerifyProfileBinding
+
     private val startTimeInMillis: Long = 120000
     private var mTimeLeftInMillis = startTimeInMillis
     private var emailOrPhone: String? = ""
@@ -44,11 +43,24 @@ class VerificationCodeProfileFragment : Fragment() {
     private lateinit var viewModel: UserProfileViewModel
     private var screenType: String? = ""
 
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+
+        arguments?.let {
+
+        }
+
+
+
+
+    }
+
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
         savedInstanceState: Bundle?
-    ): View {
-        binding = FragmentVerificationCodeProfileBinding.inflate(layoutInflater, container, false)
+    ): View? {
+
+        binding = FragmentVerifyProfileBinding.inflate(LayoutInflater.from(requireContext()))
 
         return binding.root
     }
@@ -104,9 +116,17 @@ class VerificationCodeProfileFragment : Fragment() {
 
 
         binding.imgBack.setOnClickListener {
-            findNavController().popBackStack()
+            findNavController().navigate(R.id.homeProfileFragment2)
         }
 
+        requireActivity().onBackPressedDispatcher.addCallback(
+            viewLifecycleOwner,
+            object : OnBackPressedCallback(true) {
+                override fun handleOnBackPressed() {
+                    findNavController().navigate(R.id.homeProfileFragment2)
+                }
+            }
+        )
 
     }
 
@@ -253,7 +273,7 @@ class VerificationCodeProfileFragment : Fragment() {
                         if (!sessionManagement.getProfileScreen().toString()
                                 .equals("signup", true)
                         ) {
-                            findNavController().navigateUp()
+                            findNavController().navigate(R.id.homeProfileFragment2)
                         } else {
                             openAlertBoxSuccess()
                         }

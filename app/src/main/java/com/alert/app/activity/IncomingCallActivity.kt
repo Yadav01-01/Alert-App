@@ -24,19 +24,20 @@ class IncomingCallActivity : AppCompatActivity() {
         setContentView(R.layout.activity_incoming_call)
         enableEdgeToEdge()
 
-        // Fullscreen after layout
         enableFullScreen()
 
         val callerNameTv = findViewById<TextView>(R.id.tv_caller)
         val acceptBtn = findViewById<Button>(R.id.btn_accept)
         val declineBtn = findViewById<Button>(R.id.btn_decline)
+        val incomingAlertInfo = findViewById<TextView>(R.id.tv_info)
+
 
         // Get caller data
         val callerName = intent.getStringExtra("CALLER_NAME") ?: "Unknown Caller"
         val sessionId = intent.getStringExtra("CALL_SESSION_ID") ?: "123"
 
         callerNameTv.text = "Incoming Alert"
-
+        incomingAlertInfo.text = callerName
         acceptBtn.setOnClickListener {
             stopService(Intent(this, IncomingCallService::class.java))
 

@@ -42,7 +42,7 @@ class EmergencyTextSubmitFragment : Fragment() {
     private val binding get() = _binding!!
     private lateinit var viewModel: EmergencyTextMessageViewModel
     private var isEditing = false
-
+    private var emergencyText :String =""
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?
     ): View {
@@ -55,6 +55,8 @@ class EmergencyTextSubmitFragment : Fragment() {
         super.onViewCreated(view, savedInstanceState)
 
         viewModel = ViewModelProvider(this)[EmergencyTextMessageViewModel::class.java]
+
+        emergencyText = requireArguments().getString("emergency_text") ?: ""
 
         initialize()
 
@@ -74,8 +76,9 @@ class EmergencyTextSubmitFragment : Fragment() {
             binding.edText.isEnabled = false
             binding.btnSave.text = "Edit"
         }
+        binding.edText.setText(emergencyText)
 
-        getEmergencyMessage()
+       // getEmergencyMessage()
 
     }
 
@@ -191,7 +194,9 @@ class EmergencyTextSubmitFragment : Fragment() {
             viewLifecycleOwner,
             object : OnBackPressedCallback(true) {
                 override fun handleOnBackPressed() {
-                    findNavController().navigateUp()
+                  //  findNavController().navigateUp()
+                    findNavController().navigate(R.id.homeFragment)
+
                 }
             })
     }

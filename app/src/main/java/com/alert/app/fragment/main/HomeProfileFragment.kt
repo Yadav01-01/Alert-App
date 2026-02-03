@@ -269,7 +269,6 @@ class HomeProfileFragment : Fragment() {
         }
 
         /* ------ PHONE ------ */
-
         when {
             phoneText.isEmpty() -> setPhoneVisibility(false)
 
@@ -310,12 +309,11 @@ class HomeProfileFragment : Fragment() {
             updateVerificationUI()
         }
 
-
-
         binding.edPhone.doAfterTextChanged {
              setPhoneVisibility(true)
         //   updateVerificationUI()
         }
+
     }
 
 
@@ -612,7 +610,7 @@ class HomeProfileFragment : Fragment() {
         val bundle=Bundle()
         bundle.putString("screenType", "HomeProfile")
         bundle.putString("emailOrPhone", value)
-        findNavController().navigate(R.id.verificationCodeProfileFragment,bundle)
+        findNavController().navigate(R.id.verify_phone_email,bundle)
     }
 
     private fun navigateToConfirmationFragment(value:String) {

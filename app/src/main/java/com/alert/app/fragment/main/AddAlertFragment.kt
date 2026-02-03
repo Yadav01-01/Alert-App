@@ -100,7 +100,8 @@ class AddAlertFragment : Fragment() {
         binding.tvStartTime.setOnClickListener {
             showTimePickerDialog { formattedTime ->
                 binding.tvStartTime.text = formattedTime.uppercase()
-                binding.timeTv.visibility = View.VISIBLE
+                binding.timeTv.visibility = View.GONE
+
             }
         }
 

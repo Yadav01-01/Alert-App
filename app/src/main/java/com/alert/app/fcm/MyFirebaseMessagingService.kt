@@ -54,9 +54,13 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
     @RequiresPermission(Manifest.permission.POST_NOTIFICATIONS)
     private fun callphoneWithRing(remoteMessage: RemoteMessage) {
 
-        startIncomingCallService("Nikunj","122")
+        if(remoteMessage.data.get("type").equals("self_alert")) {
+            val title = remoteMessage.data.get("title").toString()
+            val body = remoteMessage.data.get("body").toString()
+            startIncomingCallService(title, body)
+        }
 
-        // older code
+    // older code
 
         // showIncomingCallNotification("Nikunj","122")
         //        if(remoteMessage.data.isNotEmpty() && remoteMessage.data["type"] == "incoming_call") {

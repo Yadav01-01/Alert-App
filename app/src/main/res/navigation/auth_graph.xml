@@ -79,6 +79,8 @@
         android:name="com.alert.app.fragment.auth.VerificationCodeProfileFragment"
         android:label="fragment_verification_code_profile"
         tools:layout="@layout/fragment_verification_code_profile" />
+
+
     <fragment
         android:id="@+id/mobileContactListFragment2"
         android:name="com.alert.app.fragment.main.MobileContactListFragment"
@@ -103,12 +105,15 @@
         android:id="@+id/homeProfileFragment2"
         android:name="com.alert.app.fragment.main.HomeProfileFragment"
         android:label="fragment_home_profile"
-        tools:layout="@layout/fragment_home_profile" >
+        tools:layout="@layout/fragment_home_profile">
+
         <argument
             android:name="source"
             app:argType="string"
             android:defaultValue="auth" />
+
     </fragment>
+
     <fragment
         android:id="@+id/tutorialsFragment2"
         android:name="com.alert.app.fragment.main.TutorialsFragment"
@@ -119,4 +124,12 @@
         android:name="com.alert.app.fragment.main.KnowMoreFragment"
         android:label="fragment_knowm_more"
         tools:layout="@layout/fragment_knowm_more" />
+
+    <fragment
+        android:id = "@+id/verify_phone_email"
+        android:name="com.alert.app.fragment.main.VerifyProfileFragment"
+        android:label="fragment_verify_profile"
+        />
+
+
 </navigation>

@@ -35,11 +35,14 @@
         android:name="com.alert.app.fragment.main.MapFullScreenFragment"
         android:label="fragment_map_full_screen"
         tools:layout="@layout/fragment_map_full_screen" />
+
     <fragment
         android:id="@+id/notificationFragment"
         android:name="com.alert.app.fragment.main.NotificationFragment"
         android:label="fragment_notification"
         tools:layout="@layout/fragment_notification" />
+
+
     <fragment
         android:id="@+id/checkHistoryFragment"
         android:name="com.alert.app.fragment.main.CheckHistoryFragment"
@@ -55,56 +58,67 @@
         android:name="com.alert.app.fragment.main.NearByPepopleFragment"
         android:label="fragment_near_by_pepople"
         tools:layout="@layout/fragment_near_by_pepople" />
+
     <fragment
         android:id="@+id/selfAlertFragment"
         android:name="com.alert.app.fragment.main.SelfAlertFragment"
         android:label="fragment_self_alert"
         tools:layout="@layout/fragment_self_alert" />
+
     <fragment
         android:id="@+id/addAlertFragment"
         android:name="com.alert.app.fragment.main.AddAlertFragment"
         android:label="fragment_add_alert"
         tools:layout="@layout/fragment_add_alert" />
+
     <fragment
         android:id="@+id/locationShareFragment"
         android:name="com.alert.app.fragment.main.LocationShareFragment"
         android:label="fragment_location_share"
         tools:layout="@layout/fragment_location_share" />
+
     <fragment
         android:id="@+id/contactListFragment"
         android:name="com.alert.app.fragment.main.ContactListFragment"
         android:label="fragment_contact_list"
         tools:layout="@layout/fragment_contact_list" />
+
     <fragment
         android:id="@+id/emergencyContactsFragment"
         android:name="com.alert.app.fragment.main.EmergencyContactsFragment"
         android:label="fragment_emergency_contacts"
         tools:layout="@layout/fragment_emergency_contacts" />
+
     <fragment
         android:id="@+id/helpFragment"
         android:name="com.alert.app.fragment.main.HelpFragment"
         android:label="fragment_help"
         tools:layout="@layout/fragment_help" />
+
     <fragment
         android:id="@+id/emergencyTextFragment"
         android:name="com.alert.app.fragment.main.EmergencyTextFragment"
         android:label="fragment_emergency_text"
         tools:layout="@layout/fragment_emergency_text" />
+
     <fragment
         android:id="@+id/emergencyTextSubmitFragment"
         android:name="com.alert.app.fragment.main.EmergencyTextSubmitFragment"
         android:label="fragment_emergency_text_submit"
         tools:layout="@layout/fragment_emergency_text_submit" />
+
     <fragment
         android:id="@+id/watchOverMeFragment"
         android:name="com.alert.app.fragment.main.WatchOverMeFragment"
         android:label="fragment_watch_over_me"
         tools:layout="@layout/fragment_watch_over_me" />
+
     <fragment
         android:id="@+id/termsAndConditionFragment"
         android:name="com.alert.app.fragment.main.TermsAndConditionFragment"
         android:label="fragment_terms_and_condition"
         tools:layout="@layout/fragment_terms_and_condition" />
+
     <fragment
         android:id="@+id/privacyPolicyFragment"
         android:name="com.alert.app.fragment.main.PrivacyPolicyFragment"

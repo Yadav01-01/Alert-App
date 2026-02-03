@@ -49,15 +49,15 @@
                 android:id="@+id/btn_okay"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Create an Emergency Text"
+                android:layout_gravity="center"
                 android:layout_marginTop="@dimen/_20sdp"
                 android:layout_marginBottom="@dimen/_10sdp"
-                android:textColor="@color/white"
-                android:textSize="@dimen/_13sdp"
+                android:background="@drawable/textbg"
                 android:fontFamily="@font/urbanist_medium"
-                android:layout_gravity="center"
                 android:gravity="center"
-                android:background="@drawable/textbg"/>
+                android:text="Create an Emergency Text"
+                android:textColor="@color/white"
+                android:textSize="@dimen/_13sdp" />
 
         </LinearLayout>
     </ScrollView>
