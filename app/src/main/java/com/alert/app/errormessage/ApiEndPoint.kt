@@ -60,6 +60,7 @@ object ApiEndPoint {
     const val ASK_GPT="api/ask-gpt"
     const val SHARE_LOCATION="api/share-location"
     const val ADD_HEALTH_ALERT="api/add_health_alert"
+    const val MAP_LOCATIONS="api/map-locations"
 
 
 }

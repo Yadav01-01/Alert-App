@@ -27,13 +27,10 @@ android {
 
         debug {
             // Debug में भी Crashlytics enable करें
-         //   isMinifyEnabled = false
+            //   isMinifyEnabled = false
             isDebuggable = true
             // Crashlytics को debug में भी चलने दें
-            //noinspection WrongGradleMethod
-            firebaseCrashlytics {
-                mappingFileUploadEnabled = false
-            }
+
             val BASE_URL = project.property("BASE_URL")
             buildConfigField("String", "BASE_URL", "${BASE_URL}")
             val OPENAI_API_KEY = project.property("OPENAI_API_KEY")
@@ -112,22 +109,22 @@ dependencies {
     implementation ("joda-time:joda-time:2.11.1")
 
     //firebase
-   /* implementation ("com.google.firebase:firebase-analytics:21.2.2")
-    implementation ("com.google.firebase:firebase-messaging:23.1.2")
-    // Add the dependency for the Firebase SDK for Google Analytics
-    implementation ("com.google.firebase:firebase-analytics")
-    //Cloud Messaging
-    implementation ("com.google.firebase:firebase-messaging")
-    // Import the Firebase BoM
-    implementation(platform("com.google.firebase:firebase-bom:33.6.0"))
-    // TODO: Add the dependencies for Firebase products you want to use
-    // When using the BoM, don't specify versions in Firebase dependencies
-    implementation("com.google.firebase:firebase-analytics")
-    implementation("com.google.firebase:firebase-crashlytics")
-    implementation ("com.google.firebase:firebase-crashlytics:<latest-version>")
-    implementation ("com.google.firebase:firebase-perf")
+    /* implementation ("com.google.firebase:firebase-analytics:21.2.2")
+     implementation ("com.google.firebase:firebase-messaging:23.1.2")
+     // Add the dependency for the Firebase SDK for Google Analytics
+     implementation ("com.google.firebase:firebase-analytics")
+     //Cloud Messaging
+     implementation ("com.google.firebase:firebase-messaging")
+     // Import the Firebase BoM
+     implementation(platform("com.google.firebase:firebase-bom:33.6.0"))
+     // TODO: Add the dependencies for Firebase products you want to use
+     // When using the BoM, don't specify versions in Firebase dependencies
+     implementation("com.google.firebase:firebase-analytics")
+     implementation("com.google.firebase:firebase-crashlytics")
+     implementation ("com.google.firebase:firebase-crashlytics:<latest-version>")
+     implementation ("com.google.firebase:firebase-perf")
 
-    implementation ("com.google.firebase:firebase-auth-ktx:22.1.1")*/
+     implementation ("com.google.firebase:firebase-auth-ktx:22.1.1")*/
 
     /*    // Firebase SDKs with explicit versions
     implementation("com.google.firebase:firebase-auth-ktx:23.2.1")

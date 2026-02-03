@@ -149,6 +149,7 @@ class SetAlertFragment : Fragment() {
                     edPhone.text.toString(),
                     selectedRelationId,
                     selectedAlertId,
+                    null,
                     null)
                 addManual(userContactRequest,dialog)
             }

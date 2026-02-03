@@ -232,7 +232,8 @@ class AddedContactsFragment : Fragment() , ContactClick, OnClickEventDropDownTyp
                     edPhone.text.toString(),
                     selectedRelationId,
                     selectedAlertId,
-                    null)
+                    null,
+                    "manual")
                 addManual(userContactRequest,dialog)
             }
         }

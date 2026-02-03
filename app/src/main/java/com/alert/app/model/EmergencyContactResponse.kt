@@ -14,6 +14,7 @@ data class EmergencyContactResponse(
 
     @SerializedName("data")
     val data: List<EmergencyContact>? = emptyList()
+   // val data: List<EmergencyContact>? = emptyList()
 )
 data class EmergencyContact(
     @SerializedName("contact_id")

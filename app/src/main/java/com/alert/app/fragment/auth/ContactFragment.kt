@@ -227,6 +227,7 @@ class ContactFragment : Fragment(), ContactClick {
                         edPhone.text.toString(),
                         selectedRelationId,
                         selectedAlertId,
+                        null,
                         null
                     )
                     addManual(userContactRequest, dialog)

@@ -4,6 +4,7 @@ import com.alert.app.di.NetworkResult
 import com.alert.app.model.contact.UserContactRequest
 import com.alert.app.model.contact.UserEditContactRequest
 import com.alert.app.model.helpingneighbormodel.CreateHelpingNeighbor
+import com.alert.app.model.map.UserLocationResponse
 import com.alert.app.model.notification.AlertModel
 import com.alert.app.model.selfAlert.CreateSelfAlertRequest
 import com.google.gson.JsonObject
@@ -188,5 +189,7 @@ interface MainRepository {
     suspend fun sendProfileUpdateVerifyOtp(
         @Field("emailOrPhone") emailOrPhone :String
     ) : Flow<NetworkResult<String>>
+
+    suspend fun mapLocations() : Flow<NetworkResult<UserLocationResponse>>
 
 }

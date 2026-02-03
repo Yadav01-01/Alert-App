@@ -232,7 +232,31 @@ class EmergencyContactsFragment : Fragment(), OnClickContact {
             val apiModel = Gson().fromJson(data, EmergencyContactResponse::class.java)
             Log.d("@@@ addMea List ", "message :- $data")
             if (apiModel.code == 200 && apiModel.status == true) {
+              //  Toast.makeText(requireContext(), apiModel.message, Toast.LENGTH_LONG).show()
                 Toast.makeText(requireContext(), apiModel.message, Toast.LENGTH_LONG).show()
+
+                // 👉 New contact (API se aaya hua)
+                val newContact = apiModel.data?.firstOrNull()
+
+                if (newContact != null) {
+
+                    // Empty screen hatao agar pehla item hai
+                    binding.lay1.visibility = View.GONE
+                    binding.lay2.visibility = View.VISIBLE
+                    binding.btnAddNowShow.visibility = View.VISIBLE
+                    binding.rcyData.visibility = View.VISIBLE
+
+                    // 🔥 Fragment list me add
+                    getEmergencyContactList.add(newContact)
+
+                    // 🔥 Adapter me last me add
+                    emergencyContactAdapter?.addItem(newContact)
+
+                    // Optional: last item par scroll
+                    binding.rcyData.scrollToPosition(
+                        emergencyContactAdapter!!.itemCount - 1
+                    )
+                }
             } else {
                 handleError(apiModel.code,apiModel.message)
             }
