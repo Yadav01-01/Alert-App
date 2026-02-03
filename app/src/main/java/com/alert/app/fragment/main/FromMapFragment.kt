@@ -3,6 +3,7 @@ package com.alert.app.fragment.main
 import android.annotation.SuppressLint
 import android.app.Dialog
 import android.content.Context
+import android.content.Context.LAYOUT_INFLATER_SERVICE
 import android.content.pm.PackageManager
 import android.graphics.Bitmap
 import android.graphics.Canvas
@@ -10,6 +11,7 @@ import android.graphics.Color
 import android.graphics.drawable.ColorDrawable
 import android.graphics.drawable.Drawable
 import android.os.Bundle
+import android.view.Gravity
 import androidx.fragment.app.Fragment
 import android.view.LayoutInflater
 import android.view.View
@@ -19,6 +21,7 @@ import android.widget.ArrayAdapter
 
 import android.widget.ImageView
 import android.widget.PopupWindow
+import android.widget.RelativeLayout
 import android.widget.TextView
 import android.widget.Toast
 import androidx.activity.OnBackPressedCallback
@@ -69,6 +72,274 @@ import com.google.gson.Gson
 import dagger.hilt.android.AndroidEntryPoint
 import de.hdodenhof.circleimageview.CircleImageView
 import kotlinx.coroutines.launch
+
+
+import androidx.fragment.app.viewModels
+import androidx.lifecycle.lifecycleScope
+import androidx.navigation.fragment.findNavController
+import androidx.recyclerview.widget.RecyclerView
+import com.alert.app.adapter.TimeArrayCustomListAdapter
+
+import com.alert.app.base.BaseApplication.alertError
+
+import com.alert.app.errormessage.AlertUtils.showAlert
+
+import com.alert.app.model.map.UserLocationResponse
+import kotlinx.coroutines.launch
+
+/*@AndroidEntryPoint
+class FromMapFragment : Fragment(), OnMapReadyCallback {
+
+    private lateinit var binding: FragmentFromMapBinding
+    private lateinit var googleMap: GoogleMap
+    private lateinit var mapView: MapView
+    private lateinit var fusedLocationClient: FusedLocationProviderClient
+    private lateinit var locationPermissionLauncher: ActivityResultLauncher<String>
+
+    private val viewModel: MapViewModel by viewModels()
+    private var currentLocationMarker: Marker? = null
+    private var type: String = ""
+
+    private var selectedAlertId = -1
+    private var selectedRelationId = -1
+
+    override fun onCreateView(
+        inflater: LayoutInflater, container: ViewGroup?,
+        savedInstanceState: Bundle?
+    ): View {
+        binding = FragmentFromMapBinding.inflate(inflater, container, false)
+
+        mapView = binding.map
+        mapView.onCreate(savedInstanceState)
+        mapView.getMapAsync(this)
+
+        initView()
+        return binding.root
+    }
+
+    private fun initView() {
+        fusedLocationClient = LocationServices.getFusedLocationProviderClient(requireContext())
+
+        locationPermissionLauncher =
+            registerForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
+                if (granted) enableMyLocation()
+                else Toast.makeText(requireContext(), "Location permission denied", Toast.LENGTH_SHORT).show()
+            }
+
+        type = arguments?.getString("type", "") ?: ""
+
+        requireActivity().onBackPressedDispatcher.addCallback(
+            viewLifecycleOwner,
+            object : OnBackPressedCallback(true) {
+                override fun handleOnBackPressed() {
+                    findNavController().navigateUp()
+                }
+            }
+        )
+    }
+
+    // ================= MAP READY ==================
+
+    override fun onMapReady(map: GoogleMap) {
+        googleMap = map
+
+        if (ContextCompat.checkSelfPermission(
+                requireContext(),
+                android.Manifest.permission.ACCESS_FINE_LOCATION
+            ) == PackageManager.PERMISSION_GRANTED
+        ) {
+            enableMyLocation()
+        } else {
+            locationPermissionLauncher.launch(android.Manifest.permission.ACCESS_FINE_LOCATION)
+        }
+
+        loadUsersOnMap()
+
+        googleMap.setOnInfoWindowClickListener { marker ->
+            val user = marker.tag as? UserData
+            addAlert(user)
+        }
+    }
+
+    // ================= LOCATION ==================
+
+    @SuppressLint("MissingPermission")
+    private fun enableMyLocation() {
+        googleMap.isMyLocationEnabled = true
+
+        fusedLocationClient.lastLocation.addOnSuccessListener { location ->
+            if (location != null) {
+                val latLng = LatLng(location.latitude, location.longitude)
+                showCurrentLocationMarker(latLng)
+            }
+        }
+    }
+
+    private fun showCurrentLocationMarker(latLng: LatLng) {
+        currentLocationMarker?.remove()
+
+        currentLocationMarker = googleMap.addMarker(
+            MarkerOptions()
+                .position(latLng)
+                .icon(getBitmapDescriptor(R.drawable.your_location))
+                .anchor(0.5f, 0.5f)
+        )
+
+        googleMap.animateCamera(CameraUpdateFactory.newLatLngZoom(latLng, 15f))
+    }
+
+    // ================= API → MAP ==================
+
+    private fun loadUsersOnMap() {
+        if (!BaseApplication.isOnline(requireContext())) {
+            showAlert(requireContext(), MessageClass.networkError, false)
+            return
+        }
+
+        BaseApplication.openDialog()
+
+        lifecycleScope.launch {
+            viewModel.mapLocations().collect { result ->
+                BaseApplication.dismissDialog()
+
+                when (result) {
+                    is NetworkResult.Success -> {
+                        val response = result.data
+                        if (response?.status == true) {
+                            response.data.forEach { user ->
+                                if (user.latitude != "0" && user.longitude != "0") {
+
+                                    val latLng = LatLng(
+                                        user.latitude?.toDouble()?:0.000,
+                                        user.longitude?.toDouble()?:0.000
+                                    )
+
+                                    createMarkerFromView(
+                                        requireContext(),
+                                        BuildConfig.BASE_URL + user.profilePic
+                                    ) { icon ->
+                                        val marker = googleMap.addMarker(
+                                            MarkerOptions()
+                                                .position(latLng)
+                                                .icon(icon)
+                                                .anchor(0.5f, 1f)
+                                        )
+                                        marker?.tag = user
+                                    }
+                                }
+                            }
+                        }
+                    }
+
+                    is NetworkResult.Error -> {
+                        Toast.makeText(requireContext(), result.message, Toast.LENGTH_LONG).show()
+                    }
+                }
+            }
+        }
+    }
+
+    // ================= CUSTOM MARKER ==================
+
+    private fun getBitmapDescriptor(@DrawableRes id: Int): BitmapDescriptor {
+        val drawable = ContextCompat.getDrawable(requireContext(), id)!!
+        val bitmap = Bitmap.createBitmap(
+            drawable.intrinsicWidth,
+            drawable.intrinsicHeight,
+            Bitmap.Config.ARGB_8888
+        )
+        val canvas = Canvas(bitmap)
+        drawable.setBounds(0, 0, canvas.width, canvas.height)
+        drawable.draw(canvas)
+        return BitmapDescriptorFactory.fromBitmap(bitmap)
+    }
+
+    private fun createMarkerFromView(
+        context: Context,
+        imageUrl: String,
+        callback: (BitmapDescriptor) -> Unit
+    ) {
+        val view = LayoutInflater.from(context).inflate(R.layout.custom_marker, null)
+        val img = view.findViewById<CircleImageView>(R.id.imgProfile)
+
+        Glide.with(context)
+            .asBitmap()
+            .load(imageUrl)
+            .placeholder(R.drawable.marker_demmy_pic)
+            .into(object : CustomTarget<Bitmap>() {
+                override fun onResourceReady(resource: Bitmap, transition: Transition<in Bitmap>?) {
+                    img.setImageBitmap(resource)
+
+                    view.measure(
+                        View.MeasureSpec.UNSPECIFIED,
+                        View.MeasureSpec.UNSPECIFIED
+                    )
+                    view.layout(0, 0, view.measuredWidth, view.measuredHeight)
+
+                    val bitmap = Bitmap.createBitmap(
+                        view.measuredWidth,
+                        view.measuredHeight,
+                        Bitmap.Config.ARGB_8888
+                    )
+                    val canvas = Canvas(bitmap)
+                    view.draw(canvas)
+
+                    callback(BitmapDescriptorFactory.fromBitmap(bitmap))
+                }
+
+                override fun onLoadCleared(placeholder: Drawable?) {}
+            })
+    }
+
+    // ================= ADD ALERT ==================
+
+    private fun addAlert(user: UserData?) {
+        if (user == null) return
+
+        val dialog = Dialog(requireContext())
+        dialog.setContentView(R.layout.dialog_addalert)
+        dialog.setCancelable(false)
+        dialog.window!!.setBackgroundDrawable(ColorDrawable(Color.TRANSPARENT))
+        dialog.show()
+
+        val btnOkay = dialog.findViewById<TextView>(R.id.btnokay)
+        val imgClose = dialog.findViewById<ImageView>(R.id.img_close)
+
+        btnOkay.setOnClickListener {
+            if (user.email.isNullOrEmpty()) {
+                alertError(requireContext(), MessageClass.emailError, false)
+                return@setOnClickListener
+            }
+            dialog.dismiss()
+        }
+
+        imgClose.setOnClickListener {
+            dialog.dismiss()
+        }
+    }
+
+    // ================= MAPVIEW LIFECYCLE ==================
+
+    override fun onResume() {
+        super.onResume()
+        mapView.onResume()
+    }
+
+    override fun onPause() {
+        super.onPause()
+        mapView.onPause()
+    }
+
+    override fun onDestroyView() {
+        super.onDestroyView()
+        mapView.onDestroy()
+    }
+
+    override fun onLowMemory() {
+        super.onLowMemory()
+        mapView.onLowMemory()
+    }
+}*/
 
 @AndroidEntryPoint
 class FromMapFragment : Fragment(), OnClickEventDropDownType, OnMapReadyCallback {
@@ -311,10 +582,16 @@ class FromMapFragment : Fragment(), OnClickEventDropDownType, OnMapReadyCallback
         val imgClose = dialog.findViewById<ImageView>(R.id.img_close)
         dialog.show()
         dialog.window!!.setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_STATE_ALWAYS_VISIBLE)
-      /*  val dataAdapter = ArrayAdapter(requireContext(), R.layout.drop_down_item, data)
-        tvRelation.setAdapter<ArrayAdapter<String>>(dataAdapter)*/
+/*
+  val dataAdapter = ArrayAdapter(requireContext(), R.layout.drop_down_item, data)
+        tvRelation.setAdapter<ArrayAdapter<String>>(dataAdapter)
+*/
+        val stringList = data.map { it.toString() } // or use a specific property like it.timeText
 
-        /*tvRelation.setOnClickListener {
+        val dataAdapter = ArrayAdapter(requireContext(), R.layout.drop_down_item, stringList)
+        tvRelation.setAdapter(dataAdapter)
+
+tvRelation.setOnClickListener {
             val inflater = requireContext().getSystemService(LAYOUT_INFLATER_SERVICE) as LayoutInflater?
             val popupView: View? = inflater?.inflate(R.layout.item_select_layout, null)
             popupWindow = PopupWindow(popupView, tvRelation.width, RelativeLayout.LayoutParams.WRAP_CONTENT, true)
@@ -333,7 +610,8 @@ class FromMapFragment : Fragment(), OnClickEventDropDownType, OnMapReadyCallback
             }
 
 
-        }*/
+        }
+
 
 
 
@@ -354,6 +632,7 @@ class FromMapFragment : Fragment(), OnClickEventDropDownType, OnMapReadyCallback
                         it.phone_number,
                         selectedRelationId,
                         selectedAlertId,
+                        "map",
                         "map")
                     addContact(userContactRequest,dialog)
                 }

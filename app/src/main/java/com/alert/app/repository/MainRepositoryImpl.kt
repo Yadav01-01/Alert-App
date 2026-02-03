@@ -7,6 +7,7 @@ import com.alert.app.errormessage.MessageClass
 import com.alert.app.model.contact.UserContactRequest
 import com.alert.app.model.contact.UserEditContactRequest
 import com.alert.app.model.helpingneighbormodel.CreateHelpingNeighbor
+import com.alert.app.model.map.UserLocationResponse
 import com.alert.app.model.notification.AlertModel
 import com.alert.app.model.selfAlert.CreateSelfAlertRequest
 import com.google.android.exoplayer2.util.Log
@@ -1948,6 +1949,8 @@ class MainRepositoryImpl @Inject constructor(private val apiInterface: ApiInterf
     }
 
 
+
+
     override suspend fun addEmergencyContact(createHelpingNeighbor: CreateHelpingNeighbor): Flow<NetworkResult<JsonObject>> = flow {
             try {
                 apiInterface.addEmergencyContact(createHelpingNeighbor).apply {
@@ -1984,4 +1987,39 @@ class MainRepositoryImpl @Inject constructor(private val apiInterface: ApiInterf
             }
         }
 
+    override suspend fun mapLocations(): Flow<NetworkResult<UserLocationResponse>> = flow{
+        try {
+            apiInterface.mapLocations().apply {
+                if (isSuccessful) {
+                    body()?.let { resp ->
+                        if (resp.has("status") && resp.get("status").asBoolean) {
+                            val model = Gson().fromJson(resp, UserLocationResponse::class.java)
+    emit(NetworkResult.Success(model))
+
+}
+
+                        else {
+                            emit(NetworkResult.Error(resp.get("message").asString))
+                        }
+                    } ?: emit(NetworkResult.Error(AppConstant.unKnownError))
+                }
+                else {
+                    try {
+                        val jsonObj = this.errorBody()?.string()?.let { JSONObject(it) }
+                        emit(
+                            NetworkResult.Error(
+                                jsonObj?.getString("message")
+                                    ?: AppConstant.unKnownError
+                            )
+                        )
+                    } catch (e: JSONException) {
+                        e.printStackTrace()
+                        emit(NetworkResult.Error(AppConstant.unKnownError))
+                    }
+                }
+            }
+        } catch (e: Exception) {
+            emit(NetworkResult.Error(e.message ?: ""))
+        }
+    }
 }

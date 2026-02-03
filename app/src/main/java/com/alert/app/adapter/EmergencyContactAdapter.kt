@@ -166,6 +166,10 @@ class EmergencyContactAdapter(
        list.addAll(newList.toList())
        notifyDataSetChanged()
    }
-
+    @SuppressLint("NotifyDataSetChanged")
+    fun addItem(item: EmergencyContact) {
+        list.add(item)                  // last me add
+        notifyItemInserted(list.size - 1)
+    }
 
 }

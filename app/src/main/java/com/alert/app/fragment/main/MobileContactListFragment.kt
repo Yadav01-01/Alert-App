@@ -336,13 +336,21 @@ class MobileContactListFragment : Fragment() , OnClickEventMobileContact, OnClic
                         Log.d("createHelpingNeighbor","$createHelpingNeighbor")
                         addContact1(createHelpingNeighbor,dialog)
                     }else{
-                        val userContactRequest = UserContactRequest(it.name?:"",
-                            "",
-                            it.email?:"",
-                            it.number.toString(),
-                            selectedRelationId,
-                            selectedAlertId,
-                            "device")
+                        val fullName = it.name?.trim().orEmpty()
+
+                        val nameParts = fullName.split("\\s+".toRegex(), limit = 2)
+
+                        val firstName = nameParts.getOrNull(0) ?: ""
+                        val lastName = nameParts.getOrNull(1) ?: ""
+                        val userContactRequest = UserContactRequest(
+                            first_name = firstName?:"",
+                            last_name= lastName?:"",
+                            email= it.email?:"",
+                            phone= it.number.toString(),
+                            relation_id=  selectedRelationId,
+                            alert_id=  selectedAlertId,
+                            type= "contact",
+                            contact_type= "device")
                         addContact(userContactRequest,dialog)
                     }
 
@@ -367,13 +375,29 @@ class MobileContactListFragment : Fragment() , OnClickEventMobileContact, OnClic
                         Log.d("createHelpingNeighbor","$createHelpingNeighbor")
                         addContact1(createHelpingNeighbor,dialog)
                     }else{
-                        val userContactRequest = UserContactRequest(it.name?:"",
+                        val fullName = it.name?.trim().orEmpty()
+
+                        val nameParts = fullName.split("\\s+".toRegex(), limit = 2)
+
+                        val firstName = nameParts.getOrNull(0) ?: ""
+                        val lastName = nameParts.getOrNull(1) ?: ""
+                        val userContactRequest = UserContactRequest(
+                        /*    it.name?:"",
                             "",
                             it.email?:"",
                             it.number!!,
                             selectedRelationId,
                             selectedAlertId,
-                            "device")
+                            "device"*/
+                            first_name = firstName?:"",
+                            last_name= lastName?:"",
+                            email= it.email?:"",
+                            phone= it.number.toString(),
+                            relation_id=  selectedRelationId,
+                            alert_id=  selectedAlertId,
+                            type= "contact",
+                            contact_type= "device"
+                        )
                         addContact(userContactRequest,dialog)
                     }
 
@@ -637,7 +661,7 @@ class MobileContactListFragment : Fragment() , OnClickEventMobileContact, OnClic
     ) {
         val dialog = Dialog(context)
         dialog.setContentView(R.layout.dialog_country_code)
-        dialog.setCancelable(false)
+        dialog.setCancelable(true)
         val window = dialog.window
         window?.setLayout(
             WindowManager.LayoutParams.MATCH_PARENT,

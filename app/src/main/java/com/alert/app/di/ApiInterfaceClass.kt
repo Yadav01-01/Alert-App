@@ -322,5 +322,9 @@ interface ApiInterfaceClass {
     ) : Response<JsonObject>
 
 
+    @GET(ApiEndPoint.MAP_LOCATIONS)
+    suspend fun mapLocations( ) : Response<JsonObject>
+
+
 
 }

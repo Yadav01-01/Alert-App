@@ -1,4 +1,4 @@
-package com.alert.app.viewmodel.mapViewviewmodel
+package com.alert.app.viewmodel.contactsviewmodel
 
 import androidx.lifecycle.ViewModel
 import com.alert.app.di.NetworkResult
@@ -13,29 +13,11 @@ import kotlinx.coroutines.flow.onEach
 import javax.inject.Inject
 
 
+
 @HiltViewModel
 class MapViewModel @Inject constructor(private val repository: MainRepository) : ViewModel()  {
 
 
-
-    suspend fun getNearbyUser(latitude: String,longitude: String): Flow<NetworkResult<JsonObject>> {
-        return repository.getNearbyUser(latitude, longitude).onEach {
-        }
-    }
-
-/*    suspend fun getRelation(): Flow<NetworkResult<JsonObject>> {
-        return repository.getRelation().onEach {
-        }
-    }*/
-
-/*    suspend fun getAllAlerts(): Flow<NetworkResult<JsonObject>> {
-        return repository.getAllAlerts().onEach {
-        }
-    }*/
-/*    suspend fun addContact(userContactRequest: UserContactRequest): Flow<NetworkResult<JsonObject>> {
-        return repository.addContact(userContactRequest).onEach {
-        }
-    }*/
 
     suspend fun getRelation(): Flow<NetworkResult<JsonObject>> {
         return repository.getRelation().onEach {

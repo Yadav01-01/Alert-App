@@ -6,4 +6,5 @@ data class UserContactRequest(val first_name: String,
                               val phone: String,
                               val relation_id: Int,
                               val alert_id: Int,
-                              val type: String?)
+                              val type: String?,
+                               val contact_type: String?      )
