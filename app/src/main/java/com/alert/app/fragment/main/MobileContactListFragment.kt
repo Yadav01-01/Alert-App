@@ -2,13 +2,18 @@ package com.alert.app.fragment.main
 
 import android.Manifest
 import android.annotation.SuppressLint
+import android.app.AlertDialog
 import android.app.Dialog
 import android.content.Context
+import android.content.Intent
 import android.content.pm.PackageManager
 import android.graphics.Color
 import android.graphics.drawable.ColorDrawable
+import android.net.Uri
+import android.os.Build
 import android.os.Bundle
 import android.provider.ContactsContract
+import android.provider.Settings
 import android.text.Editable
 import android.text.TextWatcher
 import android.util.Log
@@ -25,6 +30,7 @@ import android.widget.PopupWindow
 import android.widget.TextView
 import android.widget.Toast
 import androidx.activity.OnBackPressedCallback
+
 import androidx.core.content.ContextCompat
 import androidx.fragment.app.viewModels
 import androidx.lifecycle.lifecycleScope
@@ -53,7 +59,9 @@ import com.google.android.material.textfield.MaterialAutoCompleteTextView
 import com.google.gson.Gson
 import com.hbb20.CountryCodePicker
 import dagger.hilt.android.AndroidEntryPoint
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 @AndroidEntryPoint
 class MobileContactListFragment : Fragment() , OnClickEventMobileContact, OnClickEventDropDownType {
@@ -160,12 +168,45 @@ class MobileContactListFragment : Fragment() , OnClickEventMobileContact, OnClic
         binding.rcyData.adapter= adapter
         // Check and request permission
         if (ContextCompat.checkSelfPermission(requireContext(), Manifest.permission.READ_CONTACTS) != PackageManager.PERMISSION_GRANTED) {
-            requestPermissions(arrayOf(Manifest.permission.READ_CONTACTS), CONTACTS_PERMISSION_REQUEST_CODE)
+       //     requestPermissions(arrayOf(Manifest.permission.READ_CONTACTS), CONTACTS_PERMISSION_REQUEST_CODE)
+            requestContactsPermission()
         } else {
             // Permission already granted
             fetchContacts()
         }
     }
+
+
+    private fun requestContactsPermission() {
+        if (shouldShowRequestPermissionRationale(Manifest.permission.READ_CONTACTS)) {
+            // User already denied once
+            showContactsRationaleDialog()
+        } else {
+            // First time OR "Don't ask again" not yet selected
+            requestPermissions(
+                arrayOf(Manifest.permission.READ_CONTACTS),
+                CONTACTS_PERMISSION_REQUEST_CODE
+            )
+        }
+    }
+
+    private fun showContactsRationaleDialog() {
+        AlertDialog.Builder(requireContext())
+            .setTitle("Contacts permission required")
+            .setMessage(
+                "We need access to your contacts so you can easily find and connect with your friends."
+            )
+            .setPositiveButton("Allow") { _, _ ->
+                requestPermissions(
+                    arrayOf(Manifest.permission.READ_CONTACTS),
+                    CONTACTS_PERMISSION_REQUEST_CODE
+                )
+            }
+            .setNegativeButton("Cancel", null)
+            .show()
+    }
+
+
     @Deprecated("Deprecated in Java")
     override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults)
@@ -176,67 +217,118 @@ class MobileContactListFragment : Fragment() , OnClickEventMobileContact, OnClic
                 fetchContacts()
             } else {
                 // Permission denied
-                Toast.makeText(requireContext(), getString(R.string.permission), Toast.LENGTH_SHORT).show()
+                if (isVivoPhone()) {
+                    showVivoPermissionHint()
+                } else if (!shouldShowRequestPermissionRationale(Manifest.permission.READ_CONTACTS)) {
+                    showGoToSettingsDialog()
+                }
             }
         }
+
+
+    }
+
+    fun isVivoPhone(): Boolean {
+        return Build.MANUFACTURER.equals("vivo", true) ||
+                Build.BRAND.equals("vivo", true)
+    }
+    private fun showGoToSettingsDialog() {
+        AlertDialog.Builder(requireContext())
+            .setTitle("Permission required")
+            .setMessage(
+                "This feature won’t work unless you allow Contacts permission. Please go to Settings and enable the permission manually."
+            )
+            .setPositiveButton("Open Settings") { _, _ ->
+                val intent = Intent(
+                    Settings.ACTION_APPLICATION_DETAILS_SETTINGS,
+                    Uri.fromParts("package", requireContext().packageName, null)
+                )
+                startActivity(intent)
+            }
+            .setNegativeButton("Cancel", null)
+            .show()
     }
 
     private fun fetchContacts() {
-        val contactList = mutableListOf<UserMobileContactListModel>()
-        groupedContacts.clear()
+        binding.pullToRefresh.isRefreshing = true
 
-        binding.pullToRefresh.isRefreshing=false
+        lifecycleScope.launch(Dispatchers.IO) {
 
-        // Query the Contacts Provider
-        val cursor = requireActivity().contentResolver.query(ContactsContract.CommonDataKinds.Phone.CONTENT_URI,
-            arrayOf(ContactsContract.CommonDataKinds.Phone.DISPLAY_NAME,
-                ContactsContract.CommonDataKinds.Phone.NUMBER,
-                ContactsContract.CommonDataKinds.Phone.CONTACT_ID),
-            null, null, ContactsContract.CommonDataKinds.Phone.DISPLAY_NAME + " ASC")
-        val resolver = requireActivity().contentResolver
-        cursor?.use {
-            while (it.moveToNext()) {
-                val contactId = it.getString(it.getColumnIndexOrThrow(ContactsContract.CommonDataKinds.Phone.CONTACT_ID))
-                val name = it.getString(it.getColumnIndexOrThrow(ContactsContract.CommonDataKinds.Phone.DISPLAY_NAME))
-                val phoneNumber = it.getString(it.getColumnIndexOrThrow(ContactsContract.CommonDataKinds.Phone.NUMBER))
+            val contactList = mutableListOf<UserMobileContactListModel>()
+            val resolver = requireContext().contentResolver
 
-                // 🔍 Get email using CONTACT_ID
-                var email: String? = null
-                val emailCursor = resolver.query(
-                    ContactsContract.CommonDataKinds.Email.CONTENT_URI,
-                    null,
-                    "${ContactsContract.CommonDataKinds.Email.CONTACT_ID} = ?",
-                    arrayOf(contactId),
-                    null
-                )
+            val cursor = resolver.query(
+                ContactsContract.CommonDataKinds.Phone.CONTENT_URI,
+                arrayOf(
+                    ContactsContract.CommonDataKinds.Phone.DISPLAY_NAME,
+                    ContactsContract.CommonDataKinds.Phone.NUMBER,
+                    ContactsContract.CommonDataKinds.Phone.CONTACT_ID
+                ),
+                null,
+                null,
+                ContactsContract.CommonDataKinds.Phone.DISPLAY_NAME + " ASC"
+            )
 
-                emailCursor?.use { eCursor ->
-                    if (eCursor.moveToFirst()) {
-                        email = eCursor.getString(eCursor.getColumnIndexOrThrow(ContactsContract.CommonDataKinds.Email.ADDRESS))
-                    }
+            if (cursor == null) {
+                Log.d("Contacts", "Cursor is NULL — permission blocked by OEM")
+            }
+
+            cursor?.use {
+                while (it.moveToNext()) {
+                    val name = it.getString(
+                        it.getColumnIndexOrThrow(
+                            ContactsContract.CommonDataKinds.Phone.DISPLAY_NAME
+                        )
+                    )
+                    val number = it.getString(
+                        it.getColumnIndexOrThrow(
+                            ContactsContract.CommonDataKinds.Phone.NUMBER
+                        )
+                    )
+
+                    contactList.add(
+                        UserMobileContactListModel(name, number, null)
+                    )
                 }
-                contactList.add(UserMobileContactListModel(name,phoneNumber,email))
+            }
+
+            withContext(Dispatchers.Main) {
+                groupedContacts.clear()
+                groupedContacts.addAll(groupContacts(contactList))
+
+                if (groupedContacts.isNotEmpty()) {
+                    adapter.updateList(groupedContacts)
+                    binding.rcyData.visibility = View.VISIBLE
+                    binding.layNodata.visibility = View.GONE
+                } else {
+                    binding.rcyData.visibility = View.GONE
+                    binding.layNodata.visibility = View.VISIBLE
+                }
+
+                binding.pullToRefresh.isRefreshing = false
             }
         }
-
-        // Display or process the contact list
-        contactList.forEach {
-            println(it.name +" number :-"+it.number) // Or update your UI with this data
-        }
-
-
-        groupedContacts.addAll(groupContacts(contactList))
-        if (groupedContacts.size>0){
-            adapter.updateList(groupedContacts)
-            binding.rcyData.visibility=View.VISIBLE
-            binding.layNodata.visibility=View.GONE
-        }else{
-            binding.rcyData.visibility=View.GONE
-            binding.layNodata.visibility=View.VISIBLE
-        }
-
-
     }
+
+
+    private fun showVivoPermissionHint() {
+        AlertDialog.Builder(requireContext())
+            .setTitle("Permission Required")
+            .setMessage(
+                "Please allow Contacts permission from system settings. " +
+                        "On some devices, this permission needs to be enabled manually."
+            )
+            .setPositiveButton("Open Settings") { _, _ ->
+                startActivity(
+                    Intent(
+                        Settings.ACTION_APPLICATION_DETAILS_SETTINGS,
+                        Uri.fromParts("package", requireContext().packageName, null)
+                    )
+                )
+            }
+            .show()
+    }
+
 
     private fun groupContacts(contacts: MutableList<UserMobileContactListModel>): MutableList<ListItem> {
         val grouped = mutableListOf<ListItem>()
@@ -329,7 +421,7 @@ class MobileContactListFragment : Fragment() , OnClickEventMobileContact, OnClic
                         val createHelpingNeighbor = CreateHelpingNeighbor(firstName,
                             lastName,
                             it.email?:"",
-                            it.number,
+                            toValidNumberWithCountryCode(it.number),
                             selectedRelationId.toString(),
                             selectedAlertId.toString(),
                             "device")
@@ -346,7 +438,7 @@ class MobileContactListFragment : Fragment() , OnClickEventMobileContact, OnClic
                             first_name = firstName?:"",
                             last_name= lastName?:"",
                             email= it.email?:"",
-                            phone= it.number.toString(),
+                            phone= toValidNumberWithCountryCode(it.number.toString()),
                             relation_id=  selectedRelationId,
                             alert_id=  selectedAlertId,
                             type= "contact",
@@ -368,7 +460,7 @@ class MobileContactListFragment : Fragment() , OnClickEventMobileContact, OnClic
                         val createHelpingNeighbor = CreateHelpingNeighbor(firstName,
                             lastName,
                             it.email?:"",
-                            it.number,
+                            toValidNumberWithCountryCode(it.number),
                             selectedRelationId.toString(),
                             selectedAlertId.toString(),
                             "device")
@@ -392,7 +484,7 @@ class MobileContactListFragment : Fragment() , OnClickEventMobileContact, OnClic
                             first_name = firstName?:"",
                             last_name= lastName?:"",
                             email= it.email?:"",
-                            phone= it.number.toString(),
+                            phone= toValidNumberWithCountryCode(it.number.toString()),
                             relation_id=  selectedRelationId,
                             alert_id=  selectedAlertId,
                             type= "contact",
@@ -420,6 +512,20 @@ class MobileContactListFragment : Fragment() , OnClickEventMobileContact, OnClic
         }
         getRelation(tvRelation)
         getAllAlerts(tvAlerts)
+    }
+
+    fun toValidNumberWithCountryCode(input: String?): String {
+        if (input.isNullOrBlank()) return ""
+
+        // Remove all non-digit/non-plus characters
+        var cleaned = input.trim().replace(Regex("[^0-9+]"), "")
+
+        // Keep + only at the start
+        if (cleaned.indexOf('+') > 0) {
+            cleaned = cleaned.replace("+", "")
+        }
+
+        return cleaned
     }
 
     private fun addContact(userContactRequest: UserContactRequest, dialog: Dialog) {

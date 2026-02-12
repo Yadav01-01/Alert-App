@@ -238,6 +238,9 @@ class VerificationCode : Fragment() {
             apiModel.name.let { sessionManagement.setUserName(it.toString()) }
             apiModel.email.let { sessionManagement.setUserEmail(it.toString()) }
             apiModel.profile_pic.let { sessionManagement.setUserProfile(it.toString()) }
+            apiModel.user_id?.let {
+                sessionManagement.setUserId(it)
+            }
             openAlertBoxSuccess()
         }catch (e:Exception){
             showAlert(e.message, false)

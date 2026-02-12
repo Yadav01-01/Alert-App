@@ -184,6 +184,7 @@ import com.alert.app.BuildConfig
 import com.alert.app.R
 import com.alert.app.activity.CallActivity
 import com.alert.app.activity.ChatActivity
+import com.alert.app.base.AppConstant
 import com.alert.app.base.BaseApplication
 import com.alert.app.databinding.FragmentNeighborProfileBinding
 import com.alert.app.di.NetworkResult
@@ -288,9 +289,10 @@ class NeighborProfileFragment : Fragment() {
 
                 data.email?.let { binding.textEmailAddress.text = it }
 
-                data.profile_pic?.let { picPath ->
+                data.profile?.let { picPath ->
+
                         Glide.with(requireActivity())
-                            .load(BuildConfig.BASE_URL + picPath)
+                            .load( picPath)
                             .placeholder(R.drawable.no_image)
                             .error(R.drawable.no_image)
                             .listener(object : RequestListener<Drawable> {

@@ -25,8 +25,10 @@ import com.github.dhaval2404.imagepicker.ImagePicker
 import com.alert.app.R
 import com.alert.app.activity.MainActivity
 import com.alert.app.adapter.PlacesAutoCompleteAdapter
+import com.alert.app.base.AppConstant
 import com.alert.app.base.BaseApplication
 import com.alert.app.base.SessionManagement
+import com.alert.app.base.ValidationUtils
 import com.alert.app.databinding.FragmentHomeProfileBinding
 import com.alert.app.di.NetworkResult
 import com.alert.app.errormessage.MessageClass
@@ -63,10 +65,14 @@ class HomeProfileFragment : Fragment() {
     private var isTermsAccepted = false
     private lateinit var viewModel: UserProfileViewModel
     private var file: File? = null
+    private var oldEmail :String =""
+    private var oldPhone :String =""
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?
     ): View { _binding = FragmentHomeProfileBinding.inflate(inflater, container, false)
+      Log.d("TESTING_HOME_PROFILE","I AM INSIDE THE HOME PROFILE")
+
         return binding.root
     }
 
@@ -148,6 +154,7 @@ class HomeProfileFragment : Fragment() {
                     val apiModel = Gson().fromJson(data, UserProfileModel::class.java)
                     if (apiModel.code == 200 && apiModel.status) {
                         apiModel.data?.let { showDataUi(it) }?: run {
+
                             showAlert(MessageClass.apiError, false)
                         }
                     } else {
@@ -202,22 +209,37 @@ class HomeProfileFragment : Fragment() {
             data.email?.let {
                 binding.edEmail.setText(it)
                 sessionManagement.setUserEmail(it)
+                oldEmail = it
             }
 
             data.phone_number?.let {
                 binding.edPhone.setText(it)
                 sessionManagement.setUserPhoneNumber(it)
+                oldPhone = it
             }
 
             /* -------- API VERIFICATION FLAGS (SOURCE OF TRUTH) -------- */
             isEmailVerifiedFromApi = data.email_verified_status == true
             isPhoneVerifiedFromApi = data.phone_verified_status == true
 
+            if(isEmailVerifiedFromApi){
+                setEmailStatus(true, MessageClass.verifyStatus,
+                    R.drawable.ic_green_tick, "#219653")
+            }
+            else{
+                setEmailStatus(true, MessageClass.verifyNowStatus,
+                    R.drawable.ic_cancel_red_icon, "#CE2127")
+            }
 
-            /* --- UPDATE UI BASED ON API --- */
-            updateVerificationUI()
+            if(isPhoneVerifiedFromApi){
+                setPhoneStatus(true, MessageClass.verifyStatus,
+                    R.drawable.ic_green_tick, "#219653")
+            }
+            else{
+                setPhoneStatus(true, MessageClass.verifyNowStatus,
+                    R.drawable.ic_cancel_red_icon, "#CE2127")
+            }
 
-            /* -------- ADDRESS -------- */
             data.address?.let {
                 binding.edAddress.setText(it)
             }
@@ -226,10 +248,11 @@ class HomeProfileFragment : Fragment() {
             longitude = data.longi?.toString().orEmpty()
 
             /* -------- PROFILE IMAGE -------- */
-            data.profile_pic?.let {
+            data.profile_image?.let {
                 sessionManagement.setUserProfile(it)
+                Log.d("Testing_profile_path",it)
                 Glide.with(requireContext())
-                    .load(BuildConfig.BASE_URL + it)
+                    .load( it)
                     .placeholder(R.drawable.user_img_icon)
                     .error(R.drawable.user_img_icon)
                     .into(binding.userImg)
@@ -248,27 +271,9 @@ class HomeProfileFragment : Fragment() {
         val isEmailValid = emailPattern.matcher(emailText).find()
         val isPhoneValid = phoneText.replace(Regex("[^0-9]"), "").length == 10
 
-        /* ---------------- EMAIL ---------------- */
-        when {
-            emailText.isEmpty() -> setEmailVisibility(false)
 
-            isEmailVerifiedFromApi -> {
-                setEmailStatus(true, MessageClass.verifyStatus,
-                    R.drawable.ic_green_tick, "#219653")
-            }
 
-            isEmailValid -> {
-                setEmailStatus(true, MessageClass.verifyNowStatus,
-                    R.drawable.ic_cancel_red_icon, "#CE2127")
-            }
 
-            else -> {
-                setEmailStatus(true, MessageClass.emailVaildStatus,
-                    R.drawable.ic_cancel_red_icon, "#CE2127")
-            }
-        }
-
-        /* ------ PHONE ------ */
         when {
             phoneText.isEmpty() -> setPhoneVisibility(false)
 
@@ -306,44 +311,52 @@ class HomeProfileFragment : Fragment() {
     private fun emailPhoneEvent() {
 
         binding.edEmail.doAfterTextChanged {
-            updateVerificationUI()
+            emailVerification()
         }
 
         binding.edPhone.doAfterTextChanged {
-             setPhoneVisibility(true)
-        //   updateVerificationUI()
+            phoneVerification()
         }
 
     }
 
 
-    private fun emailAndPhoneStatus() {
+    private fun emailVerification(){
 
-        val emailText = binding.edEmail.text.toString().trim()
-        val phoneText = binding.edPhone.text.toString().trim()
-        val emailMatcher = emailPattern.matcher(emailText)
-        val isEmailValid = emailMatcher.find()
-        val isPhoneValid = phoneText.replace(Regex("[^0-9]"), "").length == 10
-
-        if (isEmailValid) {
-            setEmailStatus(true, MessageClass.verifyStatus, R.drawable.ic_green_tick, "#219653")
-        } else {
-            if (emailText.isEmpty()) {
-                setEmailVisibility(false)
-            } else {
-                setEmailStatus(true, if (isEmailValid) MessageClass.verifyNowStatus else MessageClass.emailVaildStatus, R.drawable.ic_cancel_red_icon, "#CE2127")
+        if(ValidationUtils.isValidEmail(binding.edEmail.text.toString())){
+            if(oldEmail.equals(binding.edEmail.text.toString().trim())){
+                setEmailStatus(true, MessageClass.verifyStatus,
+                    R.drawable.ic_green_tick, "#219653")
+            }else{
+                setEmailStatus(true, MessageClass.verifyNowStatus,
+                    R.drawable.ic_cancel_red_icon, "#CE2127")
             }
         }
-        if (isPhoneValid ) {
-            setPhoneStatus(true, MessageClass.verifyStatus, R.drawable.ic_green_tick, "#219653")
-        } else {
-            if (phoneText.isEmpty()) {
-                setPhoneVisibility(false)
-            } else {
-                setPhoneStatus(true, if (isPhoneValid) MessageClass.verifyNowStatus else MessageClass.phoneVaildStatus, R.drawable.ic_cancel_red_icon, "#CE2127")
-            }
+        else{
+            setEmailStatus(true, MessageClass.emailVaildStatus,
+                R.drawable.ic_cancel_red_icon, "#CE2127")
         }
     }
+
+    private fun phoneVerification(){
+        if(ValidationUtils.isValidPhone(binding.edPhone.text.toString())){
+            if(binding.edPhone.text.toString().trim().equals(oldPhone)){
+                setPhoneStatus(true, MessageClass.verifyStatus,
+                    R.drawable.ic_green_tick, "#219653")
+            }else{
+                setPhoneStatus(true, MessageClass.verifyNowStatus,
+                    R.drawable.ic_cancel_red_icon, "#CE2127")
+            }
+        }else{
+            setPhoneStatus(true, MessageClass.phoneVaildStatus,
+                R.drawable.ic_cancel_red_icon, "#CE2127")
+
+        }
+
+
+    }
+
+
 
     private fun setEmailStatus(visible: Boolean, statusText: String, iconRes: Int, color: String) {
 
@@ -459,7 +472,7 @@ class HomeProfileFragment : Fragment() {
                         }
                 }
 
-                verifySendOtp(binding.ccp.defaultCountryCodeWithPlus + binding.edPhone.text.toString())
+             //  verifySendOtp(binding.ccp.defaultCountryCodeWithPlus + binding.edPhone.text.toString())
 
             }
   //          if (binding.tvphonestatus.text.toString().trim().equals(Html.fromHtml(MessageClass.verifyNowStatus).toString().trim(), true)) {
@@ -685,14 +698,6 @@ class HomeProfileFragment : Fragment() {
                 showAlert(MessageClass.addressError, false)
                 false
             }
-
-
-
-            file == null -> {
-                showAlert(MessageClass.profilePic, false)
-                false
-            }
-
             !isTermsAccepted -> {
                 showAlert(MessageClass.AgreetoacceptError, false)
                 false

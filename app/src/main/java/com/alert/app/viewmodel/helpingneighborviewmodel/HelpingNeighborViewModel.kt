@@ -2,6 +2,7 @@ package com.alert.app.viewmodel.helpingneighborviewmodel
 
 import androidx.lifecycle.ViewModel
 import com.alert.app.di.NetworkResult
+import com.alert.app.model.AddressModel
 import com.alert.app.model.helpingneighbormodel.CreateHelpingNeighbor
 import com.alert.app.repository.MainRepository
 import com.google.gson.JsonObject
@@ -13,8 +14,8 @@ import javax.inject.Inject
 @HiltViewModel
 class HelpingNeighborViewModel@Inject constructor(private val repository: MainRepository) : ViewModel()  {
 
-    suspend fun getNeighbor(): Flow<NetworkResult<JsonObject>> {
-        return repository.getNeighbor().onEach {
+    suspend fun getNeighbor(latitude:String?,longitude:String?): Flow<NetworkResult<JsonObject>> {
+        return repository.getNeighbor(latitude,longitude).onEach {
         }
     }
 
@@ -33,7 +34,7 @@ class HelpingNeighborViewModel@Inject constructor(private val repository: MainRe
         }
     }
 
-    suspend fun getUserAddress(): Flow<NetworkResult<JsonObject>> {
+    suspend fun getUserAddress(): Flow<NetworkResult<MutableList<AddressModel>>> {
         return repository.getUserAddress().onEach {
         }
     }
@@ -45,6 +46,14 @@ class HelpingNeighborViewModel@Inject constructor(private val repository: MainRe
 
     suspend fun deleteAddress(addressId: String?): Flow<NetworkResult<JsonObject>> {
         return repository.deleteAddress(addressId).onEach {
+        }
+    }
+
+    suspend  fun deleteUserAddress(
+        addressId :String
+    ) : Flow<NetworkResult<String>> {
+        return repository.deleteUserAddress(addressId).onEach {
+
         }
     }
 

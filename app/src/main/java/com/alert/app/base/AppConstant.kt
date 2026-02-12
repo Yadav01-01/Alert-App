@@ -2,7 +2,8 @@ package com.alert.app.base
 
 object AppConstant {
 
-
+    const val IMAGE_BASE_URL = "https://alertapp.tgastaging.com/storage/"
+    const val baseUrl ="https://alertapp.tgastaging.com/"
     const val loginSession: String="session"
     const val AUTHTOKEN: String="Token"
     const val rememberMe: String="RememberMe"
@@ -17,4 +18,7 @@ object AppConstant {
     const val profile :String ="profileScreen"
     const val PHONE :String ="Phone"
     val unKnownError = "There was an unknown error. Check your connection, and try again."
+    val CONTACT_USER_ID = "contactUserId"
+    val PROFILE = "profile"
+
 }

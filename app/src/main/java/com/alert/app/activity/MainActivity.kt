@@ -611,7 +611,7 @@ class MainActivity : AppCompatActivity() {
                                 )
                             )
 
-                            adapter.submitList(chatMessages)
+                         //   adapter.submitList(chatMessages)
                             recyclerView.scrollToPosition(chatMessages.size - 1)
                         }
 
@@ -645,7 +645,7 @@ class MainActivity : AppCompatActivity() {
                 )
             )
 
-            adapter.submitList(chatMessages)
+           // adapter.submitList(chatMessages)
             recyclerView.scrollToPosition(chatMessages.size - 1)
             edText.text.clear()
 
@@ -700,7 +700,7 @@ class MainActivity : AppCompatActivity() {
 
         sessionManagement.getUserProfile().let {
             Glide.with(this)
-                .load(BuildConfig.BASE_URL + it)
+                .load( it)
                 .placeholder(R.drawable.user_img_icon)
                 .error(R.drawable.user_img_icon)
                 .into(ivProfileSideNav)

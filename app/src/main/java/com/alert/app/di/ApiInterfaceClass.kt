@@ -223,7 +223,11 @@ interface ApiInterfaceClass {
 
 
     @POST(ApiEndPoint.getNeighbor)
-    suspend fun getNeighbor(): Response<JsonObject>
+    @FormUrlEncoded
+    suspend fun getNeighbor(
+        @Field("latitude") latitude :String?,
+        @Field("longitude") longitude :String?
+    ): Response<JsonObject>
 
     @POST(ApiEndPoint.addNeighbor)
     suspend fun addNeighbor(@Body createHelpingNeighbor: CreateHelpingNeighbor): Response<JsonObject>
@@ -323,8 +327,28 @@ interface ApiInterfaceClass {
 
 
     @GET(ApiEndPoint.MAP_LOCATIONS)
-    suspend fun mapLocations( ) : Response<JsonObject>
+    suspend fun mapLocations() : Response<JsonObject>
 
 
+    @POST("api/delete-user-address")
+    @FormUrlEncoded
+    suspend fun deleteUserAddress(
+        @Field("address_id") addressId :String
+    ) : Response<JsonObject>
+
+    @POST("api/create_channel")
+    @FormUrlEncoded
+    suspend fun createChannel(
+        @Field("contact_user_id") contactUserId:String,
+        @Field("chat_id") chatId:String
+    ) : Response<JsonObject>
+
+
+    @POST("get_channel_list")
+    suspend fun getChannelList() : Response<JsonObject>
+
+
+//    @GET(ApiEndPoint.USER_ADDRESS)
+//    suspend fun getUserAddress() : Response<JsonObject>
 
 }

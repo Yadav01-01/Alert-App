@@ -6,6 +6,7 @@ import android.view.ViewGroup
 import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
 import com.alert.app.R
+import com.alert.app.model.Message
 import com.alert.app.model.chatbot.ChatMessage
 
 /*class ChatAdapter(
@@ -68,23 +69,22 @@ import com.alert.app.model.chatbot.ChatMessage
 
 class ChatAdapter(
     private val currentUserId: String
-) : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
+, private var list : MutableList<Message> = mutableListOf()
+    ) : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
 
-    private val messages = mutableListOf<ChatMessage>()
 
     companion object {
         private const val TYPE_SENDER = 1
         private const val TYPE_RECEIVER = 2
     }
 
-    fun submitList(list: List<ChatMessage>) {
-        messages.clear()
-        messages.addAll(list)
+    fun submitList(list:MutableList<Message>) {
+        this.list = list
         notifyDataSetChanged()
     }
 
     override fun getItemViewType(position: Int): Int {
-        return if (messages[position].senderId == currentUserId)
+        return if (list.get(position).senderId.toInt() == currentUserId.toInt())
             TYPE_SENDER else TYPE_RECEIVER
     }
 
@@ -103,24 +103,30 @@ class ChatAdapter(
     }
 
     override fun onBindViewHolder(holder: RecyclerView.ViewHolder, position: Int) {
-        val msg = messages[position]
+        val msg = list[position]
         when (holder) {
             is SenderVH -> holder.bind(msg)
             is ReceiverVH -> holder.bind(msg)
         }
     }
 
-    override fun getItemCount() = messages.size
+    override fun getItemCount() = list.size
 
     class SenderVH(view: View) : RecyclerView.ViewHolder(view) {
-        fun bind(msg: ChatMessage) {
-            itemView.findViewById<TextView>(R.id.tvMessage).text = msg.message
+        fun bind(msg:Message) {
+            itemView.findViewById<TextView>(R.id.tvMessage).text = msg.text
+            msg.formattedTime?.let {
+                itemView.findViewById<TextView>(R.id.tvTime).text = msg.formattedTime
+            }
         }
     }
 
     class ReceiverVH(view: View) : RecyclerView.ViewHolder(view) {
-        fun bind(msg: ChatMessage) {
-            itemView.findViewById<TextView>(R.id.tvMessage).text = msg.message
+        fun bind(msg: Message) {
+            itemView.findViewById<TextView>(R.id.tvMessage).text = msg.text
+            msg.formattedTime?.let {
+                itemView.findViewById<TextView>(R.id.tvTime).text = msg.formattedTime
+            }
         }
     }
 }

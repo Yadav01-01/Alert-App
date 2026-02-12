@@ -19,9 +19,13 @@ import com.alert.app.R
 import com.alert.app.base.BaseApplication
 import com.alert.app.databinding.ItemaddressrowBinding
 import com.alert.app.errormessage.MessageClass
+import com.alert.app.listener.OnAddressClickListener
+import com.alert.app.model.AddressModel
 
 
-class AddressAdapter(var context:Context) :
+class AddressAdapter(var context:Context,var list: MutableList<AddressModel>,
+                     private val listener: OnAddressClickListener
+) :
     RecyclerView.Adapter<AddressAdapter.ViewHolder>() {
 
 
@@ -43,14 +47,22 @@ class AddressAdapter(var context:Context) :
 
         holder.binding.imgThree.setOnClickListener {
 
-            alertBox(holder.binding.imgThree)
+            alertBox(holder.binding.imgThree,position)
 
+        }
+
+        holder.binding.tvAddress.text = list.get(position).address
+        holder.binding.tvType.text = list.get(position).type
+
+        holder.binding.layoutMain.setOnClickListener {
+            listener.onAddressSelected(list.get(position),"main")
         }
 
     }
 
     @SuppressLint("SetTextI18n")
-    private fun alertBox(imgThree: LinearLayout) {
+    private fun alertBox(imgThree: LinearLayout,position:Int) {
+
         val inflater = context.getSystemService(LAYOUT_INFLATER_SERVICE) as LayoutInflater?
         val popupView: View? = inflater?.inflate(R.layout.item_layout, null)
 
@@ -67,22 +79,23 @@ class AddressAdapter(var context:Context) :
 
         tvDelete?.setOnClickListener {
             popupWindow.dismiss()
-            alertBoxBlockAndDelete()
+            alertBoxBlockAndDelete(position)
         }
 
         tvEdit?.setOnClickListener {
             popupWindow.dismiss()
-            addAlertBoxAddress()
+            listener.onAddressSelected(list.get(position),"edit")
+           // addAlertBoxAddress(position)
         }
     }
 
     override fun getItemCount(): Int {
-        return 4
+        return list.size
     }
 
 
     @SuppressLint("SetTextI18n")
-    private fun alertBoxBlockAndDelete(){
+    private fun alertBoxBlockAndDelete(position :Int){
 
         val dialog = Dialog(context)
 
@@ -112,6 +125,7 @@ class AddressAdapter(var context:Context) :
 
         tvOK.setOnClickListener {
             dialog.dismiss()
+            listener.onAddressSelected(list.get(position),"delete")
         }
 
         tvNo.setOnClickListener {
@@ -126,7 +140,7 @@ class AddressAdapter(var context:Context) :
     }
 
 
-    private fun addAlertBoxAddress(){
+    private fun addAlertBoxAddress(position:Int){
         val dialog = Dialog(context)
         dialog.setContentView(R.layout.dialog_add_address)
 
@@ -233,5 +247,12 @@ class AddressAdapter(var context:Context) :
 
 
     }
+
+    fun updateAdapter(list : MutableList<AddressModel>){
+        this.list = list
+        notifyDataSetChanged()
+
+    }
+
 
 }

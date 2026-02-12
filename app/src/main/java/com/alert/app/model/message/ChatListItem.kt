@@ -1,12 +1,14 @@
 package com.alert.app.model.message
 
+import java.sql.Timestamp
+
 data class ChatListItem(
     val chatId: String,
-    val otherUserId: String,
-    val otherUserName: String,
-    val otherUserImage: String,
-    val lastMessage: String,
-    val lastMessageTime: Long,
+    val userId: Int,
+    val fullName: String,
+    val profile: String,
+    val lastMessage: String?,
+    val lastMessageTime: Timestamp?,
     val unreadCount: Int
 )
 

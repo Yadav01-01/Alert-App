@@ -22,9 +22,14 @@ data class EmergencyContact(
 
     @SerializedName("first_name")
     val firstName: String? = null,
+    @SerializedName("contact_user_id")
+    val contactUserId :Int,
 
     @SerializedName("last_name")
     val lastName: String? = null,
+
+    @SerializedName("country_code")
+    val countryCode :String? = null,
 
     @SerializedName("email")
     val email: String? = null,

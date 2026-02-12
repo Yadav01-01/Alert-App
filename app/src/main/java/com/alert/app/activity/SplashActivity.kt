@@ -11,6 +11,7 @@ import com.alert.app.databinding.ActivitySplashBinding
 
 class SplashActivity : AppCompatActivity() {
 
+    //Infermedica Developer
     private var binding:ActivitySplashBinding?=null
     private var commonWorkUtils: CommonWorkUtils? = null
     private lateinit var sessionManagement: SessionManagement
@@ -18,15 +19,10 @@ class SplashActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        binding= ActivitySplashBinding.inflate(LayoutInflater.from(this))
+        binding = ActivitySplashBinding.inflate(LayoutInflater.from(this))
         setContentView(binding!!.root)
-
         sessionManagement = SessionManagement(this)
-
-
         initialize()
-
-
     }
 
     private fun initialize() {

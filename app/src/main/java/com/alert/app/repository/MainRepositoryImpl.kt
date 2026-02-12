@@ -1,12 +1,16 @@
 package com.alert.app.repository
 
+import android.net.Network
 import com.alert.app.base.AppConstant
 import com.alert.app.di.ApiInterfaceClass
 import com.alert.app.di.NetworkResult
 import com.alert.app.errormessage.MessageClass
+import com.alert.app.model.AddressModel
+import com.alert.app.model.ChatUserModel
 import com.alert.app.model.contact.UserContactRequest
 import com.alert.app.model.contact.UserEditContactRequest
 import com.alert.app.model.helpingneighbormodel.CreateHelpingNeighbor
+import com.alert.app.model.helpingneighbormodel.UserAddress
 import com.alert.app.model.map.UserLocationResponse
 import com.alert.app.model.notification.AlertModel
 import com.alert.app.model.selfAlert.CreateSelfAlertRequest
@@ -36,7 +40,7 @@ class MainRepositoryImpl @Inject constructor(private val apiInterface: ApiInterf
         fcmToken: String,
         deviceType: String,
     ) {
-//        try {
+        try {
             apiInterface.loginApiRequest(email, password, fcmToken, deviceType).apply {
                 if (isSuccessful) {
                     body()?.let {
@@ -58,9 +62,9 @@ class MainRepositoryImpl @Inject constructor(private val apiInterface: ApiInterf
                     // successCallback(NetworkResult.Error(errorBody().toString()))
                 }
             }
-//        } catch (e: Exception) {
-//            successCallback(NetworkResult.Error(e.message.toString()))
-//        }
+        } catch (e: Exception) {
+            successCallback(NetworkResult.Error(e.message.toString()))
+        }
     }
 
     override suspend fun loginPhoneRequestApi(
@@ -387,10 +391,13 @@ class MainRepositoryImpl @Inject constructor(private val apiInterface: ApiInterf
             apiInterface.forgotPasswordRequestApi(email, phone).apply {
                 if (isSuccessful) {
                     body()?.let {
-                        val data = it.get("data").asJsonObject
-                        val otp = data.get("otp").asInt
+                        val data = it.get("status").asBoolean
+                        if(data) {
+                            successCallback(NetworkResult.Success(it.get("message").asString))
+                        }else{
+                            successCallback(NetworkResult.Error(it.get("message").asString))
 
-                        successCallback(NetworkResult.Success(otp.toString()))
+                        }
                     } ?: successCallback(NetworkResult.Error(MessageClass.apiError))
                 } else {
                     val errorJson = errorBody()?.string()
@@ -466,7 +473,14 @@ class MainRepositoryImpl @Inject constructor(private val apiInterface: ApiInterf
                 .apply {
                     if (isSuccessful) {
                         body()?.let {
-                            successCallback(NetworkResult.Success(it.toString()))
+                           val data = it.get("status").asBoolean
+                            val message = it.get("message").asString
+                            if(data){
+                                  successCallback(NetworkResult.Success<String>(message))
+                            }
+                            else{
+                                  successCallback(NetworkResult.Error(message = message))
+                            }
                         } ?: successCallback(NetworkResult.Error(MessageClass.apiError))
                     } else {
                         val errorJson = errorBody()?.string()
@@ -906,7 +920,7 @@ class MainRepositoryImpl @Inject constructor(private val apiInterface: ApiInterf
     override suspend fun getNearbyUser(latitude: String, longitude: String)
             : Flow<NetworkResult<JsonObject>> =
         flow {
-            try {
+//            try {
                 apiInterface.getNearbyUser(latitude, longitude).apply {
                     if (isSuccessful) {
                         body()?.let { resp ->
@@ -931,13 +945,13 @@ class MainRepositoryImpl @Inject constructor(private val apiInterface: ApiInterf
                         }
                     }
                 }
-            } catch (e: HttpException) {
-                emit(NetworkResult.Error(e.message ?: ""))
-            } catch (e: IOException) {
-                emit(NetworkResult.Error(e.message ?: ""))
-            } catch (e: Exception) {
-                emit(NetworkResult.Error(e.message ?: ""))
-            }
+//            } catch (e: HttpException) {
+//                emit(NetworkResult.Error(e.message ?: ""))
+//            } catch (e: IOException) {
+//                emit(NetworkResult.Error(e.message ?: ""))
+//            } catch (e: Exception) {
+//                emit(NetworkResult.Error(e.message ?: ""))
+//            }
         }
 
 
@@ -1208,9 +1222,9 @@ class MainRepositoryImpl @Inject constructor(private val apiInterface: ApiInterf
 
     }
 
-    override suspend fun getNeighbor(): Flow<NetworkResult<JsonObject>> = flow {
+    override suspend fun getNeighbor(latitude:String?,longitude:String?): Flow<NetworkResult<JsonObject>> = flow {
         try {
-            apiInterface.getNeighbor().apply {
+            apiInterface.getNeighbor(latitude,longitude).apply {
                 if (isSuccessful) {
                     body()?.let { resp ->
                         if (resp.has("status") && resp.get("status").asBoolean) {
@@ -1466,17 +1480,25 @@ class MainRepositoryImpl @Inject constructor(private val apiInterface: ApiInterf
         } catch (e: Exception) {
             emit(NetworkResult.Error(e.message ?: ""))
         }
-
     }
 
-    override suspend fun getUserAddress(): Flow<NetworkResult<JsonObject>> = flow {
+    override suspend fun getUserAddress(): Flow<NetworkResult<MutableList<AddressModel>>> = flow {
         try {
             apiInterface.getUserAddress().apply {
                 if (isSuccessful) {
                     body()?.let { resp ->
                         if (resp.has("status") && resp.get("status").asBoolean) {
-                            emit(NetworkResult.Success(resp))
-                        } else {
+                            val dataArray = resp.get("data").asJsonArray
+                            val list = mutableListOf<AddressModel>()
+                            dataArray.forEach { it->
+                                val obj =  it.asJsonObject
+                                val gson = Gson()
+                                val response = gson.fromJson(obj, AddressModel::class.java)
+                                list.add(response)
+                            }
+                            emit(NetworkResult.Success(list))
+                        }
+                        else {
                             emit(NetworkResult.Error(resp.get("message").asString))
                         }
                     } ?: emit(NetworkResult.Error(AppConstant.unKnownError))
@@ -1998,6 +2020,118 @@ class MainRepositoryImpl @Inject constructor(private val apiInterface: ApiInterf
 
 }
 
+                        else {
+                            emit(NetworkResult.Error(resp.get("message").asString))
+                        }
+                    } ?: emit(NetworkResult.Error(AppConstant.unKnownError))
+                }
+                else {
+                    try {
+                        val jsonObj = this.errorBody()?.string()?.let { JSONObject(it) }
+                        emit(
+                            NetworkResult.Error(
+                                jsonObj?.getString("message")
+                                    ?: AppConstant.unKnownError
+                            )
+                        )
+                    } catch (e: JSONException) {
+                        e.printStackTrace()
+                        emit(NetworkResult.Error(AppConstant.unKnownError))
+                    }
+                }
+            }
+        } catch (e: Exception) {
+            emit(NetworkResult.Error(e.message ?: ""))
+        }
+    }
+
+    override suspend fun deleteUserAddress(addressId: String): Flow<NetworkResult<String>> = flow {
+        try {
+            apiInterface.deleteUserAddress(addressId).apply {
+                if (isSuccessful) {
+                    body()?.let { resp ->
+                        if (resp.has("status") && resp.get("status").asBoolean) {
+                            emit(NetworkResult.Success("Address Deleted Successfully"))
+                        }
+
+                        else {
+                            emit(NetworkResult.Error(resp.get("message").asString))
+                        }
+                    } ?: emit(NetworkResult.Error(AppConstant.unKnownError))
+                }
+                else {
+                    try {
+                        val jsonObj = this.errorBody()?.string()?.let { JSONObject(it) }
+                        emit(
+                            NetworkResult.Error(
+                                jsonObj?.getString("message")
+                                    ?: AppConstant.unKnownError
+                            )
+                        )
+                    } catch (e: JSONException) {
+                        e.printStackTrace()
+                        emit(NetworkResult.Error(AppConstant.unKnownError))
+                    }
+                }
+            }
+        } catch (e: Exception) {
+            emit(NetworkResult.Error(e.message ?: ""))
+        }
+    }
+
+    override suspend fun createChannel(
+        contactUserId: String,
+        chatId: String
+    ) : Flow<NetworkResult<String>> = flow{
+        try {
+            apiInterface.createChannel(contactUserId,chatId).apply {
+                if (isSuccessful) {
+                    body()?.let { resp ->
+                        if (resp.has("status") && resp.get("status").asBoolean) {
+                            emit(NetworkResult.Success(resp.get("message").asString))
+                        }
+                        else {
+                            emit(NetworkResult.Error(resp.get("message").asString))
+                        }
+                    } ?: emit(NetworkResult.Error(AppConstant.unKnownError))
+                }
+                else {
+                    try {
+                        val jsonObj = this.errorBody()?.string()?.let { JSONObject(it) }
+                        emit(
+                            NetworkResult.Error(
+                                jsonObj?.getString("message")
+                                    ?: AppConstant.unKnownError
+                            )
+                        )
+                    } catch (e: JSONException) {
+                        e.printStackTrace()
+                        emit(NetworkResult.Error(AppConstant.unKnownError))
+                    }
+                }
+            }
+        } catch (e: Exception) {
+            emit(NetworkResult.Error(e.message ?: ""))
+        }
+    }
+
+    override suspend fun getChannelList(): Flow<NetworkResult<MutableList<ChatUserModel>>> =flow{
+        try {
+            apiInterface.getChannelList().apply {
+                if (isSuccessful) {
+                    body()?.let { resp ->
+                        if (resp.has("status") && resp.get("status").asBoolean) {
+                           var arr = resp.get("data").asJsonArray
+                            var list = mutableListOf<ChatUserModel>()
+                            arr.forEach {
+
+                                val gson = Gson()
+                                val response = gson.fromJson(it.asJsonObject, ChatUserModel::class.java)
+                                list.add(response)
+                            }
+                            emit(NetworkResult.Success(list))
+
+                        }
                         else {
                             emit(NetworkResult.Error(resp.get("message").asString))
                         }

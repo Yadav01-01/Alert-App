@@ -284,9 +284,9 @@ class ContactFragment : Fragment(), ContactClick {
     }
 
     private fun setRelationData(tv_relation: MaterialAutoCompleteTextView) {
-        // Extract names
+
         val relationNames = relation.map { it.name }
-        // Set to dropdown
+
         val adapter = ArrayAdapter(
             requireContext(),
             android.R.layout.simple_dropdown_item_1line,

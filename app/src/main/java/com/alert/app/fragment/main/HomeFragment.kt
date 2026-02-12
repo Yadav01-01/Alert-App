@@ -2,12 +2,14 @@ package com.alert.app.fragment.main
 
 import android.Manifest
 import android.annotation.SuppressLint
+import android.app.AlertDialog
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.graphics.BitmapFactory
 import android.location.LocationManager
 import android.os.Bundle
+
 import android.provider.Settings
 import android.text.Html
 import android.util.Log
@@ -29,6 +31,9 @@ import androidx.navigation.fragment.findNavController
 import com.alert.app.R
 import com.alert.app.activity.MainActivity
 import com.alert.app.base.BaseApplication
+import com.alert.app.base.LocationPermission
+import com.alert.app.base.NotificationPermission
+import com.alert.app.base.PermissionManager
 import com.alert.app.databinding.FragmentHomeBinding
 import com.alert.app.di.NetworkResult
 import com.alert.app.errormessage.AlertUtils
@@ -306,4 +311,82 @@ class HomeFragment : Fragment(), OnMapReadyCallback {
             }
         }
     }
+
+
+    private fun checkPermissions() {
+        if (!NotificationPermission.isGranted(requireActivity())) {
+            requestNotification()
+            return
+        }
+
+        if (!LocationPermission.isGranted(requireActivity())) {
+            requestLocation()
+        }
+    }
+
+    private fun requestNotification() {
+        if (NotificationPermission.shouldShowRationale(requireActivity())) {
+            showDialog(
+                title = "Enable Notifications",
+                message = "Notifications are required to receive alerts and calls."
+            ) {
+                NotificationPermission.request(requireActivity())
+            }
+        } else {
+            NotificationPermission.request(requireActivity())
+        }
+    }
+
+    private fun requestLocation() {
+        if (LocationPermission.shouldShowRationale(requireActivity())) {
+            showDialog(
+                title = "Allow Location Access",
+                message = "Location is required for accurate alerts."
+            ) {
+                LocationPermission.request(requireActivity())
+            }
+        } else {
+            LocationPermission.request(requireActivity())
+        }
+    }
+
+    override fun onRequestPermissionsResult(
+        requestCode: Int,
+        permissions: Array<out String>,
+        grantResults: IntArray
+    ) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
+
+        when (requestCode) {
+            NotificationPermission.REQUEST_CODE -> {
+                if (grantResults.firstOrNull() != PackageManager.PERMISSION_GRANTED) {
+                    PermissionManager.openAppSettings(requireActivity())
+                } else {
+                    checkPermissions()
+                }
+            }
+
+            LocationPermission.REQUEST_CODE -> {
+                if (grantResults.firstOrNull() != PackageManager.PERMISSION_GRANTED) {
+                    PermissionManager.openAppSettings(requireActivity())
+                }
+            }
+        }
+    }
+
+    private fun showDialog(
+        title: String,
+        message: String,
+        onPositive: () -> Unit
+    ) {
+        AlertDialog.Builder(requireContext())
+            .setTitle(title)
+            .setMessage(message)
+            .setPositiveButton("Allow") { _, _ -> onPositive() }
+            .setNegativeButton("Cancel", null)
+            .show()
+    }
+
+
+
 }

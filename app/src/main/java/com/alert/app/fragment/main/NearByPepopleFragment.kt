@@ -1,7 +1,9 @@
 package com.alert.app.fragment.main
 
 import android.annotation.SuppressLint
+import android.location.LocationManager
 import android.os.Bundle
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -14,6 +16,7 @@ import androidx.navigation.fragment.findNavController
 import com.alert.app.R
 import com.alert.app.activity.MainActivity
 import com.alert.app.base.BaseApplication
+import com.alert.app.base.LocationHelper
 import com.alert.app.databinding.FragmentNearByPepopleBinding
 import com.alert.app.di.NetworkResult
 import com.alert.app.errormessage.AlertUtils.showAlert
@@ -38,8 +41,17 @@ class NearByPepopleFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
         setupUI()
+        Log.d("TESTING_VIEW","iNSIDE ON VIEW cREETED")
         setupListeners()
 //        getNearbyUser()
+
+        LocationHelper(requireActivity()).getCurrentLocation {
+                lat, lng, address ->
+
+            getNearbyUser(lat.toString(),lng.toString())
+
+        }
+
     }
 
     private fun setupUI() {
@@ -47,6 +59,7 @@ class NearByPepopleFragment : Fragment() {
         mainActivity.setFooter("nearByPeople")
         mainActivity.setImageShowTv()?.visibility = View.GONE
         mainActivity.setImgChatBoot().visibility = View.VISIBLE
+
 
         // Setup RecyclerView Adapter
      //   binding.rcyData.adapter = NearByPepoleAdapter(requireContext())

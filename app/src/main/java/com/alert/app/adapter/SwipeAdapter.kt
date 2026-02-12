@@ -15,36 +15,29 @@ import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
 import com.alert.app.R
 import com.alert.app.activity.ChatActivity
+import com.alert.app.model.ChatUserModel
 import com.alert.app.model.message.ChatListItem
 import com.chauthai.swipereveallayout.SwipeRevealLayout
 import com.chauthai.swipereveallayout.ViewBinderHelper
 
-class SwipeAdapter(
-    private val context: Context
-) : ListAdapter<ChatListItem, SwipeAdapter.SwipeViewHolder>(DiffCallback()) {
+class SwipeAdapter(private val context: Context) :
+    ListAdapter<ChatListItem, SwipeAdapter.SwipeViewHolder>(DiffCallback()) {
 
-    private val viewBinderHelper = ViewBinderHelper().apply {
-        setOpenOnlyOne(true)
-    }
-
-    // Mutable copy of list to support updateOrAdd()
-    private val currentListCopy = mutableListOf<ChatListItem>()
+    private val viewBinderHelper = ViewBinderHelper().apply { setOpenOnlyOne(true) }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): SwipeViewHolder {
-        val view = LayoutInflater.from(context)
-            .inflate(R.layout.item_swipe_row, parent, false)
+        val view = LayoutInflater.from(context).inflate(R.layout.item_swipe_row, parent, false)
         return SwipeViewHolder(view)
     }
 
     override fun onBindViewHolder(holder: SwipeViewHolder, position: Int) {
         val item = getItem(position)
 
-        // Unique key for swipe
+        // Swipe handling
         viewBinderHelper.bind(holder.swipeLayout, item.chatId)
-        viewBinderHelper.closeLayout(item.chatId)
 
-        holder.tvName.text = item.otherUserName
-        holder.tvLastMessage.text = item.lastMessage
+        holder.tvName.text = item.fullName
+        holder.tvLastMessage.text = item.lastMessage ?: "Say hi 👋"
 
         // Unread count
         if (item.unreadCount > 0) {
@@ -54,85 +47,31 @@ class SwipeAdapter(
             holder.tvCount.visibility = View.GONE
         }
 
-        // Click to open ChatActivity
+        // Click to open chat
         holder.imgAppbar.setOnClickListener {
             val intent = Intent(context, ChatActivity::class.java).apply {
-                putExtra("receiverId", item.otherUserId)
+                putExtra("receiverId", item.userId.toString())
+                putExtra("chatId", item.chatId)
+                putExtra("receiverName", item.fullName)
+                putExtra("receiverProfile", item.profile)
             }
             context.startActivity(intent)
         }
     }
 
     inner class SwipeViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
-
         val tvName: TextView = itemView.findViewById(R.id.tv_name)
         val tvLastMessage: TextView = itemView.findViewById(R.id.tv_last_message)
         val tvCount: TextView = itemView.findViewById(R.id.tv_count)
-
-        val imgNotification: ImageView = itemView.findViewById(R.id.img_notification)
-        val imgDelete: ImageView = itemView.findViewById(R.id.img_delete)
-
         val swipeLayout: SwipeRevealLayout = itemView.findViewById(R.id.swipe_layout)
         val imgAppbar: LinearLayout = itemView.findViewById(R.id.img_appbar)
-
-        init {
-            imgDelete.setOnClickListener {
-                // Optional: Firestore se chat delete / archive
-            }
-
-            swipeLayout.setSwipeListener(object : SwipeRevealLayout.SwipeListener {
-                override fun onClosed(view: SwipeRevealLayout) {
-                    imgAppbar.setBackgroundColor(
-                        ContextCompat.getColor(context, R.color.white)
-                    )
-                }
-
-                override fun onOpened(view: SwipeRevealLayout) {
-                    imgAppbar.setBackgroundColor(
-                        ContextCompat.getColor(context, R.color.teal_800)
-                    )
-                }
-
-                override fun onSlide(view: SwipeRevealLayout, slideOffset: Float) {
-                    val color = ColorUtils.blendARGB(
-                        ContextCompat.getColor(context, R.color.white),
-                        ContextCompat.getColor(context, R.color.teal_800),
-                        slideOffset
-                    )
-                    imgAppbar.setBackgroundColor(color)
-                }
-            })
-        }
     }
 
     class DiffCallback : DiffUtil.ItemCallback<ChatListItem>() {
-        override fun areItemsTheSame(
-            oldItem: ChatListItem,
-            newItem: ChatListItem
-        ): Boolean = oldItem.chatId == newItem.chatId
+        override fun areItemsTheSame(oldItem: ChatListItem, newItem: ChatListItem) =
+            oldItem.chatId == newItem.chatId
 
-        override fun areContentsTheSame(
-            oldItem: ChatListItem,
-            newItem: ChatListItem
-        ): Boolean = oldItem == newItem
-    }
-
-    /**
-     * Add new chat or update existing one
-     * Preserves ListAdapter animation and swipe layout
-     */
-    fun updateOrAdd(chatItem: ChatListItem) {
-        val index = currentListCopy.indexOfFirst { it.chatId == chatItem.chatId }
-
-        if (index != -1) {
-            // Update existing chat
-            currentListCopy[index] = chatItem
-        } else {
-            // Add new chat at top
-            currentListCopy.add(0, chatItem)
-        }
-
-        // Submit a **new list** to trigger DiffUtil
-        submitList(currentListCopy.toList())
+        override fun areContentsTheSame(oldItem: ChatListItem, newItem: ChatListItem) =
+            oldItem == newItem
     }
 }

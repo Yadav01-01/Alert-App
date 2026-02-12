@@ -32,7 +32,6 @@
             android:text="Sophia Rose"
             android:textColor="#0F0F0F"
             android:textSize="@dimen/_15sdp" />
-
     </LinearLayout>
 
     <View

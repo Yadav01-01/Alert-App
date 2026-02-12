@@ -62,5 +62,6 @@ object ApiEndPoint {
     const val ADD_HEALTH_ALERT="api/add_health_alert"
     const val MAP_LOCATIONS="api/map-locations"
 
+    const val USER_ADDRESS = "api/user-address"
 
 }

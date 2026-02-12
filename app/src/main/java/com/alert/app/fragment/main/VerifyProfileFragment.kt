@@ -44,13 +44,12 @@ class VerifyProfileFragment : Fragment() {
     private var screenType: String? = ""
 
     override fun onCreate(savedInstanceState: Bundle?) {
+
         super.onCreate(savedInstanceState)
 
         arguments?.let {
 
         }
-
-
 
 
     }
@@ -69,7 +68,7 @@ class VerifyProfileFragment : Fragment() {
         super.onViewCreated(view, savedInstanceState)
         viewModel = ViewModelProvider(this)[UserProfileViewModel::class.java]
         sessionManagement = SessionManagement(requireContext())
-
+        Log.d("TESTING_VERIFICATION"," I am here inside of onView Created")
         if (arguments != null) {
             emailOrPhone = requireArguments().getString("emailOrPhone")
             screenType =
@@ -97,9 +96,11 @@ class VerifyProfileFragment : Fragment() {
             if (BaseApplication.isOnline(requireContext())) {
                 if (binding.otpVerificationBox.otp!!.isEmpty()) {
                     BaseApplication.alertError(requireContext(), MessageClass.emptyOtp, false)
-                } else if (binding.otpVerificationBox.otp!!.length != 4) {
+                }
+                else if (binding.otpVerificationBox.otp!!.length != 4) {
                     BaseApplication.alertError(context, MessageClass.correctOtp, false)
-                } else {
+                }
+                else {
                     verificationApi()
                 }
             } else {
@@ -107,10 +108,7 @@ class VerifyProfileFragment : Fragment() {
             }
         }
 
-
-
-
-        binding.tvResendVerification.setOnClickListener {
+         binding.tvResendVerification.setOnClickListener {
             reSendOtp()
         }
 
@@ -131,6 +129,7 @@ class VerifyProfileFragment : Fragment() {
     }
 
     private fun verificationApi() {
+
         val input = emailOrPhone.toString().trim()
 
         val isEmail = android.util.Patterns.EMAIL_ADDRESS
@@ -138,22 +137,25 @@ class VerifyProfileFragment : Fragment() {
             .matches()
 
         val email: String? = if (isEmail) input else null
+
         val phone: String? = if (!isEmail) input else null
 
         BaseApplication.openDialog()
+
         Log.d("TESTING_VERIFICATION","I am here outside Verification" + email +" "+phone)
 
         if (screenType.equals("HomeProfile", true)) {
+
             lifecycleScope.launch {
                 BaseApplication.openDialog()
                 viewModel.verifyProfileUpdateOtp(binding.otpVerificationBox.otp.toString(),
-                    email, phone).collect { result ->
-
-                    when (result) {
+                    email, phone
+                ).collect { result ->
+                        when (result) {
                         is NetworkResult.Success -> {
                             Log.d("TESTING_VERIFICATION","I am here inside Verification" + email +" "+phone)
                             BaseApplication.dismissDialog()
-                            findNavController().popBackStack(R.id.homeProfileFragment, false)
+                            findNavController().popBackStack(R.id.homeProfileFragment2, false)
 
                         }
                         is NetworkResult.Error -> {
@@ -201,7 +203,7 @@ class VerifyProfileFragment : Fragment() {
         if (BaseApplication.isOnline(requireContext())) {
             BaseApplication.openDialog()
 
-            Log.d("TESTING_VERIFICATION","I am here outside" + emailOrPhone)
+            Log.d("TESTING_VERIFICATION","I am here outside inside resend " + emailOrPhone)
             if(screenType.equals("HomeProfile",true)){
                 Log.d("TESTING_VERIFICATION","I am here Indise" + emailOrPhone)
 
@@ -223,9 +225,7 @@ class VerifyProfileFragment : Fragment() {
 
                 }
             }
-            else {
 
-            }
 
             lifecycleScope.launch {
                 viewModel.resendOtp({ response ->
@@ -293,7 +293,7 @@ class VerifyProfileFragment : Fragment() {
         try {
             val apiModel = Gson().fromJson(data, UserProfileModel::class.java)
             if (apiModel.code == 200 && apiModel.status) {
-                findNavController().popBackStack(R.id.homeProfileFragment, false)
+                findNavController().popBackStack(R.id.homeProfileFragment2, false)
 
             } else {
                 handleError(apiModel.code, apiModel.message)

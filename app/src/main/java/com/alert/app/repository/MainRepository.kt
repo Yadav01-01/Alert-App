@@ -1,6 +1,8 @@
 package com.alert.app.repository
 
 import com.alert.app.di.NetworkResult
+import com.alert.app.model.AddressModel
+import com.alert.app.model.ChatUserModel
 import com.alert.app.model.contact.UserContactRequest
 import com.alert.app.model.contact.UserEditContactRequest
 import com.alert.app.model.helpingneighbormodel.CreateHelpingNeighbor
@@ -57,7 +59,7 @@ interface MainRepository {
         successCallback: (response: NetworkResult<String>) -> Unit,
         email: String?,
         otp: String,
-        phoneNumber :String?
+        phoneNumber: String?
     )
 
     suspend fun socialLoginRequestApi(
@@ -116,7 +118,7 @@ interface MainRepository {
         password_confirmation: String
     )
 
-    suspend fun getContactList() : Flow<NetworkResult<JsonObject>>
+    suspend fun getContactList(): Flow<NetworkResult<JsonObject>>
 
     suspend fun getRelation(): Flow<NetworkResult<JsonObject>>
 
@@ -136,9 +138,9 @@ interface MainRepository {
 
     suspend fun addSelfAlert(createSelfAlertRequest: CreateSelfAlertRequest): Flow<NetworkResult<JsonObject>>
 
-    suspend fun deleteUserAlert(alertId: String,type: String): Flow<NetworkResult<JsonObject>>
+    suspend fun deleteUserAlert(alertId: String, type: String): Flow<NetworkResult<JsonObject>>
 
-    suspend fun getNearbyUser(latitude: String,longitude: String): Flow<NetworkResult<JsonObject>>
+    suspend fun getNearbyUser(latitude: String, longitude: String): Flow<NetworkResult<JsonObject>>
 
     suspend fun privacyPolicy(): Flow<NetworkResult<JsonObject>>
 
@@ -151,9 +153,12 @@ interface MainRepository {
     suspend fun deleteUser(): Flow<NetworkResult<JsonObject>>
 
     suspend fun checkInUserAlert(type: String?): Flow<NetworkResult<JsonObject>>
-    suspend fun responseAlert(alertId: String?,description:String?): Flow<NetworkResult<JsonObject>>
+    suspend fun responseAlert(
+        alertId: String?,
+        description: String?
+    ): Flow<NetworkResult<JsonObject>>
 
-    suspend fun getNeighbor(): Flow<NetworkResult<JsonObject>>
+    suspend fun getNeighbor(latitude: String?, longitude: String?): Flow<NetworkResult<JsonObject>>
 
     suspend fun addNeighbor(createHelpingNeighbor: CreateHelpingNeighbor): Flow<NetworkResult<JsonObject>>
 
@@ -162,8 +167,14 @@ interface MainRepository {
     suspend fun neighborProfileDelete(contactId: String?): Flow<NetworkResult<JsonObject>>
     suspend fun addEmergencyMessage(message: String?): Flow<NetworkResult<JsonObject>>
     suspend fun getEmergencyMessage(): Flow<NetworkResult<JsonObject>>
-    suspend fun getUserAddress(): Flow<NetworkResult<JsonObject>>
-    suspend fun addUserAddress(type: String?, address: String?, latitude: String?, longitude: String?): Flow<NetworkResult<JsonObject>>
+    suspend fun getUserAddress(): Flow<NetworkResult<MutableList<AddressModel>>>
+    suspend fun addUserAddress(
+        type: String?,
+        address: String?,
+        latitude: String?,
+        longitude: String?
+    ): Flow<NetworkResult<JsonObject>>
+
     suspend fun deleteAddress(addressID: String?): Flow<NetworkResult<JsonObject>>
     suspend fun addEmergencyContact(createHelpingNeighbor: CreateHelpingNeighbor): Flow<NetworkResult<JsonObject>>
     suspend fun getEmergencyContact(): Flow<NetworkResult<JsonObject>>
@@ -176,20 +187,38 @@ interface MainRepository {
 
     suspend fun getChatBot(query: String): Flow<NetworkResult<JsonObject>>
 
-    suspend fun shareLocation(contact_id: String, duration: String, lat: String, long: String): Flow<NetworkResult<JsonObject>>
+    suspend fun shareLocation(
+        contact_id: String,
+        duration: String,
+        lat: String,
+        long: String
+    ): Flow<NetworkResult<JsonObject>>
 
-    suspend fun addHealthAlerts(alertFor: String,alertDuration: String,healthAlert: String,
-                                startDate: String,endDate : String,time: String, note: String,contact: List<String>?) : Flow<NetworkResult<JsonObject>>
+    suspend fun addHealthAlerts(
+        alertFor: String, alertDuration: String, healthAlert: String,
+        startDate: String, endDate: String, time: String, note: String, contact: List<String>?
+    ): Flow<NetworkResult<JsonObject>>
 
     suspend fun verifyProfileUpdateOtp(
-         otp :String, email :String?,
-         phoneNumber :String?
-    ) :Flow<NetworkResult<String>>
+        otp: String, email: String?,
+        phoneNumber: String?
+    ): Flow<NetworkResult<String>>
 
     suspend fun sendProfileUpdateVerifyOtp(
-        @Field("emailOrPhone") emailOrPhone :String
-    ) : Flow<NetworkResult<String>>
+        @Field("emailOrPhone") emailOrPhone: String
+    ): Flow<NetworkResult<String>>
 
-    suspend fun mapLocations() : Flow<NetworkResult<UserLocationResponse>>
+    suspend fun mapLocations(): Flow<NetworkResult<UserLocationResponse>>
 
+
+    suspend fun deleteUserAddress(
+        addressId: String
+    ): Flow<NetworkResult<String>>
+
+    suspend fun createChannel(
+        @Field("contact_user_id") contactUserId: String,
+        @Field("chat_id") chatId: String
+    ): Flow<NetworkResult<String>>
+
+    suspend fun getChannelList() : Flow<NetworkResult<MutableList<ChatUserModel>>>
 }

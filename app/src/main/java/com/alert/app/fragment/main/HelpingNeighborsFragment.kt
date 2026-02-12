@@ -30,6 +30,7 @@ import android.widget.PopupWindow
 import android.widget.RelativeLayout
 import android.widget.TextView
 import android.widget.Toast
+import androidx.activity.compose.BackHandler
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import androidx.fragment.app.Fragment
@@ -43,13 +44,17 @@ import com.alert.app.activity.MainActivity
 import com.alert.app.adapter.AddressAdapter
 import com.alert.app.adapter.HelpingNeighborsAdapter
 import com.alert.app.adapter.PlacesAutoCompleteAdapter
+import com.alert.app.base.AppConstant
 import com.alert.app.base.BaseApplication
+import com.alert.app.base.LocationHelper
 import com.alert.app.databinding.FragmentHelpingNeighborsBinding
 import com.alert.app.di.NetworkResult
 import com.alert.app.errormessage.AlertUtils
 import com.alert.app.errormessage.MessageClass
+import com.alert.app.listener.OnAddressClickListener
 import com.alert.app.listener.OnClickContact
 import com.alert.app.listener.OnPlacesDetailsListener
+import com.alert.app.model.AddressModel
 import com.alert.app.model.TimeModel
 import com.alert.app.model.addressmodel.Place
 import com.alert.app.model.addressmodel.PlaceAPI
@@ -95,7 +100,8 @@ import kotlinx.coroutines.launch
 import java.util.Locale
 
 @AndroidEntryPoint
-class HelpingNeighborsFragment : Fragment() , OnClickContact, OnMapReadyCallback {
+class HelpingNeighborsFragment : Fragment() , OnClickContact, OnMapReadyCallback ,
+    OnAddressClickListener {
 
     private var _binding: FragmentHelpingNeighborsBinding?=null
     private val binding get() = _binding!!
@@ -114,13 +120,17 @@ class HelpingNeighborsFragment : Fragment() , OnClickContact, OnMapReadyCallback
     private var longitude = ""
     private var currentLocation: Location? = null
     private var fusedLocationProviderClient: FusedLocationProviderClient? = null
-
+    private var addressList : MutableList<AddressModel> = mutableListOf()
     val data: MutableList<TimeModel> = mutableListOf()
     private val REQUEST_CODE = 101
     private val LOCATION_CODE = 100
     lateinit var popupWindow:PopupWindow
     private val TAG = "LocationOnOff"
     private var mMap: GoogleMap? = null
+    private lateinit var locationHelper: LocationHelper
+
+    private lateinit var addressAdapter:AddressAdapter
+
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View {
         _binding = FragmentHelpingNeighborsBinding.inflate(layoutInflater, container, false)
@@ -134,30 +144,13 @@ class HelpingNeighborsFragment : Fragment() , OnClickContact, OnMapReadyCallback
         (requireActivity() as? MainActivity)?.setImgChatBoot()?.visibility = View.GONE
 
         viewModel = ViewModelProvider(this)[HelpingNeighborViewModel::class.java]
-
-    /*    MainScope().launch {
-            delay(5000) // Delay for 5 seconds
-            binding.rcyData.visibility=View.VISIBLE
-            binding.layTitle.visibility=View.VISIBLE
-            binding.tvTitle.visibility = View.VISIBLE
-            binding.layCurrentLocation.visibility=View.VISIBLE
-            binding.layno.visibility=View.GONE
-        }*/
-
         initialize()
-
     }
 
     private fun initialize() {
 
         adapter=  HelpingNeighborsAdapter(requireContext(),getContactList,this)
         binding.rcyData.adapter= adapter
-
-/*        binding.layno.visibility=View.VISIBLE
-        binding.rcyData.visibility=View.GONE
-        binding.layTitle.visibility=View.GONE
-        binding.tvTitle.visibility = View.GONE
-        binding.btnAddNow.visibility = View.GONE*/
 
         binding.btnAdd.setOnClickListener {
             alertBottom()
@@ -171,15 +164,25 @@ class HelpingNeighborsFragment : Fragment() , OnClickContact, OnMapReadyCallback
             openAlertBoxLocation()
         }
 
-        getHelpingNeighbor()
+        locationHelper = LocationHelper(requireActivity())
+
+        locationHelper.getCurrentLocation { lat, lng, address ->
+            binding.tvAddressType.text = "Current"
+            binding.tvUserAddress.text = address
+                   latitude = lat.toString()
+                   longitude = lat.toString()
+
+            getHelpingNeighbor(lat,lng)
+
+         }
+
     }
 
-    private fun getHelpingNeighbor() {
+    private fun getHelpingNeighbor(latitude:Double,longitude:Double) {
         if (BaseApplication.isOnline(requireContext())) {
             BaseApplication.openDialog()
             lifecycleScope.launch {
-                viewModel.getNeighbor().collect {
-                    BaseApplication.dismissDialog()
+                viewModel.getNeighbor(latitude.toString(),longitude.toString()).collect {
                     handleApiResponse(it)
                 }
             }
@@ -191,8 +194,15 @@ class HelpingNeighborsFragment : Fragment() , OnClickContact, OnMapReadyCallback
     private fun handleApiResponse(it: NetworkResult<JsonObject>) {
         when (it) {
             is NetworkResult.Success -> handleSuccessApiResponse(it.data.toString())
-            is NetworkResult.Error -> showAlert(it.message, false)
-            else -> showAlert(it.message, false)
+            is NetworkResult.Error ->{
+                BaseApplication.dismissDialog()
+                showAlert(it.message, false)
+                adapter.update(mutableListOf<Contact>())
+            }
+
+            else ->{
+                BaseApplication.dismissDialog()
+                showAlert(it.message, false) }
         }
     }
 
@@ -212,10 +222,12 @@ class HelpingNeighborsFragment : Fragment() , OnClickContact, OnMapReadyCallback
                 }
             } else {
                 handleError(apiModel.code,apiModel.message)
+
             }
         } catch (e: Exception) {
             showAlert(e.message, false)
         }
+        getUserAddress()
     }
 
     private fun showDataInUI(data: GetNeighborModelData) {
@@ -226,15 +238,6 @@ class HelpingNeighborsFragment : Fragment() , OnClickContact, OnMapReadyCallback
                 getContactList.addAll(it)
             }
 
-            data.userAddress.let { address ->
-                address.type?.let {
-                    binding.tvAddressType.text = it
-                }
-
-                address.address?.let {
-                    binding.tvUserAddress.text = it
-                }
-            }
 
             if (getContactList.size > 0) {
                 binding.rcyData.visibility = View.VISIBLE
@@ -298,6 +301,29 @@ class HelpingNeighborsFragment : Fragment() , OnClickContact, OnMapReadyCallback
     }
 
 
+
+    private fun getUserAddress(){
+        lifecycleScope.launch {
+            viewModel.getUserAddress().collect {
+                when(it){
+                    is NetworkResult.Success ->{
+                        BaseApplication.dismissDialog()
+                       it.data?.let {
+                           addressList = it
+                       }
+                    }
+                    is NetworkResult.Error ->{
+                        BaseApplication.dismissDialog()
+                    }
+                    else ->{
+                        BaseApplication.dismissDialog()
+                    }
+                }
+            }
+        }
+    }
+
+
     private fun openAlertBoxLocation(){
         openBottomSheetDialog = BottomSheetDialog(requireContext(), R.style.BottomSheetDialog)
         openBottomSheetDialog.setContentView(R.layout.bottom_location_open)
@@ -323,68 +349,26 @@ class HelpingNeighborsFragment : Fragment() , OnClickContact, OnMapReadyCallback
         }
 
         tvCurrent?.setOnClickListener {
-            addCurrentAddressMap()
-//            openBottomSheetDialog.dismiss()
+
+            locationHelper.getCurrentLocation { lat, lng, address ->
+                binding.tvAddressType.text = "Current"
+                binding.tvUserAddress.text = address
+                getHelpingNeighbor(lat,lng)
+                openBottomSheetDialog.dismiss()
+            }
+
         }
 
         addAddress?.setOnClickListener {
             addAlertBoxAddress()
         }
-
-        rcyData?.adapter= AddressAdapter(requireContext())
+        addressAdapter = AddressAdapter(requireContext(),addressList,this@HelpingNeighborsFragment)
+        rcyData?.adapter= addressAdapter
 
         openBottomSheetDialog.show()
 
     }
 
-    @SuppressLint("SuspiciousIndentation")
-    private fun addCurrentAddressMap() {
-        val dialogCurrentAddress = Dialog(requireContext())
-        dialogCurrentAddress.setContentView(R.layout.dialog_current_address_item)
-        dialogCurrentAddress.window!!.setBackgroundDrawable(ColorDrawable(Color.TRANSPARENT))
-        val layoutParams = WindowManager.LayoutParams()
-        dialogCurrentAddress.window?.setLayout(WindowManager.LayoutParams.MATCH_PARENT, WindowManager.LayoutParams.MATCH_PARENT)
-        layoutParams.copyFrom(dialogCurrentAddress.window!!.attributes)
-        dialogCurrentAddress.window!!.attributes = layoutParams
-
-        tvAddress=dialogCurrentAddress.findViewById(R.id.tvAddress)
-
-        dialogCurrentAddress.show()
-
-        val apiKey = getString(R.string.api_key)
-        if (!Places.isInitialized()) {
-            Places.initialize(requireContext(), apiKey)
-        }
-
-        fusedLocationProviderClient = LocationServices.getFusedLocationProviderClient(requireActivity())
-
-        val locationManager = requireActivity().getSystemService(AppCompatActivity.LOCATION_SERVICE) as LocationManager
-          fetchLocation()
-            // check condition
-            if (ActivityCompat.checkSelfPermission(
-                    requireActivity(),
-                    Manifest.permission.ACCESS_FINE_LOCATION
-                ) !=
-                PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(
-                    requireActivity(),
-                    Manifest.permission.ACCESS_COARSE_LOCATION
-                ) != PackageManager.PERMISSION_GRANTED
-            ) {
-                // When permission is granted
-                // Call method
-                getCurrentLocation()
-            } else {
-                // When permission is not granted
-                // Call method
-                requestPermissions(
-                    arrayOf<String>(
-                        Manifest.permission.ACCESS_COARSE_LOCATION,
-                        Manifest.permission.ACCESS_FINE_LOCATION
-                    ), LOCATION_CODE
-                )
-                displayLocationSettingsRequest(requireContext())
-            }
-    }
 
     private fun displayLocationSettingsRequest(requireContext: Context) {
         val googleApiClient =
@@ -451,13 +435,7 @@ class HelpingNeighborsFragment : Fragment() , OnClickContact, OnMapReadyCallback
                     requireContext(), Manifest.permission.ACCESS_COARSE_LOCATION
                 ) != PackageManager.PERMISSION_GRANTED
             ) {
-                // TODO: Consider calling
-                //    ActivityCompat#requestPermissions
-                // here to request the missing permissions, and then overriding
-                //   public void onRequestPermissionsResult(int requestCode, String[] permissions,
-                //                                          int[] grantResults)
-                // to handle the case where the user grants the permission. See the documentation
-                // for ActivityCompat#requestPermissions for more details.
+
                 return
             }
             fusedLocationProviderClient!!.lastLocation.addOnCompleteListener(OnCompleteListener<Location?> { task ->
@@ -561,12 +539,7 @@ class HelpingNeighborsFragment : Fragment() , OnClickContact, OnMapReadyCallback
 
         val latLng = LatLng(lat, lng) // Example: Sydney
 
-     /*   // 1. Create LatLng from currentLocation
-        val latLng = LatLng(
-            currentLocation!!.latitude, currentLocation!!.longitude
-        )*/
 
-        // 2. Create MarkerOptions with the obtained LatLng
         val markerOptions = MarkerOptions().position(latLng).title("I am here!")
         // 3. Animate camera to the LatLng (first call)
         googleMap.animateCamera(CameraUpdateFactory.newLatLng(latLng))
@@ -577,18 +550,7 @@ class HelpingNeighborsFragment : Fragment() , OnClickContact, OnMapReadyCallback
         googleMap.addMarker(markerOptions)
     }
 
-    /*override fun onMapReady(googleMap: GoogleMap) {
-        this.mMap = googleMap
 
-            val latLng = LatLng(
-                currentLocation!!.latitude, currentLocation!!.longitude
-            )
-            val markerOptions = MarkerOptions().position(latLng).title("I am here!")
-            googleMap.animateCamera(CameraUpdateFactory.newLatLng(latLng))
-            googleMap.animateCamera(CameraUpdateFactory.newLatLngZoom(latLng, 15f))
-            googleMap.addMarker(markerOptions)
-//            googleMap.setOnMapClickListener(this)
-    }*/
 
     override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<String?>, grantResults: IntArray) {
         when (requestCode) {
@@ -635,7 +597,7 @@ class HelpingNeighborsFragment : Fragment() , OnClickContact, OnMapReadyCallback
         })
     }
 
-    private fun addAlertBoxAddress(){
+    private fun addAlertBoxAddress(edit:Boolean =false, address: AddressModel? = null){
         val dialog = Dialog(requireContext())
         dialog.setContentView(R.layout.dialog_add_address)
 
@@ -650,7 +612,7 @@ class HelpingNeighborsFragment : Fragment() , OnClickContact, OnMapReadyCallback
 
         layoutParams.copyFrom(dialog.window!!.attributes)
         dialog.window!!.attributes = layoutParams
-
+        var open = false
         val edText = dialog.findViewById<AutoCompleteTextView>(R.id.ed_text)
         val btnSave = dialog.findViewById<TextView>(R.id.btnSave)
         val imgCross = dialog.findViewById<ImageView>(R.id.img_cross)
@@ -659,14 +621,23 @@ class HelpingNeighborsFragment : Fragment() , OnClickContact, OnMapReadyCallback
         val hotel = dialog.findViewById<RelativeLayout>(R.id.rl_hotel)
         val other = dialog.findViewById<RelativeLayout>(R.id.rl_other)
 
+
         edText?.setAdapter(PlacesAutoCompleteAdapter(requireContext(), placesApi))
         edText?.onItemClickListener = AdapterView.OnItemClickListener { parent, _, position, _ ->
             val place = parent.getItemAtPosition(position) as Place
             edText?.setText(place.description)
             getPlaceDetails(place.id, placesApi)
+            open = true
         }
 
         var worktype: String = ""
+
+
+        if(address !=null){
+            worktype = address.type
+           edText.setText(address.address)
+        }
+
 
 
         if (worktype.equals("home",true)) {
@@ -728,6 +699,7 @@ class HelpingNeighborsFragment : Fragment() , OnClickContact, OnMapReadyCallback
         }
 
         dialog.show()
+
         dialog.window!!.setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_STATE_ALWAYS_VISIBLE)
 
         imgCross.setOnClickListener {
@@ -742,6 +714,10 @@ class HelpingNeighborsFragment : Fragment() , OnClickContact, OnMapReadyCallback
                 if (userAddress.isEmpty()) {
                     BaseApplication.alertError(context, MessageClass.addressError,false)
                 } else {
+                    if(open == false && edit == true){
+                        latitude = address?.latitude.toString()
+                        longitude = address?.longitude.toString()
+                    }
                     addUserAddress(userAddress,worktype,dialog)
                 }
             }
@@ -753,18 +729,23 @@ class HelpingNeighborsFragment : Fragment() , OnClickContact, OnMapReadyCallback
             BaseApplication.openDialog()
             lifecycleScope.launch {
                 viewModel.addUserAddress(workType,userAddress,latitude,longitude).collect {
-                    BaseApplication.dismissDialog()
+//                    BaseApplication.dismissDialog()
                     handleAddUserApiResponse(it,dialog)
                 }
             }
-        } else {
+        }
+        else {
             AlertUtils.showAlert(requireContext(), MessageClass.networkError, false)
         }
     }
 
     private fun handleAddUserApiResponse(it: NetworkResult<JsonObject>, dialogAddress: Dialog) {
         when (it) {
-            is NetworkResult.Success -> handleSuccessAddressApiResponse(it.data.toString(), dialogAddress)
+            is NetworkResult.Success -> {
+
+                handleSuccessAddressApiResponse(it.data.toString(), dialogAddress)
+                getUserAddress()
+            }
             is NetworkResult.Error -> showAlert(it.message, false)
             else -> showAlert(it.message, false)
         }
@@ -776,7 +757,7 @@ class HelpingNeighborsFragment : Fragment() , OnClickContact, OnMapReadyCallback
             val apiModel = Gson().fromJson(data, AddNeighborModel::class.java)
             Log.d("@@@ addMea List ", "message :- $data")
             if (apiModel.status == true) {
-                getHelpingNeighbor()
+            //    getHelpingNeighbor()
                 openBottomSheetDialog.dismiss()
                 dialogAddress.dismiss()
             } else {
@@ -797,8 +778,8 @@ class HelpingNeighborsFragment : Fragment() , OnClickContact, OnMapReadyCallback
 
     @SuppressLint("SetTextI18n")
     private fun showNotificationDialog(position: Int?) {
-        val dialog = createDialog(R.layout.dialog_notification)
 
+        val dialog = createDialog(R.layout.dialog_notification)
         val userImg= dialog.findViewById<ImageView>(R.id.user_img)
         val layProgress = dialog.findViewById<View>(R.id.layProgess)
         val textUserName = dialog.findViewById<TextView>(R.id.textUserName)
@@ -806,7 +787,6 @@ class HelpingNeighborsFragment : Fragment() , OnClickContact, OnMapReadyCallback
         val tvAlertName = dialog.findViewById<TextView>(R.id.tvAlertName)
         val tvRelationType = dialog.findViewById<TextView>(R.id.tvRelationType)
         val tvDescription = dialog.findViewById<TextView>(R.id.tvDescription)
-
         val item = getContactList[position!!]
         val profileImage = item.profile_pic?.takeIf { it.isNotBlank() } ?: ""
         val userName = item.first_name?.takeIf { it.isNotBlank() } ?: ""
@@ -815,15 +795,15 @@ class HelpingNeighborsFragment : Fragment() , OnClickContact, OnMapReadyCallback
         val alertName = item.alert?.takeIf { it.isNotBlank() } ?: ""
         val relationType = item.relation?.takeIf { it.isNotBlank() } ?: ""
         val description = item.alert_description?.takeIf { it.isNotBlank() } ?: ""
-
         textUserName.text= "$userName $lastName"
-        tvTime.text=BaseApplication.getTimeAgoText(duration)
-        tvAlertName.text=alertName
-        tvRelationType.text=relationType
+        tvTime.text = BaseApplication.getTimeAgoText(duration)
+        tvAlertName.text = alertName
+        tvRelationType.text= relationType
         tvDescription.text=description
+        Log.d("TESTING_PROFILE","profile image is"+BuildConfig.BASE_URL+profileImage)
 
         Glide.with(requireActivity())
-            .load(BuildConfig.BASE_URL+profileImage)
+            .load(AppConstant.IMAGE_BASE_URL + profileImage)
             .error(R.drawable.no_image)
             .placeholder(R.drawable.no_image)
             .listener(object : RequestListener<Drawable> {
@@ -894,6 +874,7 @@ class HelpingNeighborsFragment : Fragment() , OnClickContact, OnMapReadyCallback
         val edEmail = dialogContact.findViewById<EditText>(R.id.ed_email)
         val edPhone = dialogContact.findViewById<EditText>(R.id.ed_phone)
         val layRelation = dialogContact.findViewById<TextInputLayout>(R.id.layRelation)
+         val cpp = dialogContact.findViewById<com.hbb20.CountryCodePicker>(R.id.ccp)
         tvRelation = dialogContact.findViewById(R.id.tvRelation)
         tvAlerts = dialogContact.findViewById(R.id.tvAlerts)
 
@@ -911,6 +892,7 @@ class HelpingNeighborsFragment : Fragment() , OnClickContact, OnMapReadyCallback
                 tvRelation.setOnItemClickListener { _, _, position, _ ->
                     val selectedRelation = relation[position] // Get full model by position
                      selectedRelationId = selectedRelation.id
+                    selectedRelationId = selectedRelation.id
 
                     // Store ID or use it as needed
                     Log.d("SelectedRelation", "ID: $selectedRelationId ")
@@ -946,10 +928,13 @@ class HelpingNeighborsFragment : Fragment() , OnClickContact, OnMapReadyCallback
         dialogContact.window!!.setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_STATE_ALWAYS_VISIBLE)
 
         btnAdd.setOnClickListener {
+            val countryCode = cpp.selectedCountryCodeWithPlus
             if (BaseApplication.cantactValidationError(requireContext(),edFullName,edLastName,edEmail,edPhone,selectedAlertId,selectedRelationId)){
+                val phoneNumber = edPhone.text.toString().trim()
+                val finalFullNumber = countryCode + phoneNumber
                 val createHelpingNeighbor = CreateHelpingNeighbor(
                     edFullName.text.toString().trim(),edLastName.text.toString().trim(),edEmail.text.toString().trim(),
-                    edPhone.text.toString().trim(),   selectedRelationId.toString(),
+                    finalFullNumber,   selectedRelationId.toString(),
                     selectedAlertId.toString(),"manual"
                 )
                 addHelpingNeighbor(createHelpingNeighbor,dialogContact)
@@ -1074,7 +1059,7 @@ class HelpingNeighborsFragment : Fragment() , OnClickContact, OnMapReadyCallback
             val apiModel = Gson().fromJson(data, AddNeighborModel::class.java)
             Log.d("@@@ addMea List ", "message :- $data")
             if (apiModel.status == true) {
-                getHelpingNeighbor()
+               getHelpingNeighbor(latitude.toDouble(),longitude.toDouble())
                 dialogContact.dismiss()
             } else {
                 handleError(apiModel.code, apiModel.message)
@@ -1083,4 +1068,46 @@ class HelpingNeighborsFragment : Fragment() , OnClickContact, OnMapReadyCallback
             showAlert(e.message, false)
         }
     }
+
+    private fun deleteAddress(id:Int){
+        lifecycleScope.launch {
+            viewModel.deleteUserAddress(id.toString()).collect {
+                when(it){
+                    is NetworkResult.Success->{
+                        val data = it.data
+                        val addressListNew = addressList.filter {
+                            it.id != id
+                        }
+                       addressList = addressListNew.toMutableList()
+                        addressAdapter.updateAdapter(addressListNew.toMutableList())
+                    }
+                    is NetworkResult.Error ->{
+                        BaseApplication.alertError(requireContext(),it.message.toString(),false)
+                    }
+                }
+            }
+        }
+    }
+
+
+    override fun onAddressSelected(address: AddressModel,type:String,message:String ) {
+        if(type.equals("main")) {
+           binding.tvAddressType.text = address.type
+           binding.tvUserAddress.text = address.address
+           openBottomSheetDialog.dismiss()
+            latitude = address.latitude.toString()
+            longitude = address.longitude.toString()
+           getHelpingNeighbor(address.latitude?.toDouble()?:0.0 , address.longitude?.toDouble()?:0.0)
+        }
+        else if(type.equals("delete")){
+            deleteAddress(address.id)
+       }
+        else if(type.equals("edit")){
+            addAlertBoxAddress(true, address)
+       }
+
+    }
+
+
+
 }

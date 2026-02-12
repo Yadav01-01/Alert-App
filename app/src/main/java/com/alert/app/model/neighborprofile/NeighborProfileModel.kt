@@ -23,5 +23,6 @@ data class NeighborProfileModelData(
     val phone: String?,
     val profile_pic: String?,
     val relation: String?,
-    val relation_id: Int?
+    val relation_id: Int?,
+    val profile :String?
 )

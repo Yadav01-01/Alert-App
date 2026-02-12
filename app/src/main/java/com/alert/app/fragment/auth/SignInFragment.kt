@@ -26,6 +26,7 @@ import androidx.recyclerview.widget.RecyclerView
 import com.alert.app.R
 import com.alert.app.activity.MainActivity
 import com.alert.app.adapter.RememberPasswordListAdapter
+import com.alert.app.base.AppConstant
 import com.alert.app.base.BaseApplication
 import com.alert.app.base.SessionManagement
 import com.alert.app.databinding.FragmentSignInBinding
@@ -150,8 +151,6 @@ class SignInFragment : Fragment() {
             }
 
             if (!isValidate()) return@setOnClickListener
-
-        //    binding!!.tvSignInButton.isEnabled = false
 
             when (signInType) {
                 SignInType.EMAIL -> {
@@ -287,7 +286,8 @@ class SignInFragment : Fragment() {
                 "login","socialLogin" -> {
                     val apiModel = Gson().fromJson(data, LoginRootModel::class.java)
                     if (apiModel.code == 200 && apiModel.status) {
-                        apiModel.data?.let { showDataUi(it,dataType) }?: run {
+                        apiModel.data?.let {
+                            showDataUi(it,dataType) }?: run {
                             showAlert(MessageClass.apiError, false)
                         }
                     } else {
@@ -324,11 +324,18 @@ class SignInFragment : Fragment() {
 //                    sessionManagement.setProfileScreen("signup")
 //                    findNavController().navigate(R.id.homeProfileFragment2)
 //                }else{
+
                     sessionManagement.setLoginSession(true)
                     sessionManagement.setProfileScreen("login")
-                    apiModel.name.let { sessionManagement.setUserName(it.toString()) }
+                    apiModel.full_name?.let {
+                        sessionManagement.setUserName(it.toString())
+                    }
+
                     apiModel.email.let { sessionManagement.setUserEmail(it.toString()) }
-                    apiModel.profile_pic.let { sessionManagement.setUserProfile(it.toString()) }
+                    apiModel.profile_image.let { sessionManagement.setUserProfile(AppConstant.baseUrl+it.toString()) }
+                     apiModel.user_id?.let {
+                         sessionManagement.setUserId(it)
+                     }
                     val intent = Intent(context, MainActivity::class.java)
                     intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
                     startActivity(intent)

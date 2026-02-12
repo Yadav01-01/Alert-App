@@ -7,9 +7,11 @@ import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import androidx.navigation.ui.AppBarConfiguration
 import androidx.recyclerview.widget.RecyclerView
 import com.alert.app.BuildConfig
 import com.alert.app.R
+import com.alert.app.base.AppConstant
 import com.alert.app.model.EmergencyContact
 import com.alert.app.databinding.ItememergencycontactBinding
 import com.alert.app.listener.OnClickContact
@@ -98,7 +100,7 @@ class EmergencyContactAdapter(
                 holder.binding.layProgess.root.visibility = View.VISIBLE
 
                 Glide.with(context)
-                    .load("${BuildConfig.BASE_URL}${data.profilePic}")
+                    .load("${AppConstant.IMAGE_BASE_URL}${data.profilePic}")
                     .error(R.drawable.no_image)
                     .placeholder(R.drawable.no_image)
                     .listener(object : RequestListener<Drawable> {
@@ -133,10 +135,8 @@ class EmergencyContactAdapter(
 
         }
 
-
-
         holder.binding.imgChat.setOnClickListener {
-            onClickContact.onClick("chat",data.contactId.toString())
+            onClickContact.onClick("chat",data.contactId.toString()+"--"+data.contactUserId.toString())
         }
 
         holder.binding.imgCall.setOnClickListener {

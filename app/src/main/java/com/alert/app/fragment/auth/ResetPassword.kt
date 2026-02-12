@@ -98,9 +98,6 @@ class ResetPassword : Fragment() {
             binding!!.eyecnfhideIcon.visibility= View.VISIBLE
             binding!!.etConfirmPassword.setSelection(binding!!.etConfirmPassword.text.length)
         }
-
-
-
         return binding!!.root
     }
 
@@ -111,12 +108,32 @@ class ResetPassword : Fragment() {
             if (signUpType == "EMAIL"){
                 viewModel.reseatPasswordRequest({ response ->
                     BaseApplication.dismissDialog()
-                    handleApiResponse(response)
-                },email,null, binding!!.etCreateNewPassword.text.toString(),binding!!.etConfirmPassword.text.toString())
+
+                    when(response) {
+                        is NetworkResult.Success -> {
+                            openAlertBoxPassword()
+                        }
+                        is NetworkResult.Error -> {
+                            showAlert(response.message.toString(),false)
+                        }
+                    }
+                                                },email,null, binding!!.etCreateNewPassword.text.toString(),binding!!.etConfirmPassword.text.toString())
             }else{
                 viewModel.reseatPasswordRequest({ response ->
                     BaseApplication.dismissDialog()
-                    handleApiResponse(response)
+
+
+                    when(response) {
+                        is NetworkResult.Success -> {
+                            openAlertBoxPassword()
+                        }
+                        is NetworkResult.Error -> {
+                            showAlert(response.message.toString(),false)
+                        }
+                    }
+
+
+                    //   handleApiResponse(response)
                 },null,phone, binding!!.etCreateNewPassword.text.toString(),binding!!.etConfirmPassword.text.toString())
             }
         }
@@ -137,7 +154,7 @@ class ResetPassword : Fragment() {
             val apiModel = Gson().fromJson(data, LoginRootModel::class.java)
             Log.d("checkCode",apiModel.code.toString())
             if (apiModel.status_code == 200 && apiModel.status) {
-                openAlertBoxPassword()
+
             } else {
                 showAlert(apiModel.message, false)
             }

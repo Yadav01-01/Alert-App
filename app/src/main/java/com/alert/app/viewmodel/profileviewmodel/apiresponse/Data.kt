@@ -17,5 +17,6 @@ data class Data(
     val token: String?,
     val updated_at: String?,
     val user_id: Int,
-    val username: String?
+    val username: String?,
+    val profile_image :String?
 )

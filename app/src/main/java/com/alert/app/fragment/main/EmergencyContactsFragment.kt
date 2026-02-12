@@ -28,6 +28,7 @@ import com.alert.app.activity.ChatActivity
 import com.alert.app.activity.ContactDetailScreenActivity
 import com.alert.app.activity.MainActivity
 import com.alert.app.adapter.EmergencyContactAdapter
+import com.alert.app.base.AppConstant
 import com.alert.app.base.BaseApplication
 import com.alert.app.databinding.FragmentEmergencyContactsBinding
 import com.alert.app.di.NetworkResult
@@ -477,6 +478,21 @@ class EmergencyContactsFragment : Fragment(), OnClickContact {
         }
         if(data.equals("chat",true)){
             val intent = Intent(context, ChatActivity::class.java)
+            val parts = id.split("--")
+
+            val contactId = parts[0]       // "123"
+            val contactUserId = parts[1]
+
+            getEmergencyContactList.forEach {
+                Log.d("TESTING_IDS","contactId"+it.contactId+" mysceen"+contactId.toInt())
+               if(it.contactId == contactId.toInt()){
+                   intent.putExtra(AppConstant.NAME,it.firstName+" "+it.lastName)
+                   intent.putExtra(AppConstant.PROFILE, AppConstant.IMAGE_BASE_URL+it.profilePic)
+                   Log.d("Testing_Profile",AppConstant.IMAGE_BASE_URL+it.profilePic)
+               }
+            }
+
+            intent.putExtra(AppConstant.CONTACT_USER_ID, contactUserId)
             startActivity(intent)
         }
     }

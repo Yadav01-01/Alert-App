@@ -6,6 +6,7 @@
     android:layout_height="wrap_content">
 
     <LinearLayout
+        android:id="@+id/layout_main"
         android:layout_width="match_parent"
         android:background="@drawable/bg_border"
         android:padding="@dimen/_8sdp"
@@ -29,6 +30,7 @@
                 android:orientation="vertical">
 
                 <TextView
+                    android:id="@+id/tv_type"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:text="Home"
@@ -39,6 +41,7 @@
                     android:fontFamily="@font/urbanist_bold"/>
 
                 <TextView
+                    android:id="@+id/tv_address"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:text="138 My Street, Kingston, New York  Zip code - 1212"

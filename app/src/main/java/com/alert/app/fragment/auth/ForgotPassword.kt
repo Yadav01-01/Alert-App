@@ -108,9 +108,37 @@ class ForgotPassword : Fragment() {
         lifecycleScope.launch {
             if (selectedType == "EMAIL") {
                 viewModel.forgotPasswordRequest(
-                    { response ->
+                    {
+                        response ->
                         BaseApplication.dismissDialog()
-                        handleApiResponse(response)
+
+                        when(response){
+                           is NetworkResult.Success ->{
+                               val bundle = Bundle()
+                               bundle.putString(
+                                   "emailOrPhone",
+                                   if (selectedType == "EMAIL")
+                                       binding.etForgotEmail.text.toString().trim()
+                                   else
+                                       binding.etPhone.text.toString().trim()
+                               )
+                               if (selectedType == "EMAIL"){
+                                   bundle.putString("email",binding.etForgotEmail.text.toString().trim())
+                                   bundle.putString("signUpType","EMAIL")
+                               }else{
+                                   bundle.putString("phone",binding.etPhone.text.toString().trim())
+                                   bundle.putString("countryCode",binding.ccp.selectedCountryCode)
+                                   bundle.putString("signUpType","PHONE")
+                               }
+
+                               bundle.putString("screenType", "Forgot")
+                               findNavController().navigate(R.id.verificationCode, bundle)
+                           }
+                            is NetworkResult.Error->{
+                                showAlert(response.message.toString(),false)
+                            }
+                        }
+
                     },
                     binding.etForgotEmail.text.toString().trim(),
                     null
@@ -124,7 +152,23 @@ class ForgotPassword : Fragment() {
                 viewModel.forgotPasswordRequest(
                     { response ->
                         BaseApplication.dismissDialog()
-                        handleApiResponse(response)
+
+                        when(response){
+                            is NetworkResult.Success ->{
+                                val bundle = Bundle()
+                                bundle.putString("phone",binding.etPhone.text.toString().trim())
+                                bundle.putString("countryCode",binding.ccp.selectedCountryCode)
+                                bundle.putString("signUpType","PHONE")
+                                bundle.putString("screenType", "Forgot")
+                                findNavController().navigate(R.id.verificationCode, bundle)
+                            }
+                            is NetworkResult.Error->{
+                                showAlert(response.message.toString(),false)
+                            }
+                        }
+
+
+                      //  handleApiResponse(response)
                     },
                     null,
                     finalPhone
@@ -147,8 +191,9 @@ class ForgotPassword : Fragment() {
         try {
             Log.d("@@@ Api Response", "message: $data")
             val apiModel = Gson().fromJson(data, LoginRootModel::class.java)
+
             if (apiModel.code == 200 && apiModel.status) {
-                Toast.makeText(requireContext(),"OTP :- "+apiModel.data?.otp,Toast.LENGTH_LONG).show()
+
                 val bundle = Bundle()
                 bundle.putString(
                     "emailOrPhone",

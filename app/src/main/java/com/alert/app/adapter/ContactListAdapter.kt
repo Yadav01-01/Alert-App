@@ -11,6 +11,7 @@ import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
 import com.alert.app.BuildConfig
 import com.alert.app.R
+import com.alert.app.base.AppConstant
 import com.alert.app.databinding.ItemcontactBinding
 import com.alert.app.listener.ContactClick
 import com.alert.app.listener.OnClickContact
@@ -48,7 +49,7 @@ class ContactListAdapter(
         holder.binding.tvRelation.text = data.relation
         data.profile_pic.let {
             Glide.with(context)
-                .load(BuildConfig.BASE_URL+it)
+                .load(AppConstant.IMAGE_BASE_URL+it)
                 .placeholder(R.drawable.user_img_icon)
                 .error(R.drawable.user_img_icon)
                 .into(holder.binding.userImg)
