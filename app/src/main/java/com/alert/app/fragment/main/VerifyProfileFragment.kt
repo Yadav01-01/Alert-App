@@ -227,12 +227,7 @@ class VerifyProfileFragment : Fragment() {
             }
 
 
-            lifecycleScope.launch {
-                viewModel.resendOtp({ response ->
-                    BaseApplication.dismissDialog()
-                    handleApiResponse(response, "reSend")
-                }, email = email, phone = phone, type = "profile_verify")
-            }
+
         } else {
             BaseApplication.alertError(context, MessageClass.networkError, false)
         }

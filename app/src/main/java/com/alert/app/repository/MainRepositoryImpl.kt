@@ -1938,8 +1938,8 @@ class MainRepositoryImpl @Inject constructor(private val apiInterface: ApiInterf
                     body()?.let { resp ->
                         if (resp.has("status") && resp.get("status").asBoolean) {
                             val obj = resp.get("data").asJsonObject
-                             val otp = obj.get("otp").asInt
-                            emit(NetworkResult.Success(otp.toString()))
+
+                            emit(NetworkResult.Success("otp is this"))
                         } else {
                             emit(NetworkResult.Error(resp.get("message").asString))
                         }

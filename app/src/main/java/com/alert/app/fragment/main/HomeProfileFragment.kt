@@ -441,7 +441,32 @@ class HomeProfileFragment : Fragment() {
         binding.tvemailstatus.setOnClickListener {
             if (binding.tvemailstatus.text.toString().trim().equals(Html.fromHtml(MessageClass.verifyNowStatus).toString().trim(), true)) {
                 if (isValidateEmail()) {
-                    verifySendOtp(binding.edEmail.text.toString())
+                 //   verifySendOtp(binding.edEmail.text.toString())
+
+                    lifecycleScope.launch {
+                        BaseApplication.openDialog()
+                        viewModel.sendProfileUpdateVerifyOtp(binding.edEmail.text.toString())
+                            .collect { result->
+                                when(result){
+                                    is NetworkResult.Success ->{
+                                        BaseApplication.dismissDialog()
+
+                                        navigateToVerificationCodeProfile(binding.edEmail.text.toString())
+                                    }
+
+                                    is NetworkResult.Error ->{
+                                        BaseApplication.dismissDialog()
+
+                                    }
+                                    else ->{
+                                        BaseApplication.dismissDialog()
+                                    }
+                                }
+
+                            }
+                    }
+
+
                 }
             }
         }
