@@ -30,11 +30,12 @@ import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
 import java.util.Locale
 import androidx.activity.OnBackPressedCallback
+import com.alert.app.databinding.FragmentVerifyProfile2Binding
 
 @AndroidEntryPoint
-class VerifyProfileFragment : Fragment() {
+class VerifyProfile2Fragment : Fragment() {
 
-    private lateinit var binding:FragmentVerifyProfileBinding
+    private lateinit var binding: FragmentVerifyProfile2Binding
 
     private val startTimeInMillis: Long = 120000
     private var mTimeLeftInMillis = startTimeInMillis
@@ -59,7 +60,7 @@ class VerifyProfileFragment : Fragment() {
         savedInstanceState: Bundle?
     ): View? {
 
-        binding = FragmentVerifyProfileBinding.inflate(LayoutInflater.from(requireContext()))
+        binding = FragmentVerifyProfile2Binding.inflate(LayoutInflater.from(requireContext()))
 
         return binding.root
     }
@@ -108,20 +109,20 @@ class VerifyProfileFragment : Fragment() {
             }
         }
 
-         binding.tvResendVerification.setOnClickListener {
+        binding.tvResendVerification.setOnClickListener {
             reSendOtp()
         }
 
 
         binding.imgBack.setOnClickListener {
-            findNavController().navigate(R.id.homeProfileFragment2)
+            findNavController().navigate(R.id.homeProfileFragment)
         }
 
         requireActivity().onBackPressedDispatcher.addCallback(
             viewLifecycleOwner,
             object : OnBackPressedCallback(true) {
                 override fun handleOnBackPressed() {
-                    findNavController().navigate(R.id.homeProfileFragment2)
+                    findNavController().navigate(R.id.homeProfileFragment)
                 }
             }
         )
@@ -151,11 +152,11 @@ class VerifyProfileFragment : Fragment() {
                 viewModel.verifyProfileUpdateOtp(binding.otpVerificationBox.otp.toString(),
                     email, phone
                 ).collect { result ->
-                        when (result) {
+                    when (result) {
                         is NetworkResult.Success -> {
                             Log.d("TESTING_VERIFICATION","I am here inside Verification" + email +" "+phone)
                             BaseApplication.dismissDialog()
-                            findNavController().popBackStack(R.id.homeProfileFragment2, false)
+                            findNavController().popBackStack(R.id.homeProfileFragment, false)
 
                         }
                         is NetworkResult.Error -> {
@@ -270,7 +271,7 @@ class VerifyProfileFragment : Fragment() {
                         if (!sessionManagement.getProfileScreen().toString()
                                 .equals("signup", true)
                         ) {
-                            findNavController().navigate(R.id.homeProfileFragment2)
+                            findNavController().navigate(R.id.homeProfileFragment)
                         } else {
                             openAlertBoxSuccess()
                         }
@@ -290,7 +291,7 @@ class VerifyProfileFragment : Fragment() {
         try {
             val apiModel = Gson().fromJson(data, UserProfileModel::class.java)
             if (apiModel.code == 200 && apiModel.status) {
-                findNavController().popBackStack(R.id.homeProfileFragment2, false)
+                findNavController().popBackStack(R.id.homeProfileFragment, false)
 
             } else {
                 handleError(apiModel.code, apiModel.message)
@@ -377,3 +378,60 @@ class VerifyProfileFragment : Fragment() {
     }
 
 }
+
+/*
+// TODO: Rename parameter arguments, choose names that match
+// the fragment initialization parameters, e.g. ARG_ITEM_NUMBER
+private const val ARG_PARAM1 = "param1"
+private const val ARG_PARAM2 = "param2"
+
+*/
+/**
+ * A simple [Fragment] subclass.
+ * Use the [VerifyProfile2Fragment.newInstance] factory method to
+ * create an instance of this fragment.
+ *//*
+
+class VerifyProfile2Fragment : Fragment() {
+    // TODO: Rename and change types of parameters
+    private var param1: String? = null
+    private var param2: String? = null
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        arguments?.let {
+            param1 = it.getString(ARG_PARAM1)
+            param2 = it.getString(ARG_PARAM2)
+        }
+    }
+
+    override fun onCreateView(
+        inflater: LayoutInflater, container: ViewGroup?,
+        savedInstanceState: Bundle?
+    ): View? {
+        // Inflate the layout for this fragment
+        return inflater.inflate(R.layout.fragment_verify_profile2, container, false)
+    }
+
+    companion object {
+        */
+/**
+         * Use this factory method to create a new instance of
+         * this fragment using the provided parameters.
+         *
+         * @param param1 Parameter 1.
+         * @param param2 Parameter 2.
+         * @return A new instance of fragment VerifyProfile2Fragment.
+         *//*
+
+        // TODO: Rename and change types and number of parameters
+        @JvmStatic
+        fun newInstance(param1: String, param2: String) =
+            VerifyProfile2Fragment().apply {
+                arguments = Bundle().apply {
+                    putString(ARG_PARAM1, param1)
+                    putString(ARG_PARAM2, param2)
+                }
+            }
+    }
+}*/

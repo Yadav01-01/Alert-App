@@ -33,6 +33,8 @@ android {
 
             val BASE_URL = project.property("BASE_URL")
             buildConfigField("String", "BASE_URL", "${BASE_URL}")
+            val Media_URL = project.property("Media_URL")
+            buildConfigField("String", "Media_URL", "${Media_URL}")
             val OPENAI_API_KEY = project.property("OPENAI_API_KEY")
             buildConfigField("String", "OPENAI_API_KEY", "${OPENAI_API_KEY}")
             isMinifyEnabled = false
@@ -44,6 +46,8 @@ android {
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
             val BASE_URL = project.property("BASE_URL")
             buildConfigField("String", "BASE_URL", "${BASE_URL}")
+            val Media_URL = project.property("Media_URL")
+            buildConfigField("String", "Media_URL", "${Media_URL}")
             val OPENAI_API_KEY = project.property("OPENAI_API_KEY")
             buildConfigField("String", "OPENAI_API_KEY", "${OPENAI_API_KEY}")
         }

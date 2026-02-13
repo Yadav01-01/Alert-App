@@ -393,7 +393,7 @@ class SignUpFragment : Fragment() {
                 }
                 "signup" -> {
                     if (apiModel.code == 200 && apiModel.status) {
-                        Toast.makeText(requireContext(),"OTP :- "+apiModel.data?.otp,Toast.LENGTH_LONG).show()
+                    //    Toast.makeText(requireContext(),"OTP :- "+apiModel.data?.otp,Toast.LENGTH_LONG).show()
                         val bundle = Bundle()
                         bundle.putString("screenType", "SignUp")
                         bundle.putString("email", binding!!.etSignUpEmail.text.toString()?:"")

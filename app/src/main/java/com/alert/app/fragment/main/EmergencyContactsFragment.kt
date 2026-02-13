@@ -281,7 +281,7 @@ class EmergencyContactsFragment : Fragment(), OnClickContact {
 
         tvManually?.setOnClickListener {
             openBottomSheetDialog.dismiss()
-            openAlertBox("emergency")
+            openAlertBox("manual")
         }
 
         tvContacts?.setOnClickListener {

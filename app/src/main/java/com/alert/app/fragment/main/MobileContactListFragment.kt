@@ -42,6 +42,7 @@ import com.alert.app.base.BaseApplication
 import com.alert.app.base.BaseApplication.alertError
 import com.alert.app.databinding.FragmentMobileContactListBinding
 import com.alert.app.di.NetworkResult
+import com.alert.app.errormessage.AlertUtils
 import com.alert.app.errormessage.AlertUtils.showAlert
 import com.alert.app.errormessage.MessageClass
 import com.alert.app.listener.OnClickEventDropDownType
@@ -50,13 +51,16 @@ import com.alert.app.model.ListItem
 import com.alert.app.model.TimeModel
 import com.alert.app.model.UserMobileContactListModel
 import com.alert.app.model.contact.AddContactResponse
+import com.alert.app.model.contact.AddContactResponse1
 import com.alert.app.model.contact.AlertsResponse
 import com.alert.app.model.contact.RelationResponse
 import com.alert.app.model.contact.UserContactRequest
+import com.alert.app.model.helpingneighbormodel.AddNeighborModel
 import com.alert.app.model.helpingneighbormodel.CreateHelpingNeighbor
 import com.alert.app.viewmodel.contactsviewmodel.MobileContactsViewModel
 import com.google.android.material.textfield.MaterialAutoCompleteTextView
 import com.google.gson.Gson
+import com.google.gson.JsonObject
 import com.hbb20.CountryCodePicker
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.Dispatchers
@@ -427,7 +431,24 @@ class MobileContactListFragment : Fragment() , OnClickEventMobileContact, OnClic
                             "device")
                         Log.d("createHelpingNeighbor","$createHelpingNeighbor")
                         addContact1(createHelpingNeighbor,dialog)
-                    }else{
+                    } else if (type== "helpingNeighbors"){
+                        val fullName = it.name?.trim().orEmpty()
+
+                        val nameParts = fullName.split("\\s+".toRegex(), limit = 2)
+
+                        val firstName = nameParts.getOrNull(0) ?: ""
+                        val lastName = nameParts.getOrNull(1) ?: ""
+                        val createHelpingNeighbor = CreateHelpingNeighbor(firstName,
+                            lastName,
+                            it.email?:"",
+                            toValidNumberWithCountryCode(it.number),
+                            selectedRelationId.toString(),
+                            selectedAlertId.toString(),
+                            "device")
+                        Log.d("createHelpingNeighbor","$createHelpingNeighbor")
+                        addHelpingNeighbor(createHelpingNeighbor,dialog)
+                    }
+                    else{
                         val fullName = it.name?.trim().orEmpty()
 
                         val nameParts = fullName.split("\\s+".toRegex(), limit = 2)
@@ -466,6 +487,22 @@ class MobileContactListFragment : Fragment() , OnClickEventMobileContact, OnClic
                             "device")
                         Log.d("createHelpingNeighbor","$createHelpingNeighbor")
                         addContact1(createHelpingNeighbor,dialog)
+                    }else if (type== "helpingNeighbors"){
+                        val fullName = it.name?.trim().orEmpty()
+
+                        val nameParts = fullName.split("\\s+".toRegex(), limit = 2)
+
+                        val firstName = nameParts.getOrNull(0) ?: ""
+                        val lastName = nameParts.getOrNull(1) ?: ""
+                        val createHelpingNeighbor = CreateHelpingNeighbor(firstName,
+                            lastName,
+                            it.email?:"",
+                            toValidNumberWithCountryCode(it.number),
+                            selectedRelationId.toString(),
+                            selectedAlertId.toString(),
+                            "device")
+                        Log.d("createHelpingNeighbor","$createHelpingNeighbor")
+                        addHelpingNeighbor(createHelpingNeighbor,dialog)
                     }else{
                         val fullName = it.name?.trim().orEmpty()
 
@@ -537,8 +574,8 @@ class MobileContactListFragment : Fragment() , OnClickEventMobileContact, OnClic
                     when (it) {
                         is NetworkResult.Success -> {
                             it.data?.let {
-                                val addContactResponse =
-                                    Gson().fromJson(it, AddContactResponse::class.java)
+                                //val addContactResponse = Gson().fromJson(it, AddContactResponse::class.java)
+                                val addContactResponse = Gson().fromJson(it, AddContactResponse::class.java)
                                 if (addContactResponse.code==200) {
                                     if (type.equals("helpingNeighbors",true) ||
                                         type.equals("addContact",true)){
@@ -581,7 +618,7 @@ class MobileContactListFragment : Fragment() , OnClickEventMobileContact, OnClic
                         is NetworkResult.Success -> {
                             it.data?.let {
                                 val addContactResponse =
-                                    Gson().fromJson(it, AddContactResponse::class.java)
+                                    Gson().fromJson(it, AddContactResponse1::class.java)
                                 if (addContactResponse.code==200) {
                                 /*    if (type.equals("helpingNeighbors",true) ||
                                         type.equals("addContact",true)){*/
@@ -615,6 +652,51 @@ class MobileContactListFragment : Fragment() , OnClickEventMobileContact, OnClic
         }
     }
 
+    private fun addHelpingNeighbor(createHelpingNeighbor: CreateHelpingNeighbor,dialogContact:Dialog) {
+        if (BaseApplication.isOnline(requireContext())) {
+            BaseApplication.openDialog()
+            lifecycleScope.launch {
+                viewModel.addNeighbor(createHelpingNeighbor).collect {
+                    BaseApplication.dismissDialog()
+                    handleApiResponse(it, dialogContact)
+                }
+            }
+        } else {
+            AlertUtils.showAlert(requireContext(), MessageClass.networkError, false)
+        }
+    }
+
+    private fun handleApiResponse(it: NetworkResult<JsonObject>, dialogContact: Dialog) {
+        when (it) {
+            is NetworkResult.Success -> handleSuccessApiResponse(it.data.toString(), dialogContact)
+            is NetworkResult.Error -> showAlert(requireContext(),it.message?:"", false)
+            else -> showAlert(requireContext(),it.message?:"", false)
+        }
+    }
+
+    @SuppressLint("SetTextI18n")
+    private fun handleSuccessApiResponse(data: String,dialogContact:Dialog) {
+        try {
+            val apiModel = Gson().fromJson(data, AddNeighborModel::class.java)
+            Log.d("@@@ addMea List ", "message :- $data")
+            if (apiModel.status == true) {
+                findNavController().navigateUp()
+              //  getHelpingNeighbor(latitude.toDouble(),longitude.toDouble())
+                dialogContact.dismiss()
+            } else {
+                handleError(apiModel.code, apiModel.message)
+            }
+        } catch (e: Exception) {
+            showAlert(requireContext(),e.message?:"", false)
+        }
+    }
+    private fun handleError(code: Int?, message: String?) {
+        if (code== MessageClass.deactivatedUser || code== MessageClass.deletedUser){
+            showAlert(requireContext(),message?:"", true)
+        }else{
+            showAlert(requireContext(),message?:"", false)
+        }
+    }
     private fun getRelation(tv_relation: MaterialAutoCompleteTextView) {
         if (BaseApplication.isOnline(requireContext())) {
             BaseApplication.openDialog()

@@ -195,7 +195,7 @@ class VerificationCode : Fragment() {
                 "forgotResend" ,"signupResend"->{
                     val apiModel = Gson().fromJson(data, LoginRootModel::class.java)
                     if (apiModel.code == 200 && apiModel.status) {
-                        Toast.makeText(requireContext(),"OTP :- "+apiModel.data?.otp,Toast.LENGTH_LONG).show()
+                    //    Toast.makeText(requireContext(),"OTP :- "+apiModel.data?.otp,Toast.LENGTH_LONG).show()
                         binding!!.otpVerificationBox.setOTP("")
                         startTime()
                     } else {
