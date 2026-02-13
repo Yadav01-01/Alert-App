@@ -1,6 +1,6 @@
 package com.alert.app.model.message
 
-import java.sql.Timestamp
+import com.google.firebase.Timestamp
 
 data class ChatListItem(
     val chatId: String,

@@ -466,7 +466,9 @@ class EmergencyContactsFragment : Fragment(), OnClickContact {
 
     override fun onClick(data: String, id: String) {
         if (data.equals("view",true)){
+
             val intent = Intent(context, ContactDetailScreenActivity::class.java)
+            intent.putExtra("contact_id",id)
             startActivity(intent)
         }
         if(data.equals("call",true)){

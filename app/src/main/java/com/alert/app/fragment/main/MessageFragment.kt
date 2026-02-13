@@ -46,7 +46,7 @@ class MessageFragment : Fragment() {
             savedInstanceState: Bundle?
         ): View {
             _binding = FragmentMessageBinding.inflate(inflater, container, false)
-
+            Log.d("Inside_Testing","Inside message on create")
             // UserId set karna
             chattingViewModel.currentUserId = SessionManagement(requireContext()).getUserId().toString()
 
@@ -91,7 +91,6 @@ class MessageFragment : Fragment() {
 
         private fun observeChatList() {
             chattingViewModel.chatList.observe(viewLifecycleOwner) { list ->
-                // Yahan type mismatch nahi hoga agar imports same hain
                 swipeAdapter.submitList(list)
             }
         }

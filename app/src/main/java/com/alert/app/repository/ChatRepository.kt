@@ -82,30 +82,35 @@ class ChatRepository @Inject constructor(private val firestore: FirebaseFirestor
 
         if (chatIds.isEmpty()) {
             trySend(emptyList())
+            close()
             return@callbackFlow
         }
 
         val listener = firestore.collection("chats")
             .whereIn(FieldPath.documentId(), chatIds)
-            .addSnapshotListener { snapshot, _ ->
+            .addSnapshotListener { snapshot, error ->
+
+                if (error != null || snapshot == null) {
+                    trySend(emptyList())
+                    return@addSnapshotListener
+                }
+
+                val chatMap = snapshot.documents.associateBy { it.id }
 
                 val result = users.mapNotNull { user ->
-                    val chatDoc = snapshot?.documents
-                        ?.firstOrNull { it.id == user.chat_id }
+                    val chatDoc = chatMap[user.chat_id] ?: return@mapNotNull null
 
-                    chatDoc?.let {
-                        ChatListItem(
-                            chatId = user.chat_id!!,
-                            userId = user.id!!,
-                            fullName = user.full_name ?: "",
-                            profile = user.profile ?: "",
-                            lastMessage = it.getString("lastMessage"),
-                            lastMessageTime = it.getTimestamp("lastMessageTime") as java.sql.Timestamp?,
-                            unreadCount = it
-                                .getLong("unreadCount_$myUserId")
-                                ?.toInt() ?: 0
-                        )
-                    }
+                    ChatListItem(
+                        chatId = user.chat_id!!,
+                        userId = user.id!!,
+                        fullName = user.full_name.orEmpty(),
+                        profile = user.profile.orEmpty(),
+                        lastMessage = chatDoc.getString("lastMessage"),
+                        lastMessageTime = chatDoc.getTimestamp("lastMessageTime"), // ✅ FIX
+                        unreadCount = chatDoc
+                            .getLong("unreadCount_$myUserId")
+                            ?.toInt() ?: 0
+                    )
                 }
 
                 trySend(result)
@@ -113,6 +118,7 @@ class ChatRepository @Inject constructor(private val firestore: FirebaseFirestor
 
         awaitClose { listener.remove() }
     }
+
 
         suspend fun markChatRead(chatId: String, myUserId: String) {
         firestore.collection("chats")

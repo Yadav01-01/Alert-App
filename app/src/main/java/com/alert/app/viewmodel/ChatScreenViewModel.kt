@@ -47,7 +47,9 @@ class ChatScreenViewModel  @Inject constructor(
     }
 
     suspend fun getChatList(): Flow<NetworkResult<MutableList<ChatUserModel>>> {
-        return repository1.getChannelList()
+        return repository1.getChannelList().onEach {
+
+        }
     }
 
     // Create channel API

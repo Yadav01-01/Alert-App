@@ -17,8 +17,10 @@ import com.alert.app.R
 import com.alert.app.activity.ChatActivity
 import com.alert.app.model.ChatUserModel
 import com.alert.app.model.message.ChatListItem
+import com.bumptech.glide.Glide
 import com.chauthai.swipereveallayout.SwipeRevealLayout
 import com.chauthai.swipereveallayout.ViewBinderHelper
+import de.hdodenhof.circleimageview.CircleImageView
 
 class SwipeAdapter(private val context: Context) :
     ListAdapter<ChatListItem, SwipeAdapter.SwipeViewHolder>(DiffCallback()) {
@@ -46,6 +48,13 @@ class SwipeAdapter(private val context: Context) :
         } else {
             holder.tvCount.visibility = View.GONE
         }
+        Glide.with(context)
+            .load(item.profile)
+            .placeholder(R.drawable.user_img_icon)
+            .error(R.drawable.user_img_icon)
+            .into(holder.userImage);
+
+       
 
         // Click to open chat
         holder.imgAppbar.setOnClickListener {
@@ -65,13 +74,16 @@ class SwipeAdapter(private val context: Context) :
         val tvCount: TextView = itemView.findViewById(R.id.tv_count)
         val swipeLayout: SwipeRevealLayout = itemView.findViewById(R.id.swipe_layout)
         val imgAppbar: LinearLayout = itemView.findViewById(R.id.img_appbar)
+        val userImage : CircleImageView = itemView.findViewById<CircleImageView>(R.id.user_img_message)
     }
 
     class DiffCallback : DiffUtil.ItemCallback<ChatListItem>() {
+
         override fun areItemsTheSame(oldItem: ChatListItem, newItem: ChatListItem) =
             oldItem.chatId == newItem.chatId
-
         override fun areContentsTheSame(oldItem: ChatListItem, newItem: ChatListItem) =
             oldItem == newItem
     }
+
+
 }

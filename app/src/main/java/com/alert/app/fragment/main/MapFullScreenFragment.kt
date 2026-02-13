@@ -5,8 +5,10 @@ import android.content.Context
 import android.content.pm.PackageManager
 import android.graphics.Bitmap
 import android.graphics.Canvas
+import android.graphics.drawable.BitmapDrawable
 import android.graphics.drawable.Drawable
 import android.os.Bundle
+import android.util.Log
 import androidx.fragment.app.Fragment
 import android.view.LayoutInflater
 import android.view.View
@@ -122,10 +124,13 @@ class MapFullScreenFragment : Fragment(), OnMapReadyCallback {
                                   val users = nearbyUsersResponse.data
                                     // Setup RecyclerView Adapter
                                     binding.rcyData.adapter = NearByPepoleAdapter(requireContext(),users)
+                                    Log.d("TESTING_RECYCLER_SIZE","Size is "+users.size)
                                     users.forEach { user ->
                                         user.latitude?.let { lat->
                                             user.longitude?.let { lon->
-                                                createMarkerFromView(requireContext(), BuildConfig.BASE_URL+user.profile_pic)
+                                                Log.d("TESTING_RECYCLER_SIZE","Latitude "+user.latitude +" Longitude"+ user.longitude)
+
+                                                createMarkerFromView(requireContext(), BuildConfig.BASE_URL+user.profile_image)
                                                 { icon ->
                                                     val marker =    googleMap.addMarker(
                                                         MarkerOptions()
@@ -295,30 +300,68 @@ class MapFullScreenFragment : Fragment(), OnMapReadyCallback {
         val markerView = LayoutInflater.from(context).inflate(R.layout.custom_marker, null)
 
         val profileImage = markerView.findViewById<CircleImageView>(R.id.imgProfile)
-
+        Log.d("TESTING_SIZE","Image Url is "+imageUrl)
         Glide.with(context)
             .asBitmap()
             .load(imageUrl)
             .placeholder(R.drawable.marker_demmy_pic)
+            .error(R.drawable.marker_demmy_pic) // Agar URL crash kare toh ye chale
             .into(object : CustomTarget<Bitmap>() {
+
                 override fun onResourceReady(resource: Bitmap, transition: Transition<in Bitmap>?) {
-                    profileImage.setImageBitmap(resource)
+                    // Case 1: Sahi image load ho gayi
+                    processMarkerView(resource)
+                }
 
-                    // Convert the view to bitmap
-                    val measureSpec = View.MeasureSpec.makeMeasureSpec(0, View.MeasureSpec.UNSPECIFIED)
-                    markerView.measure(measureSpec, measureSpec)
-                    markerView.layout(0, 0, markerView.measuredWidth, markerView.measuredHeight)
-                    val bitmap = Bitmap.createBitmap(
-                        markerView.measuredWidth, markerView.measuredHeight,
-                        Bitmap.Config.ARGB_8888
-                    )
-                    val canvas = Canvas(bitmap)
-                    markerView.draw(canvas)
+                override fun onLoadStarted(placeholder: Drawable?) {
+                    super.onLoadStarted(placeholder)
+                    // Case 2: Loading start hote hi dummy image dikhao (agar callback turant chahiye)
+                    handlePlaceholder(placeholder)
+                }
 
-                    callback(BitmapDescriptorFactory.fromBitmap(bitmap))
+                override fun onLoadFailed(errorDrawable: Drawable?) {
+
+                    handlePlaceholder(errorDrawable)
                 }
 
                 override fun onLoadCleared(placeholder: Drawable?) {}
+
+                // Helper function to handle Drawable to Bitmap conversion
+                private fun handlePlaceholder(drawable: Drawable?) {
+                    drawable?.let {
+                        val bitmap = if (it is BitmapDrawable) {
+                            it.bitmap
+                        } else {
+                            // Drawable ko bitmap mein convert karna padega
+                            val b = Bitmap.createBitmap(it.intrinsicWidth, it.intrinsicHeight, Bitmap.Config.ARGB_8888)
+                            val canvas = Canvas(b)
+                            it.setBounds(0, 0, canvas.width, canvas.height)
+                            it.draw(canvas)
+                            b
+                        }
+                        processMarkerView(bitmap)
+                    }
+                }
+
+                // Common logic to convert your custom view to Google Maps Marker
+                private fun processMarkerView(imageBitmap: Bitmap) {
+                    profileImage.setImageBitmap(imageBitmap)
+
+                    // View update logic
+                    val measureSpec = View.MeasureSpec.makeMeasureSpec(0, View.MeasureSpec.UNSPECIFIED)
+                    markerView.measure(measureSpec, measureSpec)
+                    markerView.layout(0, 0, markerView.measuredWidth, markerView.measuredHeight)
+
+                    val finalBitmap = Bitmap.createBitmap(
+                        markerView.measuredWidth, markerView.measuredHeight,
+                        Bitmap.Config.ARGB_8888
+                    )
+                    val canvas = Canvas(finalBitmap)
+                    markerView.draw(canvas)
+
+                    // Final callback for Google Maps
+                    callback(BitmapDescriptorFactory.fromBitmap(finalBitmap))
+                }
             })
     }
 
