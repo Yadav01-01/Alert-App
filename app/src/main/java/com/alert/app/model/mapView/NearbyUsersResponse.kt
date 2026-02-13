@@ -29,5 +29,6 @@ data class UserData(
     val updated_at: String,
     val deleted_at: String?,
     val profile_status: String,
-    val distance: String?
+    val distance: String?,
+    val profile_image:String? = null
 )

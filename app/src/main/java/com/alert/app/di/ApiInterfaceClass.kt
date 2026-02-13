@@ -272,7 +272,7 @@ interface ApiInterfaceClass {
     suspend fun getEmergencyContact(): Response<JsonObject>
 
     @FormUrlEncoded
-    @POST(ApiEndPoint.getEmergencyContactProfile)
+    @POST("api/get-emergency-contact-by-id")
     suspend fun getEmergencyContactProfile(@Field("contact_id") contactId:String?): Response<JsonObject>
 
 
@@ -344,7 +344,7 @@ interface ApiInterfaceClass {
     ) : Response<JsonObject>
 
 
-    @POST("get_channel_list")
+    @POST("api/get_channel_list")
     suspend fun getChannelList() : Response<JsonObject>
 
 

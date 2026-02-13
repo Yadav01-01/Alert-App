@@ -43,7 +43,7 @@ class EmergencyContactAdapter(
         val data=list[position]
 
         data.let { data ->
-            // Set full name if available
+
             val fullName = listOfNotNull(data.firstName, data.lastName).joinToString(" ")
             if (fullName.isNotBlank()) {
                 holder.binding.tvName.text = fullName
@@ -63,44 +63,12 @@ class EmergencyContactAdapter(
             data.phone?.let {
                 holder.binding.tvPhoneNumber.text = it
             }
-
-            // Load profile picture using Glide
-          /*  data.profilePic?.let { profilePic ->
-                Glide.with(context)
-                    .load("${BuildConfig.BASE_URL}$profilePic")
-                    .error(R.drawable.no_image)
-                    .placeholder(R.drawable.no_image)
-                    .listener(object : RequestListener<Drawable> {
-                        override fun onLoadFailed(
-                            e: GlideException?,
-                            model: Any?,
-                            target: Target<Drawable>?,
-                            isFirstResource: Boolean
-                        ): Boolean {
-                            holder.binding.layProgess.root.visibility = View.GONE
-                            return false
-                        }
-
-                        override fun onResourceReady(
-                            resource: Drawable?,
-                            model: Any?,
-                            target: Target<Drawable>?,
-                            dataSource: DataSource?,
-                            isFirstResource: Boolean
-                        ): Boolean {
-                            holder.binding.layProgess.root.visibility = View.GONE
-                            return false
-                        }
-                    })
-                    .into(holder.binding.userImg)
-            }*/
-            // Load profile picture using Glide - ONLY if profilePic is not null/empty
             if (!data.profilePic.isNullOrEmpty()) {
                 // Progress bar दिखाएं जब image load हो रही है
                 holder.binding.layProgess.root.visibility = View.VISIBLE
 
                 Glide.with(context)
-                    .load("${AppConstant.IMAGE_BASE_URL}${data.profilePic}")
+                    .load(data.profilePic)
                     .error(R.drawable.no_image)
                     .placeholder(R.drawable.no_image)
                     .listener(object : RequestListener<Drawable> {

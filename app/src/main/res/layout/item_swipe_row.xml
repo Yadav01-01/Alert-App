@@ -48,9 +48,9 @@
             android:layout_width="@dimen/_60sdp"
             android:layout_height="@dimen/_60sdp">
             <de.hdodenhof.circleimageview.CircleImageView
-                android:id="@+id/user_img"
-                android:layout_width="@dimen/_50sdp"
-                android:layout_height="@dimen/_50sdp"
+                android:id="@+id/user_img_message"
+                android:layout_width="@dimen/_42sdp"
+                android:layout_height="@dimen/_42sdp"
                 android:layout_centerInParent="true"
                 android:layout_gravity="center"
                 android:src="@drawable/user_dummy_icon" />
@@ -61,6 +61,7 @@
                 android:layout_alignParentBottom="true"
                 android:layout_marginBottom="@dimen/_5sdp"
                 android:layout_marginEnd="@dimen/_10sdp"
+                android:visibility="gone"
                 android:layout_alignParentEnd="true"
                 android:src="@drawable/active_icon"/>
         </RelativeLayout>
@@ -89,7 +90,7 @@
                     android:layout_height="wrap_content"
                     android:fontFamily="@font/urbanist_medium"
                     android:textColor="#797C7B"
-                    android:textSize="@dimen/_10sdp"
+                    android:textSize="@dimen/_12sdp"
                     android:text="Don’t miss to attend the meeting." />
             </LinearLayout>
             <LinearLayout
@@ -100,6 +101,7 @@
                 android:gravity="center"
                 android:layout_alignParentEnd="true">
                 <TextView
+                    android:id="@+id/tv_time_ago"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:fontFamily="@font/urbanist_medium"
@@ -110,8 +112,8 @@
                     android:text="2 min ago" />
                 <TextView
                     android:id="@+id/tv_count"
-                    android:layout_width="@dimen/_30sdp"
-                    android:layout_height="@dimen/_30sdp"
+                    android:layout_width="@dimen/_20sdp"
+                    android:layout_height="@dimen/_20sdp"
                     android:fontFamily="@font/urbanist_medium"
                     android:textColor="#FFFFFF"
                     android:layout_marginTop="@dimen/_2sdp"

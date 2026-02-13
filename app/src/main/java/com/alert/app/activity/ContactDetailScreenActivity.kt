@@ -47,6 +47,7 @@ class ContactDetailScreenActivity : AppCompatActivity() {
 
     private lateinit var binding: ActivityContactDetailScreenBinding
     private lateinit var viewModel: ContactDetailsScreenViewModel
+    private var contactId :String =""
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -54,6 +55,8 @@ class ContactDetailScreenActivity : AppCompatActivity() {
         setContentView(binding.root)
 
         viewModel = ViewModelProvider(this)[ContactDetailsScreenViewModel::class.java]
+         contactId = intent.getStringExtra("contact_id") ?: ""
+
 
         // Set listeners
         binding.imgBack.setOnClickListener { finish() }
@@ -80,7 +83,7 @@ class ContactDetailScreenActivity : AppCompatActivity() {
         if (BaseApplication.isOnline(this@ContactDetailScreenActivity)) {
             BaseApplication.openDialog()
             lifecycleScope.launch {
-                viewModel.getEmergencyContactProfile("").collect {
+                viewModel.getEmergencyContactProfile(contactId).collect {
                     BaseApplication.dismissDialog()
                     handleApiResponse(it)
                 }
