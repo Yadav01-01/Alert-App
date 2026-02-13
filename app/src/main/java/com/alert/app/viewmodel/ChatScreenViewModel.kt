@@ -34,7 +34,6 @@ class ChatScreenViewModel  @Inject constructor(
     private val _chatList = MutableLiveData<List<ChatListItem>>()
     val chatList: LiveData<List<ChatListItem>> = _chatList
 
-    // API list ko Firebase sync mein convert karne wala function
     fun loadChatList(usersFromApi: List<ChatUserModel>, myUserId: String) {
         chatJob?.cancel() // Purana collection band karo
         chatJob = viewModelScope.launch {
@@ -52,9 +51,10 @@ class ChatScreenViewModel  @Inject constructor(
         }
     }
 
-    // Create channel API
+
     suspend fun createChannel(contactUserId: String, chatId: String): Flow<NetworkResult<String>> {
         return repository1.createChannel(contactUserId, chatId)
-    }
+       }
+
 
     }

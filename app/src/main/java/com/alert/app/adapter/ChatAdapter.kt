@@ -8,6 +8,12 @@ import androidx.recyclerview.widget.RecyclerView
 import com.alert.app.R
 import com.alert.app.model.Message
 import com.alert.app.model.chatbot.ChatMessage
+import com.bumptech.glide.Glide
+import com.google.firebase.Timestamp
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
+import java.util.concurrent.TimeUnit
 
 /*class ChatAdapter(
     private val currentUserId: String
@@ -76,6 +82,11 @@ class ChatAdapter(
     companion object {
         private const val TYPE_SENDER = 1
         private const val TYPE_RECEIVER = 2
+        private var receiverProfile =""
+    }
+
+    fun receiverProfile(img:String){
+        receiverProfile = img
     }
 
     fun submitList(list:MutableList<Message>) {
@@ -115,18 +126,78 @@ class ChatAdapter(
     class SenderVH(view: View) : RecyclerView.ViewHolder(view) {
         fun bind(msg:Message) {
             itemView.findViewById<TextView>(R.id.tvMessage).text = msg.text
-            msg.formattedTime?.let {
-                itemView.findViewById<TextView>(R.id.tvTime).text = msg.formattedTime
+            msg.timestamp?.let {
+                itemView.findViewById<TextView>(R.id.tvTime).text = getTimeAgo(msg.timestamp)
             }
         }
+
+        fun getTimeAgo(timestamp: Timestamp?): String {
+            if (timestamp == null) return ""
+
+            val now = System.currentTimeMillis()
+            val time = timestamp.toDate().time
+            val diff = now - time
+
+            val minutes = TimeUnit.MILLISECONDS.toMinutes(diff)
+            val hours = TimeUnit.MILLISECONDS.toHours(diff)
+            val days = TimeUnit.MILLISECONDS.toDays(diff)
+
+            return when {
+                minutes < 1 -> "Just now"
+                minutes < 60 -> "$minutes min ago"
+                hours < 24 -> "$hours hr${if (hours > 1) "s" else ""} ago"
+                days == 1L -> "Yesterday"
+                days < 7 -> "$days day${if (days > 1) "s" else ""} ago"
+                else -> {
+                    val sdf = SimpleDateFormat("MMM dd, yyyy", Locale.getDefault())
+                    sdf.format(Date(time))
+                }
+            }
+        }
+
+
     }
 
     class ReceiverVH(view: View) : RecyclerView.ViewHolder(view) {
         fun bind(msg: Message) {
             itemView.findViewById<TextView>(R.id.tvMessage).text = msg.text
-            msg.formattedTime?.let {
-                itemView.findViewById<TextView>(R.id.tvTime).text = msg.formattedTime
+            msg.timestamp?.let {
+                itemView.findViewById<TextView>(R.id.tvTime).text = getTimeAgo(msg.timestamp)
+            }
+            Glide.with(itemView.context)
+                .load(receiverProfile) // image URL
+                .placeholder(R.drawable.img_not_found)
+                .error(R.drawable.img_not_found)
+                .into(itemView.findViewById(R.id.imgProfile))
+        }
+
+        fun getTimeAgo(timestamp: Timestamp?): String {
+            if (timestamp == null) return ""
+
+            val now = System.currentTimeMillis()
+            val time = timestamp.toDate().time
+            val diff = now - time
+
+            val minutes = TimeUnit.MILLISECONDS.toMinutes(diff)
+            val hours = TimeUnit.MILLISECONDS.toHours(diff)
+            val days = TimeUnit.MILLISECONDS.toDays(diff)
+
+            return when {
+                minutes < 1 -> "Just now"
+                minutes < 60 -> "$minutes min ago"
+                hours < 24 -> "$hours hr${if (hours > 1) "s" else ""} ago"
+                days == 1L -> "Yesterday"
+                days < 7 -> "$days day${if (days > 1) "s" else ""} ago"
+                else -> {
+                    val sdf = SimpleDateFormat("MMM dd, yyyy", Locale.getDefault())
+                    sdf.format(Date(time))
+                }
             }
         }
+
     }
+
+
+
+
 }

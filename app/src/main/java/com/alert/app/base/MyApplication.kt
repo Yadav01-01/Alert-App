@@ -3,7 +3,9 @@ package com.alert.app.base
 import android.app.Application
 import android.content.Context
 import android.os.Build
+import androidx.lifecycle.ProcessLifecycleOwner
 import com.alert.app.BuildConfig
+import com.alert.app.chatgpt.AppLifecycleObserver
 import com.google.firebase.FirebaseApp
 import com.google.firebase.crashlytics.FirebaseCrashlytics
 import dagger.hilt.android.HiltAndroidApp
@@ -11,6 +13,7 @@ import java.io.File
 
 @HiltAndroidApp
 public class MyApplication : Application() {
+    private lateinit var lifecycleObserver: AppLifecycleObserver
 
     override fun onCreate() {
         super.onCreate()
@@ -26,6 +29,12 @@ public class MyApplication : Application() {
         if (BuildConfig.DEBUG) {
             FirebaseCrashlytics.getInstance().setCrashlyticsCollectionEnabled(true)
         }
+
+        lifecycleObserver = AppLifecycleObserver(SessionManagement(this).getUserId().toString())
+
+        ProcessLifecycleOwner.get()
+            .lifecycle
+            .addObserver(lifecycleObserver)
     }
 
     companion object {

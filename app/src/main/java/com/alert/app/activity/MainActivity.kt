@@ -39,6 +39,7 @@ import androidx.core.os.bundleOf
 import androidx.core.view.GravityCompat
 import androidx.drawerlayout.widget.DrawerLayout
 import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.ProcessLifecycleOwner
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
@@ -50,6 +51,7 @@ import com.alert.app.R
 import com.alert.app.adapter.ChatAdapter
 import com.alert.app.base.BaseApplication
 import com.alert.app.base.SessionManagement
+import com.alert.app.chatgpt.AppLifecycleObserver
 import com.alert.app.databinding.ActivityMainBinding
 import com.alert.app.di.NetworkResult
 import com.alert.app.errormessage.AlertUtils
@@ -80,7 +82,6 @@ class MainActivity : AppCompatActivity() {
     private lateinit var viewModel: MainActivityViewModel
     private lateinit var locationViewModel: LocationViewModel
     private val LOCATION_PERMISSION_REQUEST_CODE = 1001
-
     //tts
     private lateinit var tts: TextToSpeech
     private var isTtsReady = false
@@ -160,11 +161,21 @@ class MainActivity : AppCompatActivity() {
         setUI()
         sideBar()
         clickListener()
+
     }
+
+
 
     override fun onResume() {
         super.onResume()
         checkIf15MinutesPassed()
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        ProcessLifecycleOwner.get()
+            .lifecycle
+            .removeObserver(lifecycleObserver)
     }
 
     //

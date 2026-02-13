@@ -17,13 +17,20 @@ import com.vanniktech.emoji.google.GoogleEmojiProvider
 import dagger.hilt.android.AndroidEntryPoint
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.lifecycleScope
+import com.alert.app.R
 import com.alert.app.base.AppConstant
 import com.alert.app.base.SessionManagement
+import com.alert.app.chatgpt.UserRepository
 import com.alert.app.di.NetworkResult
 import com.alert.app.model.Message
 import com.alert.app.viewmodel.ChatScreenViewModel
 import com.bumptech.glide.Glide
 import kotlinx.coroutines.launch
+import java.sql.Timestamp
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
+import java.util.concurrent.TimeUnit
 
 @AndroidEntryPoint
 class ChatActivity : AppCompatActivity() {
@@ -43,28 +50,53 @@ class ChatActivity : AppCompatActivity() {
         setContentView(binding.root)
         viewModel =     ViewModelProvider(this)[ChatViewModel::class.java]
         chatViewModel = ViewModelProvider(this)[ChatScreenViewModel::class.java]
-        contactUserId = intent.getStringExtra("contactUserId")?:"-1"
-        settingProfileData()
-        makingChatId(contactUserId)
+       if(intent.hasExtra("contactUserId")){
+           contactUserId = intent.getStringExtra("contactUserId")?:"-1"
+       }
+        if(intent.hasExtra(AppConstant.CHAT_ID)){
+            chatId = intent.getStringExtra(AppConstant.CHAT_ID)?:"-1"
+        }
         currentUserId = SessionManagement(this).getUserId().toString()
 
         setupToolbar()
 
         setupEmoji()
-
         setupRecyclerView()
+        settingProfileData()
+
+        if( !contactUserId.isNullOrEmpty() && contactUserId.equals("-1")==false) {
+            makingChatId(contactUserId)
+        }
 
         setupClicks()
 
         viewModel.loadMessages(chatId,currentUserId)
-
         viewModel.messages.observe(this) { messages ->
-            messageList = messages
-            Log.d("Testing_message",messages.size.toString())
+              messageList = messages
+              Log.d("Testing_message",messages.size.toString())
               adapter.submitList(messages.toMutableList())
            }
+         checkingOtherUserStatus()
+    }
+
+    private fun checkingOtherUserStatus(){
+        lifecycleScope.launch {
+            val repository = UserRepository()
+            val id = getOtherUserId(chatId,currentUserId)
+            repository.observeUserOnlineStatus(id)
+                .collect { (isOnline, lastSeen) ->
+                    Log.d("TESTING_CURRENT_USER_STATUS","Status is"+ isOnline+" "+lastSeen)
+                    binding.tvStatus.text =
+                        if (isOnline) "Online"
+                        else "Last seen ${viewModel.getTimeAgo(lastSeen)}"
+                }
+          }
 
     }
+
+
+
+
 
     private fun settingProfileData(){
         if (intent?.hasExtra(AppConstant.NAME) == true) {
@@ -74,7 +106,14 @@ class ChatActivity : AppCompatActivity() {
 
         if(intent?.hasExtra(AppConstant.PROFILE) == true){
             val userProfileImage = intent.getStringExtra(AppConstant.PROFILE)
-            Glide.with(this).load(userProfileImage).into( binding.userImg)
+            Log.d("TESTING_USER_PROFILE","Profile is "+userProfileImage.toString())
+            adapter.receiverProfile(userProfileImage.toString())
+            Glide.with(this)
+                .load(userProfileImage)
+                .placeholder(R.drawable.user_img_icon) // shown while loading
+                .error(R.drawable.user_img_icon)       // shown if load fails
+                .into(binding.userImg)
+
         }
 
     }
@@ -91,6 +130,11 @@ class ChatActivity : AppCompatActivity() {
         }
 
         Log.d("TESTING_CHAT_ID",chatId)
+    }
+
+    fun getOtherUserId(chatId: String, currentUserId: String): String {
+        val (id1, id2) = chatId.split("_")
+        return if (id1 == currentUserId) id2 else id1
     }
 
     private fun setupToolbar() {
@@ -119,8 +163,7 @@ class ChatActivity : AppCompatActivity() {
     private fun setupRecyclerView() {
         adapter = ChatAdapter(currentUserId,mutableListOf())
 
-        binding.rvMessages.layoutManager =
-            LinearLayoutManager(this).apply {
+        binding.rvMessages.layoutManager = LinearLayoutManager(this).apply {
                 stackFromEnd = true
             }
 

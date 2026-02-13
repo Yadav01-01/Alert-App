@@ -20,5 +20,6 @@ object AppConstant {
     val unKnownError = "There was an unknown error. Check your connection, and try again."
     val CONTACT_USER_ID = "contactUserId"
     val PROFILE = "profile"
+    val  CHAT_ID ="chat_id"
 
 }

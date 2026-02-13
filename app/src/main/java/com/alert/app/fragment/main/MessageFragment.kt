@@ -12,6 +12,7 @@ import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.fragment.findNavController
+import androidx.recyclerview.widget.DividerItemDecoration
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.alert.app.R
 import com.alert.app.activity.MainActivity
@@ -87,6 +88,8 @@ class MessageFragment : Fragment() {
                 layoutManager = LinearLayoutManager(requireContext())
                 adapter = swipeAdapter
             }
+            val divider = DividerItemDecoration(context, DividerItemDecoration.VERTICAL)
+            binding.rcyData.addItemDecoration(divider)
         }
 
         private fun observeChatList() {

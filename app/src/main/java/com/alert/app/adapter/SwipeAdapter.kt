@@ -2,6 +2,7 @@ package com.alert.app.adapter
 
 import android.content.Context
 import android.content.Intent
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -15,12 +16,20 @@ import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
 import com.alert.app.R
 import com.alert.app.activity.ChatActivity
+import com.alert.app.base.AppConstant
 import com.alert.app.model.ChatUserModel
 import com.alert.app.model.message.ChatListItem
 import com.bumptech.glide.Glide
 import com.chauthai.swipereveallayout.SwipeRevealLayout
 import com.chauthai.swipereveallayout.ViewBinderHelper
+import com.google.firebase.Timestamp
 import de.hdodenhof.circleimageview.CircleImageView
+import java.text.SimpleDateFormat
+import java.util.Calendar
+import java.util.Date
+import java.util.Locale
+import java.util.concurrent.TimeUnit
+
 
 class SwipeAdapter(private val context: Context) :
     ListAdapter<ChatListItem, SwipeAdapter.SwipeViewHolder>(DiffCallback()) {
@@ -58,13 +67,42 @@ class SwipeAdapter(private val context: Context) :
 
         // Click to open chat
         holder.imgAppbar.setOnClickListener {
-            val intent = Intent(context, ChatActivity::class.java).apply {
-                putExtra("receiverId", item.userId.toString())
-                putExtra("chatId", item.chatId)
-                putExtra("receiverName", item.fullName)
-                putExtra("receiverProfile", item.profile)
-            }
+
+            val intent = Intent(context, ChatActivity::class.java)
+
+
+            intent.putExtra(AppConstant.NAME,item.fullName)
+            intent.putExtra(AppConstant.PROFILE, item.profile)
+
+
+
+            intent.putExtra(AppConstant.CHAT_ID, item.chatId)
             context.startActivity(intent)
+        }
+        holder.timeAgo.setText(getTimeAgo(item.lastMessageTime))
+    }
+
+    fun getTimeAgo(timestamp: Timestamp?): String {
+        if (timestamp == null) return ""
+
+        val now = System.currentTimeMillis()
+        val time = timestamp.toDate().time
+        val diff = now - time
+
+        val minutes = TimeUnit.MILLISECONDS.toMinutes(diff)
+        val hours = TimeUnit.MILLISECONDS.toHours(diff)
+        val days = TimeUnit.MILLISECONDS.toDays(diff)
+
+        return when {
+            minutes < 1 -> "Just now"
+            minutes < 60 -> "$minutes min ago"
+            hours < 24 -> "$hours hr${if (hours > 1) "s" else ""} ago"
+            days == 1L -> "Yesterday"
+            days < 7 -> "$days day${if (days > 1) "s" else ""} ago"
+            else -> {
+                val sdf = SimpleDateFormat("MMM dd, yyyy", Locale.getDefault())
+                sdf.format(Date(time))
+            }
         }
     }
 
@@ -75,6 +113,7 @@ class SwipeAdapter(private val context: Context) :
         val swipeLayout: SwipeRevealLayout = itemView.findViewById(R.id.swipe_layout)
         val imgAppbar: LinearLayout = itemView.findViewById(R.id.img_appbar)
         val userImage : CircleImageView = itemView.findViewById<CircleImageView>(R.id.user_img_message)
+        val timeAgo : TextView = itemView.findViewById<TextView>(R.id.tv_time_ago)
     }
 
     class DiffCallback : DiffUtil.ItemCallback<ChatListItem>() {

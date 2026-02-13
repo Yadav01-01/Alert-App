@@ -10,6 +10,7 @@
     app:dragEdge="right"
     app:mode="same_level"
     tools:ignore="MissingClass">
+
     <LinearLayout
         android:id="@+id/delete_layout"
         android:layout_width="wrap_content"
@@ -74,6 +75,7 @@
                 android:layout_marginStart="@dimen/_5sdp"
                 android:layout_centerInParent="true"
                 android:layout_toLeftOf="@id/lay_end"
+                android:layout_marginTop="@dimen/_6sdp"
                 android:orientation="vertical">
                 <TextView
                     android:id="@+id/tv_name"
@@ -82,7 +84,8 @@
                     android:fontFamily="@font/urbanist_bold"
                     android:textColor="#000000"
                     android:textStyle="bold"
-                    android:textSize="@dimen/_15sdp"
+                    android:textSize="@dimen/_14sdp"
+
                     android:text="Jhon Abraham" />
                 <TextView
                     android:id="@+id/tv_last_message"
@@ -99,6 +102,7 @@
                 android:layout_height="wrap_content"
                 android:orientation="vertical"
                 android:gravity="center"
+                android:layout_marginTop="@dimen/_6sdp"
                 android:layout_alignParentEnd="true">
                 <TextView
                     android:id="@+id/tv_time_ago"
@@ -124,5 +128,9 @@
 
             </LinearLayout>
         </RelativeLayout>
+
     </LinearLayout>
+
+
+
 </com.chauthai.swipereveallayout.SwipeRevealLayout>

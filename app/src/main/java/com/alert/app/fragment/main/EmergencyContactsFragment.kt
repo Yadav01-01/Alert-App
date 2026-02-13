@@ -489,7 +489,7 @@ class EmergencyContactsFragment : Fragment(), OnClickContact {
                 Log.d("TESTING_IDS","contactId"+it.contactId+" mysceen"+contactId.toInt())
                if(it.contactId == contactId.toInt()){
                    intent.putExtra(AppConstant.NAME,it.firstName+" "+it.lastName)
-                   intent.putExtra(AppConstant.PROFILE, AppConstant.IMAGE_BASE_URL+it.profilePic)
+                   intent.putExtra(AppConstant.PROFILE, it.profilePic)
                    Log.d("Testing_Profile",AppConstant.IMAGE_BASE_URL+it.profilePic)
                }
             }

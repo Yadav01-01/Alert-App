@@ -13,10 +13,13 @@ import com.google.firebase.Timestamp
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.launch
+import java.text.SimpleDateFormat
 import java.time.Instant
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
+import java.util.Date
 import java.util.Locale
+import java.util.concurrent.TimeUnit
 import javax.inject.Inject
 
 @HiltViewModel
@@ -31,6 +34,29 @@ class ChatViewModel @Inject constructor( private val repository: ChatRepository)
             repository.observeMessages(chatId).collect {
                 _messages.postValue(it)
                 repository.markChatRead(chatId, myUserId)
+            }
+        }
+    }
+    fun getTimeAgo(timestamp: Timestamp?): String {
+        if (timestamp == null) return ""
+
+        val now = System.currentTimeMillis()
+        val time = timestamp.seconds * 1000
+        val diff = now - time
+
+        val minutes = TimeUnit.MILLISECONDS.toMinutes(diff)
+        val hours = TimeUnit.MILLISECONDS.toHours(diff)
+        val days = TimeUnit.MILLISECONDS.toDays(diff)
+
+        return when {
+            minutes < 1 -> "Just now"
+            minutes < 60 -> "$minutes min ago"
+            hours < 24 -> "$hours hr${if (hours > 1) "s" else ""} ago"
+            days == 1L -> "Yesterday"
+            days < 7 -> "$days day${if (days > 1) "s" else ""} ago"
+            else -> {
+                SimpleDateFormat("MMM dd, yyyy", Locale.getDefault())
+                    .format(Date(time))
             }
         }
     }

@@ -64,13 +64,15 @@
                     android:textStyle="bold"
                     android:textSize="@dimen/_15sdp"
                     android:text="Jhon Abraham" />
+
                 <TextView
+                    android:id="@+id/tv_status"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:fontFamily="@font/urbanist_medium"
+                    android:text="Active now"
                     android:textColor="#797C7B"
-                    android:textSize="@dimen/_12sdp"
-                    android:text="Active now" />
+                    android:textSize="@dimen/_12sdp" />
             </LinearLayout>
             <ImageView
                 android:id="@+id/img_call"
