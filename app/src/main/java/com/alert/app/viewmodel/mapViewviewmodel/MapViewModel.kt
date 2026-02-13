@@ -60,4 +60,8 @@ class MapViewModel @Inject constructor(private val repository: MainRepository) :
         return repository.mapLocations().onEach {
         }
     }
+    suspend fun addNeighbor(createHelpingNeighbor: CreateHelpingNeighbor): Flow<NetworkResult<JsonObject>> {
+        return repository.addNeighbor(createHelpingNeighbor).onEach {
+        }
+    }
 }

@@ -182,7 +182,7 @@
                         android:layout_toLeftOf="@+id/phone_status"
                         android:paddingStart="@dimen/_10sdp"
                         android:singleLine="true"
-                        android:maxLength="10"
+                        android:inputType="phone"
                         android:paddingEnd="@dimen/_10sdp"
                         android:background="@null"/>
                     <ImageView

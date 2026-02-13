@@ -37,4 +37,9 @@ class MobileContactsViewModel @Inject constructor(private val repository: MainRe
         return repository.addEmergencyContact(createHelpingNeighbor).onEach {
         }
     }
+
+    suspend fun addNeighbor(createHelpingNeighbor: CreateHelpingNeighbor): Flow<NetworkResult<JsonObject>> {
+        return repository.addNeighbor(createHelpingNeighbor).onEach {
+        }
+    }
 }

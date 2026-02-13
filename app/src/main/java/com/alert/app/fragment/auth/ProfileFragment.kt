@@ -359,7 +359,15 @@ class ProfileFragment : Fragment() {
             binding.tvphonestatus.text = Html.fromHtml(statusText, Html.FROM_HTML_MODE_LEGACY)
             binding.phoneStatus.setImageResource(iconRes)
             binding.tvphonestatus.setTextColor(Color.parseColor(color))
+            if (statusText == MessageClass.verifyStatus) {
+                binding.tvphonestatus.isClickable = false
+                binding.tvphonestatus.isEnabled = false
+            } else {
+                binding.tvphonestatus.isClickable = true
+                binding.tvphonestatus.isEnabled = true
+            }
         }
+
     }
 
     private fun setEmailVisibility(visible: Boolean) {

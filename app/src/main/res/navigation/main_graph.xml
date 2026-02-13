@@ -234,4 +234,10 @@
         android:label="fragment_f_a_q"
         tools:layout="@layout/fragment_f_a_q" />
 
+    <fragment
+        android:id="@+id/verify_phone_email"
+        android:name="com.alert.app.fragment.main.VerifyProfile2Fragment"
+        android:label="fragment_verify_profile2" />
+
+
 </navigation>

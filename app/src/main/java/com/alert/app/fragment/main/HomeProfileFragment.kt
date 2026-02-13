@@ -381,6 +381,13 @@ class HomeProfileFragment : Fragment() {
             binding.phoneStatus.setImageResource(iconRes)
             binding.tvphonestatus.setTextColor(Color.parseColor(color))
         }
+        if (statusText == MessageClass.verifyStatus) {
+            binding.tvphonestatus.isClickable = false
+            binding.tvphonestatus.isEnabled = false
+        } else {
+            binding.tvphonestatus.isClickable = true
+            binding.tvphonestatus.isEnabled = true
+        }
     }
 
     private fun setEmailVisibility(visible: Boolean) {

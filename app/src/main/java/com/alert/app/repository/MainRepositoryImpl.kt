@@ -1974,7 +1974,7 @@ class MainRepositoryImpl @Inject constructor(private val apiInterface: ApiInterf
 
 
     override suspend fun addEmergencyContact(createHelpingNeighbor: CreateHelpingNeighbor): Flow<NetworkResult<JsonObject>> = flow {
-            try {
+          try {
                 apiInterface.addEmergencyContact(createHelpingNeighbor).apply {
                     if (isSuccessful) {
                         body()?.let { resp ->
