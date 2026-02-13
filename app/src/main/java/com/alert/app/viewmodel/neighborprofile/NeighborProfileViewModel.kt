@@ -13,6 +13,9 @@ import javax.inject.Inject
 class NeighborProfileViewModel @Inject constructor(private val repository: MainRepository) : ViewModel() {
 
 
+    var userId :Int =-1
+    var userName :String =""
+
     suspend fun neighborProfileDetails(contactId: String): Flow<NetworkResult<JsonObject>> {
         return repository.neighborProfileDetails(contactId).onEach {
         }

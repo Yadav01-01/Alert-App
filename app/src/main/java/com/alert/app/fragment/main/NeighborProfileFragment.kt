@@ -180,7 +180,7 @@ import androidx.fragment.app.Fragment
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.lifecycleScope
 import androidx.navigation.fragment.findNavController
-import com.alert.app.BuildConfig
+
 import com.alert.app.R
 import com.alert.app.activity.CallActivity
 import com.alert.app.activity.ChatActivity
@@ -204,6 +204,7 @@ import com.google.gson.Gson
 import com.google.gson.JsonObject
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
+import kotlin.text.split
 
 @AndroidEntryPoint
 class NeighborProfileFragment : Fragment() {
@@ -211,6 +212,7 @@ class NeighborProfileFragment : Fragment() {
     private lateinit var binding: FragmentNeighborProfileBinding
     private var contactId:String=""
     private lateinit var viewModel: NeighborProfileViewModel
+    private  var profilePath:String =""
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View {
         binding = FragmentNeighborProfileBinding.inflate(inflater, container, false)
@@ -281,16 +283,20 @@ class NeighborProfileFragment : Fragment() {
                 data.first_name
                     ?.takeIf { it.isNotBlank() }?.let { first -> val last = data.last_name.orEmpty()
                         binding.textNeighborName.text = "$first $last".trim()
+                        viewModel.userName =  "$first $last".trim()
                     }
+
 
                 data.address?.let { binding.textAddressDetails.text = it }
 
                 data.phone?.let { binding.textPhoneNumber.text = it }
 
                 data.email?.let { binding.textEmailAddress.text = it }
-
+                data.user_id?.let {
+                    viewModel.userId = it
+                }
                 data.profile?.let { picPath ->
-
+                    profilePath = picPath
                         Glide.with(requireActivity())
                             .load( picPath)
                             .placeholder(R.drawable.no_image)
@@ -347,6 +353,12 @@ class NeighborProfileFragment : Fragment() {
         binding.btnSendAlert.setOnClickListener { navigateToSendAlert("Send Alert") }
 
         binding.imgChat.setOnClickListener {
+
+            val intent = Intent(context, ChatActivity::class.java)
+            intent.putExtra(AppConstant.NAME,viewModel.userName)
+            intent.putExtra(AppConstant.PROFILE, profilePath)
+            intent.putExtra(AppConstant.CONTACT_USER_ID, viewModel.userId)
+            startActivity(intent)
             startActivity(Intent(requireContext(), ChatActivity::class.java))
         }
 

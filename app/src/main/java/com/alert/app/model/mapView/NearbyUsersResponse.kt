@@ -18,7 +18,7 @@ data class UserData(
     val phone_verify: String,
     val country: String?,
     val profile_pic: String?,
-    val profile_image: String?,
+    //val profile_image: String?,
     val address: String?,
     val latitude: String?,
     val longitude: String?,

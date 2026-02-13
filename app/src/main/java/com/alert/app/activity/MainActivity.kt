@@ -171,22 +171,12 @@ class MainActivity : AppCompatActivity() {
         checkIf15MinutesPassed()
     }
 
-    override fun onDestroy() {
-        super.onDestroy()
-        ProcessLifecycleOwner.get()
-            .lifecycle
-            .removeObserver(lifecycleObserver)
-    }
-
-    //
     private fun speakTotalNotifications() {
         val count = getNotificationCount()
-        val msg = if (count > 0)
-            "You have received $count notifications"
-        else
-            "You have no notifications"
-
+        val msg = if (count > 0) "You have received $count notifications"
+        else "You have no notifications"
         speak(msg)
+
     }
 
     private fun speak(msg: String) {

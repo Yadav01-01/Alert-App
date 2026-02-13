@@ -1011,7 +1011,7 @@ class FromMapFragment : Fragment(), OnClickEventDropDownType, OnMapReadyCallback
                     Log.d("UserMarkerClick", "Latitude: ${user.latitude}")
                     Log.d("UserMarkerClick", "Longitude: ${user.longitude}")
                     Log.d("UserMarkerClick", "Distance: ${user.distance} km")
-                    Log.d("UserMarkerClick", "Profile Image: ${user.profile_image}")
+
                     Log.d("UserMarkerClick", "Address: ${user.address}")
                 }
                 false
@@ -1075,18 +1075,13 @@ class FromMapFragment : Fragment(), OnClickEventDropDownType, OnMapReadyCallback
                                                 createMarkerFromView(
                                                     requireContext(),
                                                     if (!user.profile_image.isNullOrEmpty()) {
-                                                        // Fix 1: Check if the URL is already complete
                                                         if (user.profile_image.startsWith("http")) {
                                                             user.profile_image
                                                         } else {
-                                                            // Fix 2: Add the correct storage path
-                                                           // BuildConfig.BASE_URL + user.profile_image
                                                             BuildConfig.Media_URL +  user.profile_image
                                                         }
                                                     } else null,
-                                                    /*if (!user.profile_image.isNullOrEmpty())
-                                                        BuildConfig.BASE_URL + user.profile_image
-                                                    else null,*/
+
                                                     { icon ->
                                                         val marker = googleMap.addMarker(
                                                             MarkerOptions()
