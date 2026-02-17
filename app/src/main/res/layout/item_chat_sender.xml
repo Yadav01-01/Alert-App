@@ -12,25 +12,51 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content">
 
-        <TextView
-            android:id="@+id/tvMessage"
+        <LinearLayout
+            android:orientation="vertical"
             android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="You did your job well!"
-            android:fontFamily="@font/urbanist_medium"
-            android:textColor="@color/white"
-            android:textSize="12sp"/>
+            android:layout_height="wrap_content">
 
+            <!-- EXISTING TEXT MESSAGE -->
+            <TextView
+                android:id="@+id/tvMessage"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:fontFamily="@font/urbanist_medium"
+                android:textColor="@color/white"
+                android:textSize="12sp"
+                android:visibility="gone"/>
+
+            <!-- 🔥 NEW: LOCATION STATUS -->
+            <TextView
+                android:id="@+id/tvLocationStatus"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="📍 Live location"
+                android:textColor="@color/white"
+                android:textSize="12sp"
+                android:visibility="gone"/>
+
+            <!-- 🔥 NEW: OPEN MAP -->
+            <TextView
+                android:id="@+id/btnOpenMap"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="View on map"
+                android:textColor="@color/white"
+                android:textSize="11sp"
+                android:paddingTop="4dp"
+                android:visibility="gone"/>
+        </LinearLayout>
     </LinearLayout>
 
+    <!-- EXISTING TIME -->
     <TextView
         android:id="@+id/tvTime"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="09:25 AM"
         android:fontFamily="@font/poppins_medium"
         android:textSize="10sp"
         android:textColor="#BCBDBD"
         android:gravity="end"/>
-
 </LinearLayout>

@@ -44,6 +44,7 @@
                 android:layout_marginBottom="@dimen/_3sdp"
                 android:layout_marginEnd="@dimen/_10sdp"
                 android:layout_alignParentEnd="true"
+                android:visibility="gone"
                 android:src="@drawable/active_icon"/>
 
         </RelativeLayout>
@@ -72,6 +73,7 @@
                     android:fontFamily="@font/urbanist_medium"
                     android:text="Active now"
                     android:textColor="#797C7B"
+                    android:visibility="gone"
                     android:textSize="@dimen/_12sdp" />
             </LinearLayout>
             <ImageView

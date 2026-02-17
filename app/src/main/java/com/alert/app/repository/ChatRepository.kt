@@ -73,9 +73,23 @@ class ChatRepository @Inject constructor(private val firestore: FirebaseFirestor
         }.await()
     }
 
+
+    fun deleteForMe(messageId: String, currentUserId: String,chatId:String) {
+
+        val messageRef = FirebaseFirestore.getInstance()
+            .collection("chats")
+            .document(chatId)
+            .collection("messages")
+            .document(messageId)
+
+        messageRef.update(
+            "deletedFor",
+            FieldValue.arrayUnion(currentUserId)
+        )
+    }
+
     fun observeChatList(
-        users: List<ChatUserModel>,
-        myUserId: String
+        users: List<ChatUserModel>, myUserId: String
     ): Flow<List<ChatListItem>> = callbackFlow {
 
         val chatIds = users.mapNotNull { it.chat_id }
@@ -94,12 +108,10 @@ class ChatRepository @Inject constructor(private val firestore: FirebaseFirestor
                     trySend(emptyList())
                     return@addSnapshotListener
                 }
-
                 val chatMap = snapshot.documents.associateBy { it.id }
-
                 val result = users.mapNotNull { user ->
-                    val chatDoc = chatMap[user.chat_id] ?: return@mapNotNull null
-
+                val chatDoc = chatMap[user.chat_id] ?: return@mapNotNull null
+                    val isLiveLocation = chatDoc.getString("type") == "location"
                     ChatListItem(
                         chatId = user.chat_id!!,
                         userId = user.id!!,
@@ -109,13 +121,13 @@ class ChatRepository @Inject constructor(private val firestore: FirebaseFirestor
                         lastMessageTime = chatDoc.getTimestamp("lastMessageTime"), // ✅ FIX
                         unreadCount = chatDoc
                             .getLong("unreadCount_$myUserId")
-                            ?.toInt() ?: 0
+                            ?.toInt() ?: 0,
+                        isLiveLocation = isLiveLocation
                     )
-                }
+                }.sortedByDescending { it.lastMessageTime?.toDate()?.time ?: 0 }
 
                 trySend(result)
             }
-
         awaitClose { listener.remove() }
     }
 
@@ -129,6 +141,152 @@ class ChatRepository @Inject constructor(private val firestore: FirebaseFirestor
             )
             .await()
     }
+
+    suspend fun startLiveLocation(
+        chatId: String,
+        senderId: String,
+        receiverId: String,
+        initialLocation: GeoPoint
+    ): String {
+        val docRef = firestore
+            .collection("chats")
+            .document(chatId)
+            .collection("messages")
+            .document()
+
+        val message = Message(
+            senderId = senderId,
+            receiverId = receiverId,
+            type = MessageType.LOCATION,
+            location = initialLocation,
+            isLive = true,
+            timestamp = Timestamp.now()
+        )
+
+        docRef.set(message).await()
+        return docRef.id // 🔥 save this messageId
+    }
+
+    suspend fun updateLiveLocation(
+        chatId: String,
+        messageId: String,
+        newLocation: GeoPoint
+    ) {
+        firestore
+            .collection("chats")
+            .document(chatId)
+            .collection("messages")
+            .document(messageId)
+            .update(
+                mapOf(
+                    "location" to newLocation,
+                    "timestamp" to Timestamp.now()
+                )
+            )
+            .await()
+    }
+
+    suspend fun stopLiveLocation(
+        chatId: String,
+        messageId: String
+    ) {
+        firestore
+            .collection("chats")
+            .document(chatId)
+            .collection("messages")
+            .document(messageId)
+            .update(
+                mapOf(
+                    "isLive" to false,
+                    "timestamp" to Timestamp.now()
+                )
+            )
+            .await()
+    }
+
+
+
+
+
+    // old createLiveLocationMessageCode
+
+//    suspend fun createLiveLocationMessage(
+//        chatId: String,
+//        senderId: String,
+//        receiverId: String,
+//        duration: Int
+//    ): String {
+//
+//        val expiresAt = Timestamp(
+//            System.currentTimeMillis() / 1000 + duration * 60,
+//            0
+//        )
+//
+//        val message = Message(
+//            senderId = senderId,
+//            receiverId = receiverId,
+//            type = MessageType.LOCATION,
+//            isLive = true,
+//            expiresAt = expiresAt,
+//            timestamp = Timestamp.now()
+//        )
+//
+//        val docRef = firestore.collection("chats").document(chatId)
+//                .collection("messages")
+//                .document()
+//
+//        docRef.set(message).await()
+//
+//        return docRef.id
+//    }
+
+
+    suspend fun createLiveLocationMessage(
+        chatId: String,
+        senderId: String,
+        receiverId: String,
+        duration: Int
+    ): String {
+
+        val expiresAt = Timestamp(
+            System.currentTimeMillis() / 1000 + duration * 60,
+            0
+        )
+
+        val message = Message(
+            senderId = senderId,
+            receiverId = receiverId,
+            type = MessageType.LOCATION, // marks as location
+            isLive = true,
+            expiresAt = expiresAt,
+            timestamp = Timestamp.now()
+        )
+
+        val messageRef = firestore.collection("chats").document(chatId)
+            .collection("messages")
+            .document()
+
+        firestore.runBatch { batch ->
+            // Save the live location message
+            batch.set(messageRef, message)
+
+            // Update chat document's lastMessageTime and lastMessage
+            batch.set(
+                firestore.collection("chats").document(chatId),
+                mapOf(
+                    "lastMessage" to "Live location", // text for chat list
+                    "lastMessageTime" to message.timestamp,
+                    "lastSenderId" to senderId,
+                    "unreadCount_$receiverId" to FieldValue.increment(1)
+                ),
+                SetOptions.merge()
+            )
+        }.await()
+
+        return messageRef.id
+    }
+
+
 
  }
 

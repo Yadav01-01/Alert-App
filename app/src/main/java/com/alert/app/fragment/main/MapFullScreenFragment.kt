@@ -29,6 +29,7 @@ import com.alert.app.BuildConfig
 import com.alert.app.R
 import com.alert.app.activity.MainActivity
 import com.alert.app.adapter.NearByPepoleAdapter
+import com.alert.app.base.AppConstant
 import com.alert.app.base.BaseApplication
 import com.alert.app.databinding.FragmentMapFullScreenBinding
 import com.alert.app.di.NetworkResult
@@ -58,6 +59,7 @@ import kotlinx.coroutines.launch
 
 @AndroidEntryPoint
 class MapFullScreenFragment : Fragment(), OnMapReadyCallback {
+
     private lateinit var binding: FragmentMapFullScreenBinding
     private lateinit var mainActivity: MainActivity
     private lateinit var googleMap: GoogleMap
@@ -130,7 +132,7 @@ class MapFullScreenFragment : Fragment(), OnMapReadyCallback {
                                             user.longitude?.let { lon->
                                                 Log.d("TESTING_RECYCLER_SIZE","Latitude "+user.latitude +" Longitude"+ user.longitude)
 
-                                                createMarkerFromView(requireContext(), BuildConfig.BASE_URL+user.profile_image)
+                                                createMarkerFromView(requireContext(), AppConstant.IMAGE_BASE_URL+user.profile_image)
                                                 { icon ->
                                                     val marker =    googleMap.addMarker(
                                                         MarkerOptions()

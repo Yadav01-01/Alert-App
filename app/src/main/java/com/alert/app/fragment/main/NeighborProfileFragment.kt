@@ -359,7 +359,7 @@ class NeighborProfileFragment : Fragment() {
             intent.putExtra(AppConstant.PROFILE, profilePath)
             intent.putExtra(AppConstant.CONTACT_USER_ID, viewModel.userId)
             startActivity(intent)
-            startActivity(Intent(requireContext(), ChatActivity::class.java))
+
         }
 
         binding.imgCall.setOnClickListener {

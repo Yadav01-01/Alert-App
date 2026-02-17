@@ -11,7 +11,9 @@ import com.alert.app.listener.OnClickEventDropDownType
 import com.alert.app.model.TimeModel
 
 
-class TimeArrayCustomListAdapter(var context: Context, var data: MutableList<TimeModel> , var OnClickEventDropDownType: OnClickEventDropDownType,var type:String) : RecyclerView.Adapter<TimeArrayCustomListAdapter.ViewHolder>() {
+class TimeArrayCustomListAdapter(var context: Context,
+                                 var data: MutableList<TimeModel> ,
+                                 var OnClickEventDropDownType: OnClickEventDropDownType,var type:String) : RecyclerView.Adapter<TimeArrayCustomListAdapter.ViewHolder>() {
 
 
     class ViewHolder(var binding: DropDownItemTimeBinding) :

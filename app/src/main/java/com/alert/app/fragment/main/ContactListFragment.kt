@@ -2,6 +2,7 @@ package com.alert.app.fragment.main
 
 import android.app.Dialog
 import android.content.Context.LAYOUT_INFLATER_SERVICE
+import android.content.Intent
 import android.graphics.Color
 import android.graphics.drawable.ColorDrawable
 import android.os.Bundle
@@ -24,9 +25,11 @@ import androidx.lifecycle.lifecycleScope
 import androidx.navigation.fragment.findNavController
 import androidx.recyclerview.widget.RecyclerView
 import com.alert.app.R
+import com.alert.app.activity.ChatActivity
 import com.alert.app.activity.MainActivity
 import com.alert.app.adapter.ContactListAdapter
 import com.alert.app.adapter.TimeArrayCustomListAdapter
+import com.alert.app.base.AppConstant
 import com.alert.app.base.BaseApplication
 import com.alert.app.databinding.FragmentContactListBinding
 import com.alert.app.di.NetworkResult
@@ -35,6 +38,7 @@ import com.alert.app.errormessage.AlertUtils.showAlert
 import com.alert.app.errormessage.MessageClass
 import com.alert.app.listener.ContactClick
 import com.alert.app.listener.OnClickEventDropDownType
+import com.alert.app.listener.OnTimeSelectedListener
 import com.alert.app.model.TimeModel
 import com.alert.app.model.contact.Contact
 import com.alert.app.model.contact.ContactListResponse
@@ -45,7 +49,8 @@ import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
 
 @AndroidEntryPoint
-class ContactListFragment : Fragment(), ContactClick, OnClickEventDropDownType {
+class ContactListFragment : Fragment(), ContactClick, OnClickEventDropDownType,
+    OnTimeSelectedListener {
 
     private lateinit var binding: FragmentContactListBinding
     private lateinit var adapter: ContactListAdapter
@@ -56,6 +61,7 @@ class ContactListFragment : Fragment(), ContactClick, OnClickEventDropDownType {
     private lateinit var viewModel: ContactsViewModel
     private lateinit var locationViewModel: LocationViewModel
     private var selectedDuration: String = ""
+    private var selectedDurationMinutes: Int? = null
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?
@@ -127,8 +133,59 @@ class ContactListFragment : Fragment(), ContactClick, OnClickEventDropDownType {
         }
     }
 
+//    private fun openAlertBox(contact: Contact) {
+//        selectedDuration = ""
+//        val dialog = Dialog(requireContext())
+//        dialog.setContentView(R.layout.dialog_long_time)
+//        dialog.setCancelable(false)
+//        dialog.window?.setBackgroundDrawable(ColorDrawable(Color.TRANSPARENT))
+//        dialog.window?.attributes = WindowManager.LayoutParams().apply {
+//            copyFrom(dialog.window!!.attributes)
+//        }
+//        dialog.window?.setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_STATE_ALWAYS_VISIBLE)
+//
+//        tvTime = dialog.findViewById(R.id.tvMinit)
+//        val imgClose = dialog.findViewById<ImageView>(R.id.img_close)
+//        val tvShare = dialog.findViewById<TextView>(R.id.tvshare)
+//
+//        dialog.show()
+//
+//        // Time options
+//        data.clear()
+//        data.addAll(listOf(
+//            TimeModel("15 Minutes", false),
+//            TimeModel("30 Minutes", false),
+//            ))
+//
+//        tvTime.setOnClickListener {
+//            val inflater = requireContext().getSystemService(LAYOUT_INFLATER_SERVICE) as LayoutInflater?
+//            val popupView = inflater?.inflate(R.layout.item_select_layout, null)
+//            popupWindow = PopupWindow(popupView, tvTime.width, RelativeLayout.LayoutParams.WRAP_CONTENT, true)
+//            popupWindow.showAsDropDown(tvTime, 0, 0, Gravity.CENTER)
+//
+//            val rcyData = popupView?.findViewById<RecyclerView>(R.id.rcy_data)
+//            rcyData?.adapter = TimeArrayCustomListAdapter(requireContext(), data, this, "time")
+//        }
+//
+//        tvShare.setOnClickListener {
+//            if (selectedDuration.isBlank()) {
+//                Toast.makeText(requireContext(), "Please select duration", Toast.LENGTH_SHORT).show()
+//                return@setOnClickListener
+//            }
+//
+//            dialog.dismiss()
+//            callShareLocation(contact.contact_id.toString(), selectedDuration)
+//        }
+//
+//        imgClose.setOnClickListener {
+//            dialog.dismiss()
+//        }
+//    }
+
     private fun openAlertBox(contact: Contact) {
-        selectedDuration = ""
+
+        selectedDurationMinutes = null
+
         val dialog = Dialog(requireContext())
         dialog.setContentView(R.layout.dialog_long_time)
         dialog.setCancelable(false)
@@ -146,35 +203,55 @@ class ContactListFragment : Fragment(), ContactClick, OnClickEventDropDownType {
 
         // Time options
         data.clear()
-        data.addAll(listOf(
-            TimeModel("15 Minutes", false),
-            TimeModel("30 Minutes", false),
-            TimeModel("45 Minutes", false),
-            TimeModel("1 Hour", false),
-            TimeModel("2 Hour", false),
-            TimeModel("8 Hour", false),
-            TimeModel("12 Hour", false),
-            TimeModel("24 Hour", false)
-        ))
+        data.addAll(
+            listOf(
+                TimeModel("15 Minutes", false),
+                TimeModel("30 Minutes", false)
+            )
+        )
 
         tvTime.setOnClickListener {
-            val inflater = requireContext().getSystemService(LAYOUT_INFLATER_SERVICE) as LayoutInflater?
-            val popupView = inflater?.inflate(R.layout.item_select_layout, null)
-            popupWindow = PopupWindow(popupView, tvTime.width, RelativeLayout.LayoutParams.WRAP_CONTENT, true)
+            val inflater =
+                requireContext().getSystemService(LAYOUT_INFLATER_SERVICE) as LayoutInflater
+            val popupView = inflater.inflate(R.layout.item_select_layout, null)
+
+            popupWindow = PopupWindow(
+                popupView,
+                tvTime.width,
+                RelativeLayout.LayoutParams.WRAP_CONTENT,
+                true
+            )
+
             popupWindow.showAsDropDown(tvTime, 0, 0, Gravity.CENTER)
 
-            val rcyData = popupView?.findViewById<RecyclerView>(R.id.rcy_data)
-            rcyData?.adapter = TimeArrayCustomListAdapter(requireContext(), data, this, "time")
+            val rcyData = popupView.findViewById<RecyclerView>(R.id.rcy_data)
+            rcyData.adapter =
+                TimeArrayCustomListAdapter(requireContext(), data, this, "time")
         }
 
         tvShare.setOnClickListener {
-            if (selectedDuration.isBlank()) {
-                Toast.makeText(requireContext(), "Please select duration", Toast.LENGTH_SHORT).show()
+
+            if (selectedDurationMinutes == null) {
+                Toast.makeText(
+                    requireContext(),
+                    "Please select duration",
+                    Toast.LENGTH_SHORT
+                ).show()
                 return@setOnClickListener
             }
 
             dialog.dismiss()
-            callShareLocation(contact.contact_id.toString(), selectedDuration)
+
+            val intent = Intent(requireContext(), ChatActivity::class.java)
+            intent.putExtra("contactUserId",contact.other_user_id.toString())
+            intent.putExtra(AppConstant.PROFILE,contact.profile_pic)
+            intent.putExtra(AppConstant.NAME,contact.first_name+" "+contact.last_name)
+            intent.putExtra(AppConstant.Duration, selectedDurationMinutes!!)
+            startActivity(intent)
+
+
+
+
         }
 
         imgClose.setOnClickListener {
@@ -235,6 +312,11 @@ class ContactListFragment : Fragment(), ContactClick, OnClickEventDropDownType {
                 val selectedItem = data[index]
                 tvTime.text = selectedItem.name
                 selectedDuration = selectedItem.name ?: ""
+                selectedDurationMinutes = when {
+                    selectedItem.name?.contains("15") == true -> 15
+                    selectedItem.name?.contains("30") == true -> 30
+                    else -> null
+                }
             }
         }
 
@@ -244,5 +326,10 @@ class ContactListFragment : Fragment(), ContactClick, OnClickEventDropDownType {
 
     override fun onClick(data: String, contact: Contact, pos: Int) {
         openAlertBox(contact)
+    }
+
+    override fun onTimeSelected(label: String, minutes: Int) {
+        selectedDurationMinutes = minutes
+
     }
 }

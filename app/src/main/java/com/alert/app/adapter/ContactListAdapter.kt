@@ -49,7 +49,7 @@ class ContactListAdapter(
         holder.binding.tvRelation.text = data.relation
         data.profile_pic.let {
             Glide.with(context)
-                .load(AppConstant.IMAGE_BASE_URL+it)
+                .load(it)
                 .placeholder(R.drawable.user_img_icon)
                 .error(R.drawable.user_img_icon)
                 .into(holder.binding.userImg)

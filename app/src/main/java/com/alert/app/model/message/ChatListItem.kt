@@ -9,7 +9,8 @@ data class ChatListItem(
     val profile: String,
     val lastMessage: String?,
     val lastMessageTime: Timestamp?,
-    val unreadCount: Int
+    val unreadCount: Int,
+    var isLiveLocation:Boolean = false
 )
 
 

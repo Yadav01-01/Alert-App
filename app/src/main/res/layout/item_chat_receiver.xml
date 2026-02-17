@@ -8,7 +8,7 @@
     android:paddingTop="4dp"
     android:paddingBottom="4dp">
 
-    <!-- Profile image -->
+    <!-- Profile image (UNCHANGED) -->
     <de.hdodenhof.circleimageview.CircleImageView
         android:id="@+id/imgProfile"
         android:layout_width="40dp"
@@ -32,6 +32,7 @@
             android:padding="10dp"
             android:maxWidth="280dp">
 
+            <!-- KEEP existing TextView -->
             <TextView
                 android:id="@+id/tvMessage"
                 android:layout_width="wrap_content"
@@ -39,10 +40,31 @@
                 android:fontFamily="@font/poppins_medium"
                 android:textColor="#000E08"
                 android:textSize="12sp"
-                android:text="Hello ! Nazrul How are you?"/>
+                android:text="Hello ! Nazrul How are you?" />
+
+            <!-- 🔥 NEW: Location status (hidden by default) -->
+            <TextView
+                android:id="@+id/tvLocationStatus"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="📍 Live location"
+                android:textColor="#000E08"
+                android:textSize="12sp"
+                android:visibility="gone" />
+
+            <!-- 🔥 NEW: Open map button -->
+            <TextView
+                android:id="@+id/btnOpenMap"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="View on map"
+                android:textColor="#1A73E8"
+                android:textSize="11sp"
+                android:paddingTop="4dp"
+                android:visibility="gone" />
         </LinearLayout>
 
-        <!-- Time OUTSIDE bubble -->
+        <!-- Time OUTSIDE bubble (UNCHANGED) -->
         <TextView
             android:id="@+id/tvTime"
             android:layout_width="wrap_content"
@@ -55,5 +77,4 @@
             android:textSize="10sp"
             android:textColor="#8A8A8A" />
     </LinearLayout>
-
 </LinearLayout>

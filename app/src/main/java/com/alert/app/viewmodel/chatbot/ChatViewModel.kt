@@ -1,12 +1,16 @@
 package com.alert.app.viewmodel.chatbot
 
+import android.content.Context
+import android.content.Intent
 import android.os.Build
 import androidx.annotation.RequiresApi
+import androidx.core.content.ContextCompat
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.alert.app.di.NetworkResult
+import com.alert.app.location.LiveLocationService
 import com.alert.app.model.Message
 import com.alert.app.repository.ChatRepository
 import com.google.firebase.Timestamp
@@ -76,6 +80,38 @@ class ChatViewModel @Inject constructor( private val repository: ChatRepository)
             )
         }
     }
+
+    fun startSharingLocation(
+        context: Context,
+        chatId: String,
+        senderId: String,
+        receiverId: String,
+        duration: Int
+    ) {
+
+        viewModelScope.launch {
+            // Step 1: create message in Firestore
+            val messageId = repository.createLiveLocationMessage(
+                chatId,
+                senderId,
+                receiverId,
+                duration
+            )
+
+            val intent = Intent(context, LiveLocationService::class.java).apply {
+                putExtra("chatId", chatId)
+                putExtra("messageId", messageId)
+                putExtra("duration", duration)
+            }
+
+            ContextCompat.startForegroundService(context, intent)
+        }
+
+    }
+
+
+
+
 
 //    fun sendLiveLocation(
 //        chatId: String,

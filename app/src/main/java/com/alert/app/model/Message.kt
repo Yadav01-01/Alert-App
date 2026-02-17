@@ -12,7 +12,9 @@ data class Message(
     val timestamp: Timestamp = Timestamp.now(),
     val isLive: Boolean = false,
     val formattedTime: String? = null,
-    val seenBy: List<String> = emptyList()
+    val seenBy: List<String> = emptyList(),
+    val expiresAt: Timestamp? = null,
+    val deletedFor: List<String> = emptyList()
 
 )
 

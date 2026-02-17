@@ -1,5 +1,7 @@
 package com.alert.app.base
 
+import kotlin.time.Duration
+
 object AppConstant {
 
     const val IMAGE_BASE_URL = "https://alertapp.tgastaging.com/storage/"
@@ -21,5 +23,6 @@ object AppConstant {
     val CONTACT_USER_ID = "contactUserId"
     val PROFILE = "profile"
     val  CHAT_ID ="chat_id"
+    val Duration ="duration"
 
 }

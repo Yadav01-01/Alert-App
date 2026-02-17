@@ -4,6 +4,7 @@ import android.content.Intent
 import android.os.Bundle
 import android.util.Log
 import android.view.LayoutInflater
+import android.view.View
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.recyclerview.widget.LinearLayoutManager
@@ -34,6 +35,7 @@ import java.util.concurrent.TimeUnit
 
 @AndroidEntryPoint
 class ChatActivity : AppCompatActivity() {
+
     private lateinit var binding: ActivityChatBinding
     private lateinit var adapter: ChatAdapter
     private var popup: EmojiPopup? = null
@@ -44,15 +46,22 @@ class ChatActivity : AppCompatActivity() {
     private var messageList : List<Message> = mutableListOf()
     private lateinit var  chatViewModel : ChatScreenViewModel
     var contactUserId :String =""
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
         binding = ActivityChatBinding.inflate(LayoutInflater.from(this))
+
         setContentView(binding.root)
+
         viewModel =     ViewModelProvider(this)[ChatViewModel::class.java]
+
         chatViewModel = ViewModelProvider(this)[ChatScreenViewModel::class.java]
-       if(intent.hasExtra("contactUserId")){
+
+        if(intent.hasExtra("contactUserId")){
            contactUserId = intent.getStringExtra("contactUserId")?:"-1"
-       }
+        }
+
         if(intent.hasExtra(AppConstant.CHAT_ID)){
             chatId = intent.getStringExtra(AppConstant.CHAT_ID)?:"-1"
         }
@@ -76,8 +85,22 @@ class ChatActivity : AppCompatActivity() {
               Log.d("Testing_message",messages.size.toString())
               adapter.submitList(messages.toMutableList())
            }
+
+        workingForLiveLocationSharing()
          checkingOtherUserStatus()
     }
+
+    private fun workingForLiveLocationSharing(){
+        if(intent.hasExtra(AppConstant.Duration)){
+            val milliseconds = 15
+            var duration = intent.getIntExtra(AppConstant.Duration,milliseconds)
+            duration = duration* 60 * 1000
+            if(messageList.size ==0){
+                callingCreateChannelApiLocation(duration)
+            }
+        }
+    }
+
 
     private fun checkingOtherUserStatus(){
         lifecycleScope.launch {
@@ -87,8 +110,15 @@ class ChatActivity : AppCompatActivity() {
                 .collect { (isOnline, lastSeen) ->
                     Log.d("TESTING_CURRENT_USER_STATUS","Status is"+ isOnline+" "+lastSeen)
                     binding.tvStatus.text =
-                        if (isOnline) "Online"
+                        if (isOnline) {
+                            "Online"
+                        }
                         else "Last seen ${viewModel.getTimeAgo(lastSeen)}"
+
+                    if(isOnline){
+                        binding.imgUpload.visibility =View.VISIBLE
+                    }
+
                 }
           }
 
@@ -98,16 +128,22 @@ class ChatActivity : AppCompatActivity() {
 
 
 
+
     private fun settingProfileData(){
+
         if (intent?.hasExtra(AppConstant.NAME) == true) {
             val userName = intent.getStringExtra(AppConstant.NAME)
             binding.userName.setText(userName)
         }
 
         if(intent?.hasExtra(AppConstant.PROFILE) == true){
+
             val userProfileImage = intent.getStringExtra(AppConstant.PROFILE)
+
             Log.d("TESTING_USER_PROFILE","Profile is "+userProfileImage.toString())
+
             adapter.receiverProfile(userProfileImage.toString())
+
             Glide.with(this)
                 .load(userProfileImage)
                 .placeholder(R.drawable.user_img_icon) // shown while loading
@@ -150,14 +186,15 @@ class ChatActivity : AppCompatActivity() {
     }
 
     private fun setupEmoji() {
+
         EmojiManager.install(GoogleEmojiProvider())
-        popup = EmojiPopup.Builder
-            .fromRootView(binding.root)
-            .build(binding.edMsg)
+
+        popup = EmojiPopup.Builder.fromRootView(binding.root).build(binding.edMsg)
 
         binding.imgImogi.setOnClickListener {
             popup?.toggle()
         }
+
     }
 
     private fun setupRecyclerView() {
@@ -179,6 +216,32 @@ class ChatActivity : AppCompatActivity() {
                 }else {
                     sendMessage(text)
                     binding.edMsg.text.clear()
+                }
+            }
+        }
+    }
+
+    private fun callingCreateChannelApiLocation(text:Int){
+        lifecycleScope.launch {
+            chatViewModel.createChannel(contactUserId,chatId).collect {
+                when(it){
+                    is NetworkResult.Success ->{
+                        val currentUserId = SessionManagement(this@ChatActivity).getUserId()
+
+                        viewModel.startSharingLocation(
+                            context = this@ChatActivity,
+                            chatId = chatId,
+                            senderId = currentUserId.toString(),
+                            receiverId = contactUserId,
+                            duration = text
+                        )
+
+                    //  sendMessage(text)
+                    //    binding.edMsg.text.clear()
+                    }
+                    is NetworkResult.Error ->{
+                        Toast.makeText(this@ChatActivity,"Something Went Wrong Try Again",Toast.LENGTH_LONG).show()
+                    }
                 }
             }
         }

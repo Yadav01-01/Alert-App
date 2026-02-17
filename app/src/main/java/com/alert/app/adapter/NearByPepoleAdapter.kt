@@ -7,6 +7,7 @@ import android.view.*
 import androidx.recyclerview.widget.RecyclerView
 import com.alert.app.BuildConfig
 import com.alert.app.R
+import com.alert.app.base.AppConstant
 import com.alert.app.databinding.ItemlistnearbypepoleBinding
 import com.alert.app.model.mapView.UserData
 import com.bumptech.glide.Glide
@@ -43,9 +44,9 @@ class NearByPepoleAdapter(var context:Context,val userData:List<UserData>) :
         userData.get(position).email.let {
             holder.binding.tvEmail.text = it
         }
-        userData.get(position).profile_pic.let {
+        userData.get(position).profile_image.let {
             Glide.with(context)
-                .load(BuildConfig.BASE_URL+it)
+                .load(AppConstant.IMAGE_BASE_URL + it)
                 .placeholder(R.drawable.user_img_icon)
                 .error(R.drawable.user_img_icon)
                 .into(holder.binding.userImg)

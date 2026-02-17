@@ -2,6 +2,7 @@ package com.alert.app.adapter
 
 import android.content.Context
 import android.content.Intent
+import android.location.Geocoder
 import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
@@ -48,7 +49,13 @@ class SwipeAdapter(private val context: Context) :
         viewBinderHelper.bind(holder.swipeLayout, item.chatId)
 
         holder.tvName.text = item.fullName
-        holder.tvLastMessage.text = item.lastMessage ?: "Say hi 👋"
+
+        holder.tvLastMessage.text = if(item.isLiveLocation){
+            "Live Location"
+        }else {
+            item.lastMessage ?: "Say hi 👋"
+        }
+
 
         // Unread count
         if (item.unreadCount > 0) {

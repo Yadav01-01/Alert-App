@@ -1,5 +1,6 @@
 package com.alert.app.viewmodel
 
+import android.content.Context
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
@@ -17,6 +18,7 @@ import retrofit2.http.Field
 import javax.inject.Inject
 import androidx.lifecycle.viewModelScope
 import com.alert.app.model.MessageType
+import com.google.firebase.firestore.GeoPoint
 import kotlinx.coroutines.launch
 import java.util.Date
 
@@ -26,13 +28,12 @@ class ChatScreenViewModel  @Inject constructor(
     private val repository: ChatRepository
     ) : ViewModel(){
 
-  var currentUserId:String =""
-
-
+    var currentUserId:String =""
     private var chatJob: Job? = null
 
     private val _chatList = MutableLiveData<List<ChatListItem>>()
     val chatList: LiveData<List<ChatListItem>> = _chatList
+    private var liveLocationMessageId: String? = null
 
     fun loadChatList(usersFromApi: List<ChatUserModel>, myUserId: String) {
         chatJob?.cancel() // Purana collection band karo
@@ -45,16 +46,36 @@ class ChatScreenViewModel  @Inject constructor(
         }
     }
 
-    suspend fun getChatList(): Flow<NetworkResult<MutableList<ChatUserModel>>> {
-        return repository1.getChannelList().onEach {
 
+    fun updateLiveLocation(chatId: String, geoPoint: GeoPoint) {
+        val messageId = liveLocationMessageId ?: return
+        viewModelScope.launch {
+                repository.updateLiveLocation(chatId, messageId, geoPoint)
+            }
+    }
+
+    fun stopLiveLocation(chatId: String) {
+        val messageId = liveLocationMessageId ?: return
+
+        viewModelScope.launch {
+                repository.stopLiveLocation(chatId, messageId)
+                liveLocationMessageId = null
         }
     }
 
 
-    suspend fun createChannel(contactUserId: String, chatId: String): Flow<NetworkResult<String>> {
-        return repository1.createChannel(contactUserId, chatId)
-       }
+    suspend fun getChatList(): Flow<NetworkResult<MutableList<ChatUserModel>>> {
+        return repository1.getChannelList().onEach {
+        }
+    }
+
+
+        suspend fun createChannel(
+            contactUserId: String,
+            chatId: String
+        ): Flow<NetworkResult<String>> {
+            return repository1.createChannel(contactUserId, chatId)
+        }
 
 
     }

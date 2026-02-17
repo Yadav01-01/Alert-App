@@ -48,7 +48,7 @@ class MessageFragment : Fragment() {
         ): View {
             _binding = FragmentMessageBinding.inflate(inflater, container, false)
             Log.d("Inside_Testing","Inside message on create")
-            // UserId set karna
+
             chattingViewModel.currentUserId = SessionManagement(requireContext()).getUserId().toString()
 
             return binding.root
@@ -56,7 +56,6 @@ class MessageFragment : Fragment() {
 
         override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
             super.onViewCreated(view, savedInstanceState)
-
             setupUI()
             setupRecyclerView()
             observeChatList()
@@ -66,11 +65,9 @@ class MessageFragment : Fragment() {
         private fun setupUI() {
             mainActivity?.setImageShowTv()?.visibility = View.GONE
             mainActivity?.setImgChatBoot()?.visibility = View.GONE
-
             binding.imgNotification.setOnClickListener {
                 findNavController().navigate(R.id.notificationFragment)
             }
-
             binding.threeLine.setOnClickListener {
                 mainActivity?.getDrawerLayout()?.let { drawer ->
                     if (drawer.isDrawerVisible(GravityCompat.START)) {

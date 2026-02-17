@@ -9,7 +9,7 @@ data class ContactListResponse(
 
 data class Contact(
     val contact_id: Int,
-    val first_name: String?,   // nullable as it can be null
+    val first_name: String?,
     val last_name: String,
     val phone: String,
     val email: String,
@@ -18,5 +18,6 @@ data class Contact(
     val time: String,
     val alert_id: Int,
     val type: String,
-    val profile_pic: String
+    val profile_pic: String,
+    val other_user_id : Int =-1
 )
