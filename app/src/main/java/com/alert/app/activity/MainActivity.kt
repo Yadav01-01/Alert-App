@@ -29,6 +29,7 @@ import android.widget.LinearLayout
 import android.widget.RelativeLayout
 import android.widget.TextView
 import android.widget.Toast
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.core.app.ActivityCompat
@@ -50,6 +51,7 @@ import com.alert.app.BuildConfig
 import com.alert.app.R
 import com.alert.app.adapter.ChatAdapter
 import com.alert.app.base.BaseApplication
+import com.alert.app.base.NotificationPermissionHelper
 import com.alert.app.base.SessionManagement
 import com.alert.app.chatgpt.AppLifecycleObserver
 import com.alert.app.databinding.ActivityMainBinding
@@ -86,7 +88,14 @@ class MainActivity : AppCompatActivity() {
     //tts
     private lateinit var tts: TextToSpeech
     private var isTtsReady = false
+    private lateinit var notificationHelper: NotificationPermissionHelper
 
+    private val notificationPermissionLauncher =
+        registerForActivityResult(ActivityResultContracts.RequestPermission()) { isGranted ->
+            if (!isGranted) {
+                notificationHelper.showPermissionDialog()
+            }
+        }
 
     private val handler = Handler(Looper.getMainLooper())
     private var userReminderRunnable: Runnable? = null
@@ -162,7 +171,14 @@ class MainActivity : AppCompatActivity() {
         setUI()
         sideBar()
         clickListener()
+        notificationHelper = NotificationPermissionHelper(this)
 
+
+        notificationHelper.checkAndRequestPermission(notificationPermissionLauncher)
+
+        if (!notificationHelper.areNotificationsEnabled()) {
+            Toast.makeText(this, "Please enable notifications to receive calls", Toast.LENGTH_LONG).show()
+        }
     }
 
 

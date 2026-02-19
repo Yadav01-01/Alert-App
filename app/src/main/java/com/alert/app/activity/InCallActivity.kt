@@ -1,8 +1,10 @@
 package com.alert.app.activity
 
 import android.Manifest
+import android.content.Intent
 import android.content.pm.PackageManager
 import android.graphics.drawable.Drawable
+import android.media.MediaPlayer
 import android.os.Build
 import android.os.Bundle
 import android.os.CountDownTimer
@@ -10,22 +12,30 @@ import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.widget.Toast
+import androidx.activity.OnBackPressedCallback
+import androidx.activity.OnBackPressedDispatcher
 import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
+import androidx.lifecycle.ViewModelProvider
 import androidx.navigation.ui.AppBarConfiguration
 import com.alert.app.R
 import com.alert.app.base.AppConstant
+import com.alert.app.calling.IncomingAudioCallService
 import com.alert.app.databinding.ActivityInCallBinding
 import com.alert.app.databinding.ActivityMainBinding
+import com.alert.app.viewmodel.InCallViewModel
 import com.bumptech.glide.Glide
 import com.bumptech.glide.load.DataSource
 import com.bumptech.glide.load.engine.GlideException
 import com.bumptech.glide.request.RequestListener
 import com.bumptech.glide.request.target.Target
+import com.google.firebase.firestore.FirebaseFirestore
+import dagger.hilt.android.AndroidEntryPoint
+import de.hdodenhof.circleimageview.CircleImageView
 import io.agora.rtc2.ChannelMediaOptions
 import io.agora.rtc2.Constants
 import io.agora.rtc2.IRtcEngineEventHandler
@@ -38,18 +48,20 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-
+@AndroidEntryPoint
 class InCallActivity : AppCompatActivity() {
 
     private lateinit var binding: ActivityInCallBinding
     private var rtcEngine: RtcEngine? = null
+    private lateinit var viewModel: InCallViewModel
+    private var ringtonePlayer: MediaPlayer? = null
 
     private val TAG = "AGORA_DEBUG"
 
     // ✅ TEST VALUES
-    private val channelName = "call_fd9e3f48-2ab8-4d35-a061-b0d18e7443eb"
-    private val appId = "3d45540a74844ab68670e75d586cc630"
-    private val token ="007eJxTYHjQ+UDtCXOB0HTWf3IWd5XP8P0w85rhrsHGbtxXuqXmyBoFBuMUE1NTE4NEcxMLE5PEJDMLM3ODVHPTFFMLs+RkM2ODt3enZf59PS3zvspKFkYGRgYWIAYBJjDJDCZZwKQmQ3JiTk58WoplqnGaiYWuUWKSha5JirGpbqKBmaFukkGKoUWquYmJcWoSI4MBAJ5nKbc="
+    private var channelName = "call_fd9e3f48-2ab8-4d35-a061-b0d18e7443eb"
+    private var appId = "3d45540a74844ab68670e75d586cc630"
+    private var token ="007eJxTYHjQ+UDtCXOB0HTWf3IWd5XP8P0w85rhrsHGbtxXuqXmyBoFBuMUE1NTE4NEcxMLE5PEJDMLM3ODVHPTFFMLs+RkM2ODt3enZf59PS3zvspKFkYGRgYWIAYBJjDJDCZZwKQmQ3JiTk58WoplqnGaiYWuUWKSha5JirGpbqKBmaFukkGKoUWquYmJcWoSI4MBAJ5nKbc="
     private val uId =0
     @Volatile
     private var isAgoraInitialized = false
@@ -76,6 +88,37 @@ class InCallActivity : AppCompatActivity() {
         if (!hasPermissions()) {
             requestPermissions()
         }
+        stopService(Intent(this, IncomingAudioCallService::class.java))
+
+        intent?.let {
+            channelName = it.getStringExtra(AppConstant.CHANNEL).orEmpty()
+            token = it.getStringExtra(AppConstant.TOKEN).orEmpty()
+            appId = it.getStringExtra(AppConstant.APPiD).orEmpty()
+           val callerName = it.getStringExtra(AppConstant.NAME).orEmpty()
+            val image = it.getStringExtra(AppConstant.IMAGE).orEmpty()
+            val actionType = it.getStringExtra("ACTION_TYPE").orEmpty()
+            binding.userName.text = callerName
+            Glide.with(this)
+                .load(image)
+                .placeholder(R.drawable.user_img_icon)
+                .error(R.drawable.user_img_icon)
+                .into(binding.userImg)
+        }
+
+        viewModel = ViewModelProvider(this)[InCallViewModel::class.java]
+
+        viewModel = ViewModelProvider(this)[InCallViewModel::class.java]
+
+        viewModel.time.observe(this) { time ->
+            binding.chronometer.text = time
+        }
+        observeIncomingCall(token)
+        onBackPressedDispatcher.addCallback(this, object : OnBackPressedCallback(true) {
+            override fun handleOnBackPressed() {
+                // Do nothing
+            }
+        })
+
     }
 
     override fun onResume() {
@@ -172,6 +215,25 @@ class InCallActivity : AppCompatActivity() {
         }
     }
 
+
+    fun observeIncomingCall(chatToken: String) {
+        val firestore = FirebaseFirestore.getInstance()
+        firestore.collection("calls")
+            .document(chatToken)
+            .addSnapshotListener { snapshot, error ->
+                if (error != null || snapshot == null || !snapshot.exists()) return@addSnapshotListener
+
+                val data = snapshot.data ?: return@addSnapshotListener
+                val status = data["status"] as? String ?: "ringing"
+                when (status) {
+                    "ended" -> {
+                        endCall()
+
+                    }
+                }
+            }
+    }
+
     private fun joinChannel() {
         val options = ChannelMediaOptions().apply {
             channelProfile = Constants.CHANNEL_PROFILE_COMMUNICATION
@@ -197,6 +259,9 @@ class InCallActivity : AppCompatActivity() {
                     "JOINED CHANNEL ✅ uid=$uid",
                     Toast.LENGTH_LONG
                 ).show()
+
+                startRinging()
+
                 Log.e(TAG, "JOINED CHANNEL uid=$uid")
             }
         }
@@ -208,6 +273,11 @@ class InCallActivity : AppCompatActivity() {
                     "REMOTE USER JOINED ✅ uid=$uid",
                     Toast.LENGTH_LONG
                 ).show()
+
+                stopRinging()     // 🔕 STOP RINGING
+
+                viewModel.startTimer()
+
                 Log.e(TAG, "REMOTE USER JOINED uid=$uid")
             }
         }
@@ -255,8 +325,6 @@ class InCallActivity : AppCompatActivity() {
         }
     }
 
-    // ================= CLEANUP =================
-
     private fun cleanupAgora() {
         rtcEngine?.leaveChannel()
         RtcEngine.destroy()
@@ -269,12 +337,44 @@ class InCallActivity : AppCompatActivity() {
         if (isCallEnded) return
         isCallEnded = true
 
+        val firestore = FirebaseFirestore.getInstance()
+
+        // Update Firestore so other party knows
+        firestore.collection("calls")
+            .document(token)
+            .update("status", "ended")
+            .addOnSuccessListener { Log.d("CallFirestore", "Call ended") }
+
+        stopRinging()
+        viewModel.stopTimer()
         cleanupAgora()
         finish()
     }
 
     override fun onDestroy() {
         super.onDestroy()
+        viewModel.stopTimer()
         cleanupAgora()
+
     }
+
+
+    private fun startRinging() {
+        if (ringtonePlayer == null) {
+            ringtonePlayer = MediaPlayer.create(this, R.raw.call_ringing)
+            ringtonePlayer?.isLooping = true
+            ringtonePlayer?.start()
+        }
+    }
+
+    private fun stopRinging() {
+        ringtonePlayer?.stop()
+        ringtonePlayer?.release()
+        ringtonePlayer = null
+    }
+
+
+
 }
+
+

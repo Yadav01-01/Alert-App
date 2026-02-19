@@ -20,6 +20,7 @@ import com.google.firebase.messaging.FirebaseMessagingService
 import com.google.firebase.messaging.RemoteMessage
 import androidx.core.content.edit
 import com.alert.app.activity.IncomingAudioCallActivity
+import com.alert.app.base.AppConstant
 import com.alert.app.calling.CallActionReceiverTwo
 import com.alert.app.calling.IncomingAudioCallService
 import com.alert.app.calling.IncomingCallService
@@ -62,11 +63,11 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
                val image = "https://fastly.picsum.photos/id/345/536/354.jpg?hmac=VQu01ToDu1bkvsCxDdsQWV3Ur5r3ot9yrN32rnufbXQ"
 
             val svcIntent = Intent(this, IncomingAudioCallService::class.java).apply {
-                putExtra("channel_name", channelName)
-                putExtra("agora_token", agoraToken)
-                putExtra("agora_app_id", appId)
-                putExtra("caller_name", callerName)
-                putExtra("image", image)
+                putExtra(AppConstant.CHANNEL, channelName)
+                putExtra(AppConstant.TOKEN, agoraToken)
+                putExtra(AppConstant.APPiD, appId)
+                putExtra(AppConstant.NAME, callerName)
+                putExtra(AppConstant.IMAGE, image)
             }
 
             ContextCompat.startForegroundService(this, svcIntent)

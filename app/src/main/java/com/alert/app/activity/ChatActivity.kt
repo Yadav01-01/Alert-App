@@ -86,8 +86,9 @@ class ChatActivity : AppCompatActivity() {
               messageList = messages
               Log.d("Testing_message",messages.size.toString())
               adapter.submitList(messages.toMutableList())
-            binding.rvMessages.smoothScrollToPosition(adapter.itemCount - 1)
-
+            if(adapter.itemCount>1) {
+                binding.rvMessages.smoothScrollToPosition(adapter.itemCount - 1)
+            }
         }
 
         workingForLiveLocationSharing()

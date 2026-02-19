@@ -494,7 +494,7 @@ class EmergencyContactsFragment : Fragment(), OnClickContact {
                }
             }
 
-            intent.putExtra(AppConstant.CONTACT_USER_ID, contactUserId)
+            intent.putExtra("contactUserId", contactUserId.toInt())
             startActivity(intent)
         }
     }

@@ -201,6 +201,7 @@ import com.bumptech.glide.load.DataSource
 import com.bumptech.glide.load.engine.GlideException
 import com.bumptech.glide.request.RequestListener
 import com.bumptech.glide.request.target.Target
+import com.google.firebase.firestore.FirebaseFirestore
 import com.google.gson.Gson
 import com.google.gson.JsonObject
 import dagger.hilt.android.AndroidEntryPoint
@@ -237,9 +238,27 @@ class NeighborProfileFragment : Fragment() {
 
         BaseApplication.openDialog()
         lifecycleScope.launch {
-            viewModel.getCallInitiate(contactId.toInt()).collect {
+            viewModel.getCallInitiate(viewModel.userId.toInt()).collect {
                 when(it){
                     is NetworkResult.Success ->{
+                        it.data?.token?.let {
+                            val firestore = FirebaseFirestore.getInstance()
+                            val callData = hashMapOf(
+                                "chatToken" to it,
+                                "status" to "ringing",
+                                "receiverId" to viewModel.userId
+                            )
+
+                            firestore.collection("calls")
+                                .document(it) // use chatToken as unique call ID
+                                .set(callData)
+                                .addOnSuccessListener {
+                                    Log.d("CallFirestore", "Call document created")
+                                }
+                                .addOnFailureListener { e ->
+                                    Log.e("CallFirestore", "Failed to create call doc", e)
+                                }
+                        }
                         BaseApplication.dismissDialog()
                         val intent = Intent(requireActivity(), InCallActivity::class.java)
                         intent.putExtra(AppConstant.CHANNEL, it.data?.channel_name)
