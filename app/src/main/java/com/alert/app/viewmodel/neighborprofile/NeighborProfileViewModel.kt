@@ -2,6 +2,7 @@ package com.alert.app.viewmodel.neighborprofile
 
 import androidx.lifecycle.ViewModel
 import com.alert.app.di.NetworkResult
+import com.alert.app.model.CallChannel
 import com.alert.app.repository.MainRepository
 import com.google.gson.JsonObject
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -26,8 +27,17 @@ class NeighborProfileViewModel @Inject constructor(private val repository: MainR
     }
     suspend fun neighborProfileDelete(contactId: String): Flow<NetworkResult<JsonObject>> {
         return repository.neighborProfileDelete(contactId).onEach {
+
         }
     }
+
+
+    suspend fun getCallInitiate(receiver_id: Int): Flow<NetworkResult<CallChannel>>{
+        return repository.getCallInitiate(receiver_id).onEach {
+
+        }
+    }
+
 
 
 }

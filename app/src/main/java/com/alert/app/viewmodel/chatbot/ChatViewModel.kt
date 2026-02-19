@@ -3,6 +3,7 @@ package com.alert.app.viewmodel.chatbot
 import android.content.Context
 import android.content.Intent
 import android.os.Build
+import android.util.Log
 import androidx.annotation.RequiresApi
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.LiveData
@@ -35,12 +36,28 @@ class ChatViewModel @Inject constructor( private val repository: ChatRepository)
 
     fun loadMessages(chatId: String, myUserId: String) {
         viewModelScope.launch {
-            repository.observeMessages(chatId).collect {
+            repository.observeMessages(chatId,myUserId).collect {
                 _messages.postValue(it)
                 repository.markChatRead(chatId, myUserId)
             }
         }
     }
+
+
+    fun deleteChatForMe(chatId: String,currentUserId:String) {
+        repository.deleteChatForMe(chatId = chatId,
+            currentUserId){ success ->
+            if (success) {
+                Log.d("TESTING_MESSAGE","I AM HERE IN DELETE SUCCESS")
+                _messages.value   = emptyList<Message>()
+            } else {
+                Log.d("TESTING_MESSAGE","I AM HERE IN DELETE fAILURE")
+
+            }
+        }
+    }
+
+
     fun getTimeAgo(timestamp: Timestamp?): String {
         if (timestamp == null) return ""
 

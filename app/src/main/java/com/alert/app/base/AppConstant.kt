@@ -24,5 +24,9 @@ object AppConstant {
     val PROFILE = "profile"
     val  CHAT_ID ="chat_id"
     val Duration ="duration"
+    val CHANNEL ="CHANNEL"
+    val TOKEN = "token"
+    val APPiD ="APPID"
+    val IMAGE = "IMAGE"
 
 }

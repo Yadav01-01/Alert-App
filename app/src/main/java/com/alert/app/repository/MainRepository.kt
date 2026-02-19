@@ -2,6 +2,7 @@ package com.alert.app.repository
 
 import com.alert.app.di.NetworkResult
 import com.alert.app.model.AddressModel
+import com.alert.app.model.CallChannel
 import com.alert.app.model.ChatUserModel
 import com.alert.app.model.contact.UserContactRequest
 import com.alert.app.model.contact.UserEditContactRequest
@@ -221,4 +222,8 @@ interface MainRepository {
     ): Flow<NetworkResult<String>>
 
     suspend fun getChannelList() : Flow<NetworkResult<MutableList<ChatUserModel>>>
+
+    suspend fun getCallInitiate(receiver_id:Int) : Flow<NetworkResult<CallChannel>>
+
+
 }

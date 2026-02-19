@@ -56,6 +56,7 @@ import com.alert.app.databinding.ActivityMainBinding
 import com.alert.app.di.NetworkResult
 import com.alert.app.errormessage.AlertUtils
 import com.alert.app.errormessage.MessageClass
+import com.alert.app.model.Message
 import com.alert.app.model.chatbot.ChatMessage
 import com.alert.app.model.emergencytextmessage.EmergencyTextMszModel
 import com.alert.app.model.homemodel.HomeModel
@@ -582,7 +583,7 @@ class MainActivity : AppCompatActivity() {
 
         val currentUserId = sessionManagement.getUserId().toString()
 
-        val chatMessages = mutableListOf<ChatMessage>()
+        val chatMessages = mutableListOf<Message>()
         val adapter = ChatAdapter(currentUserId)
 
         recyclerView.layoutManager = LinearLayoutManager(this)
@@ -604,15 +605,16 @@ class MainActivity : AppCompatActivity() {
                                 ?.get("reply")
                                 ?.asString
                                 ?: "How can I help you?"
+                            Log.d("TESTING_CHAT_BOT","Chat bot reply is"+ reply)
 
                             chatMessages.add(
-                                ChatMessage(
-                                    message = reply,
+                                Message(
+                                    text = reply,
                                     senderId = "BOT"
                                 )
                             )
 
-                         //   adapter.submitList(chatMessages)
+                            adapter.submitList(chatMessages)
                             recyclerView.scrollToPosition(chatMessages.size - 1)
                         }
 
@@ -640,8 +642,8 @@ class MainActivity : AppCompatActivity() {
 
             //  Add user message
             chatMessages.add(
-                ChatMessage(
-                    message = userMsg,
+                Message(
+                    text = userMsg,
                     senderId = currentUserId
                 )
             )

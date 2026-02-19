@@ -348,6 +348,14 @@ interface ApiInterfaceClass {
     suspend fun getChannelList() : Response<JsonObject>
 
 
+    @POST("api/calls-initiate")
+    @FormUrlEncoded
+    suspend fun callInitiate(
+        @Field("receiver_id") receiverId :Int
+     ) : Response<JsonObject>
+
+
+
 //    @GET(ApiEndPoint.USER_ADDRESS)
 //    suspend fun getUserAddress() : Response<JsonObject>
 

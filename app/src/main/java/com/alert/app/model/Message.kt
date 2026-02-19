@@ -14,7 +14,7 @@ data class Message(
     val formattedTime: String? = null,
     val seenBy: List<String> = emptyList(),
     val expiresAt: Timestamp? = null,
-    val deletedFor: List<String> = emptyList()
+    val deletedAt: Map<String, Long> = emptyMap()
 
 )
 

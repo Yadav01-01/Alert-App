@@ -1,6 +1,8 @@
 package com.alert.app.fragment.main
 
 import android.os.Bundle
+import android.text.Editable
+import android.text.TextWatcher
 import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
@@ -51,6 +53,34 @@ class MessageFragment : Fragment() {
 
             chattingViewModel.currentUserId = SessionManagement(requireContext()).getUserId().toString()
 
+
+            binding.etSerach.addTextChangedListener(object : TextWatcher{
+                override fun beforeTextChanged(
+                    s: CharSequence?,
+                    start: Int,
+                    count: Int,
+                    after: Int
+                ) {
+
+                }
+                override fun onTextChanged(
+                    s: CharSequence?,
+                    start: Int,
+                    before: Int,
+                    count: Int
+                ) {
+                    swipeAdapter.filter(s.toString())
+                }
+
+                override fun afterTextChanged(s: Editable?) {
+                }
+
+            })
+
+
+
+
+
             return binding.root
         }
 
@@ -92,6 +122,7 @@ class MessageFragment : Fragment() {
         private fun observeChatList() {
             chattingViewModel.chatList.observe(viewLifecycleOwner) { list ->
                 swipeAdapter.submitList(list)
+                swipeAdapter.setData(list)
             }
         }
 
@@ -127,3 +158,5 @@ class MessageFragment : Fragment() {
 
 
 }
+
+

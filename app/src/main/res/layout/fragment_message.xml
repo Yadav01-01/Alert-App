@@ -50,6 +50,7 @@
         app:cardCornerRadius="@dimen/_15sdp"
         android:background="@drawable/search_bg_message">
         <EditText
+            android:id="@+id/et_serach"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
             android:hint="@string/search"

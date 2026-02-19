@@ -17,24 +17,81 @@ import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.callbackFlow
 import javax.inject.Inject
 import javax.inject.Singleton
+import kotlin.collections.filter
+import kotlin.compareTo
 
 @Singleton
 class ChatRepository @Inject constructor(private val firestore: FirebaseFirestore,
                                          private val locationClient: FusedLocationProviderClient
 ) {
+//old delete for me
+//    fun observeMessages(chatId: String): Flow<List<Message>> = callbackFlow {
+//        val listener = firestore.collection("chats")
+//            .document(chatId)
+//            .collection("messages")
+//            .orderBy("timestamp")
+//
+//            .addSnapshotListener { snapshot, _ ->
+//                val messages = snapshot?.toObjects(Message::class.java) ?: emptyList()
+//                trySend(messages)
+//            }
+//
+//        awaitClose { listener.remove() }
+//    }
 
-    fun observeMessages(chatId: String): Flow<List<Message>> = callbackFlow {
-        val listener = firestore.collection("chats")
-            .document(chatId)
-            .collection("messages")
+
+
+
+    fun observeMessages(
+        chatId: String,
+        currentUserId: String
+    ): Flow<List<Message>> = callbackFlow {
+
+        if (chatId.isBlank()) {
+            trySend(emptyList())
+            close()
+            return@callbackFlow
+        }
+
+        val chatRef = firestore.collection("chats").document(chatId)
+        val messagesRef = chatRef.collection("messages")
             .orderBy("timestamp")
-            .addSnapshotListener { snapshot, _ ->
-                val messages = snapshot?.toObjects(Message::class.java) ?: emptyList()
-                trySend(messages)
-            }
 
-        awaitClose { listener.remove() }
+        // delete-for-me time (milliseconds)
+        var deleteTime = 0L
+
+        // 🔥 Observe delete-for-me changes
+        val chatListener = chatRef.addSnapshotListener { snapshot, error ->
+            if (error != null) return@addSnapshotListener
+
+            val deletedAtMap =
+                snapshot?.get("deletedAt") as? Map<String, Long> ?: emptyMap()
+
+            deleteTime = deletedAtMap[currentUserId] ?: 0L
+        }
+
+        // 🔥 Observe messages
+        val messageListener = messagesRef.addSnapshotListener { snapshot, error ->
+            if (error != null) return@addSnapshotListener
+
+            val visibleMessages = snapshot?.documents
+                ?.mapNotNull { it.toObject(Message::class.java) }
+                ?.filter { message ->
+                    val messageTime =
+                        message.timestamp?.toDate()?.time ?: 0L
+                    messageTime > deleteTime
+                }
+                ?: emptyList()
+
+            trySend(visibleMessages)
+        }
+
+        awaitClose {
+            chatListener.remove()
+            messageListener.remove()
+        }
     }
+
 
     // 🔹 SEND TEXT MESSAGE (FIXED)
     suspend fun sendTextMessage(
@@ -43,7 +100,9 @@ class ChatRepository @Inject constructor(private val firestore: FirebaseFirestor
         senderId: String,
         receiverId: String
     ) {
+
         val chatRef = firestore.collection("chats").document(chatId)
+
         val messageRef = chatRef.collection("messages").document()
 
         val message = Message(
@@ -55,10 +114,7 @@ class ChatRepository @Inject constructor(private val firestore: FirebaseFirestor
         )
 
         firestore.runBatch { batch ->
-            // save message
             batch.set(messageRef, message)
-
-            // create / update chat document safely
             batch.set(
                 chatRef,
                 mapOf(
@@ -71,22 +127,31 @@ class ChatRepository @Inject constructor(private val firestore: FirebaseFirestor
                 SetOptions.merge()
             )
         }.await()
+
+
     }
 
+    fun deleteChatForMe(
+        chatId: String,
+        currentUserId: String,
+        onResult: (Boolean) -> Unit
+    ) {
+        val chatRef = firestore.collection("chats").document(chatId)
 
-    fun deleteForMe(messageId: String, currentUserId: String,chatId:String) {
-
-        val messageRef = FirebaseFirestore.getInstance()
-            .collection("chats")
-            .document(chatId)
-            .collection("messages")
-            .document(messageId)
-
-        messageRef.update(
-            "deletedFor",
-            FieldValue.arrayUnion(currentUserId)
-        )
+        chatRef.update("deletedAt.$currentUserId", System.currentTimeMillis())
+            .addOnSuccessListener { onResult(true) }
+            .addOnFailureListener { e ->
+                // document/field not exist → create map safely
+                val data = mapOf("deletedAt" to mapOf(currentUserId to System.currentTimeMillis()))
+                chatRef.set(data, SetOptions.merge())
+                    .addOnSuccessListener { onResult(true) }
+                    .addOnFailureListener { e2 ->
+                        e2.printStackTrace()
+                        onResult(false)
+                    }
+            }
     }
+
 
     fun observeChatList(
         users: List<ChatUserModel>, myUserId: String
@@ -203,42 +268,6 @@ class ChatRepository @Inject constructor(private val firestore: FirebaseFirestor
             )
             .await()
     }
-
-
-
-
-
-    // old createLiveLocationMessageCode
-
-//    suspend fun createLiveLocationMessage(
-//        chatId: String,
-//        senderId: String,
-//        receiverId: String,
-//        duration: Int
-//    ): String {
-//
-//        val expiresAt = Timestamp(
-//            System.currentTimeMillis() / 1000 + duration * 60,
-//            0
-//        )
-//
-//        val message = Message(
-//            senderId = senderId,
-//            receiverId = receiverId,
-//            type = MessageType.LOCATION,
-//            isLive = true,
-//            expiresAt = expiresAt,
-//            timestamp = Timestamp.now()
-//        )
-//
-//        val docRef = firestore.collection("chats").document(chatId)
-//                .collection("messages")
-//                .document()
-//
-//        docRef.set(message).await()
-//
-//        return docRef.id
-//    }
 
 
     suspend fun createLiveLocationMessage(

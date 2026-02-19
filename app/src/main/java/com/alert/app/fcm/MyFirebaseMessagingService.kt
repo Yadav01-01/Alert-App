@@ -19,7 +19,9 @@ import com.alert.app.R
 import com.google.firebase.messaging.FirebaseMessagingService
 import com.google.firebase.messaging.RemoteMessage
 import androidx.core.content.edit
+import com.alert.app.activity.IncomingAudioCallActivity
 import com.alert.app.calling.CallActionReceiverTwo
+import com.alert.app.calling.IncomingAudioCallService
 import com.alert.app.calling.IncomingCallService
 
 class MyFirebaseMessagingService : FirebaseMessagingService() {
@@ -35,17 +37,9 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
         val title = remoteMessage.notification?.title ?: "Notification"
         val body = remoteMessage.notification?.body ?: "No content"
 
-        // Show the notification
-       // showNotification(title, body)
 
-        // Increment stored count
-        incrementNotificationCount()
 
-        // If app is in foreground, use TTS via broadcast
-//        if (isAppInForeground(this)) {
-//            val intent = Intent("FCM_NOTIFICATION_RECEIVED")
-//            sendBroadcast(intent)
-//        }
+
 
         callphoneWithRing(remoteMessage)
 
@@ -60,15 +54,27 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
             startIncomingCallService(title, body)
         }
 
-    // older code
+        else if(remoteMessage.data.get("type").equals("incoming_call")){
+               val channelName = remoteMessage.data.get("channel_name").toString()
+               val agoraToken = remoteMessage.data.get("agora_token").toString()
+               val appId = remoteMessage.data.get("agora_app_id").toString()
+               val callerName = remoteMessage.data.get("caller_name").toString()
+               val image = "https://fastly.picsum.photos/id/345/536/354.jpg?hmac=VQu01ToDu1bkvsCxDdsQWV3Ur5r3ot9yrN32rnufbXQ"
 
-        // showIncomingCallNotification("Nikunj","122")
-        //        if(remoteMessage.data.isNotEmpty() && remoteMessage.data["type"] == "incoming_call") {
-        //            val callerName = remoteMessage.data["caller_name"] ?: "APWL Connect Calling"
-        //            val callSessionId = remoteMessage.data["caller_id"] ?: ""
-        //            Log.d("testing_notification","Call SessionId is"+callSessionId);
-        //            startIncomingCallService(callerName,callSessionId)
-         //        }
+            val svcIntent = Intent(this, IncomingAudioCallService::class.java).apply {
+                putExtra("channel_name", channelName)
+                putExtra("agora_token", agoraToken)
+                putExtra("agora_app_id", appId)
+                putExtra("caller_name", callerName)
+                putExtra("image", image)
+            }
+
+            ContextCompat.startForegroundService(this, svcIntent)
+        }
+
+
+
+
 
     }
 
@@ -131,7 +137,6 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
 
 
     private fun startIncomingCallService(caller: String, sessionId: String) {
-
         stopService(Intent(this, IncomingCallService::class.java))
 
         val svcIntent = Intent(this, IncomingCallService::class.java).apply {

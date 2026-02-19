@@ -59,12 +59,14 @@ class ChatActivity : AppCompatActivity() {
         chatViewModel = ViewModelProvider(this)[ChatScreenViewModel::class.java]
 
         if(intent.hasExtra("contactUserId")){
-           contactUserId = intent.getStringExtra("contactUserId")?:"-1"
+           contactUserId = intent.getIntExtra("contactUserId",-1).toString()
         }
+        Log.d("TESTING_CHAT_ID","Inside chat activity "+contactUserId)
 
         if(intent.hasExtra(AppConstant.CHAT_ID)){
             chatId = intent.getStringExtra(AppConstant.CHAT_ID)?:"-1"
         }
+
         currentUserId = SessionManagement(this).getUserId().toString()
 
         setupToolbar()
@@ -84,10 +86,13 @@ class ChatActivity : AppCompatActivity() {
               messageList = messages
               Log.d("Testing_message",messages.size.toString())
               adapter.submitList(messages.toMutableList())
-           }
+            binding.rvMessages.smoothScrollToPosition(adapter.itemCount - 1)
+
+        }
 
         workingForLiveLocationSharing()
-         checkingOtherUserStatus()
+        checkingOtherUserStatus()
+
     }
 
     private fun workingForLiveLocationSharing(){
@@ -169,6 +174,7 @@ class ChatActivity : AppCompatActivity() {
     }
 
     fun getOtherUserId(chatId: String, currentUserId: String): String {
+       Log.d("TESTING_CHAT_ID","CHAT ID IS"+chatId+" Current UserId is"+ currentUserId)
         val (id1, id2) = chatId.split("_")
         return if (id1 == currentUserId) id2 else id1
     }

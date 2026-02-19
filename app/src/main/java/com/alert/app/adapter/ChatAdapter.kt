@@ -40,6 +40,7 @@ class ChatAdapter(
     fun submitList(list: MutableList<Message>) {
         this.list = list
         notifyDataSetChanged()
+
     }
 
     override fun getItemViewType(position: Int): Int {

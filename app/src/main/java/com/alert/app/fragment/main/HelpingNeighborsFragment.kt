@@ -803,7 +803,7 @@ class HelpingNeighborsFragment : Fragment() , OnClickContact, OnMapReadyCallback
         Log.d("TESTING_PROFILE","profile image is"+BuildConfig.BASE_URL+profileImage)
 
         Glide.with(requireActivity())
-            .load(AppConstant.IMAGE_BASE_URL + profileImage)
+            .load( profileImage)
             .error(R.drawable.no_image)
             .placeholder(R.drawable.no_image)
             .listener(object : RequestListener<Drawable> {

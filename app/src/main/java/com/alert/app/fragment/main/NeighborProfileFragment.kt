@@ -184,6 +184,7 @@ import androidx.navigation.fragment.findNavController
 import com.alert.app.R
 import com.alert.app.activity.CallActivity
 import com.alert.app.activity.ChatActivity
+import com.alert.app.activity.InCallActivity
 import com.alert.app.base.AppConstant
 import com.alert.app.base.BaseApplication
 import com.alert.app.databinding.FragmentNeighborProfileBinding
@@ -204,6 +205,7 @@ import com.google.gson.Gson
 import com.google.gson.JsonObject
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
+import kotlinx.serialization.builtins.ByteArraySerializer
 import kotlin.text.split
 
 @AndroidEntryPoint
@@ -221,16 +223,44 @@ class NeighborProfileFragment : Fragment() {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
-
         contactId= arguments?.getString("contactId").toString()
-
+        Log.d("TESTING_IN_CALL","HERE INSIDE onVIEW Created")
         viewModel = ViewModelProvider(this)[NeighborProfileViewModel::class.java]
-
         setupStatusBarAppearance()
         setupClickListeners()
         getNeighborProfile()
-
     }
+
+
+    private fun callingAudioCallApi(){
+        Log.d("TESTING_IN_CALL","HERE INSIDE CALL")
+
+        BaseApplication.openDialog()
+        lifecycleScope.launch {
+            viewModel.getCallInitiate(contactId.toInt()).collect {
+                when(it){
+                    is NetworkResult.Success ->{
+                        BaseApplication.dismissDialog()
+                        val intent = Intent(requireActivity(), InCallActivity::class.java)
+                        intent.putExtra(AppConstant.CHANNEL, it.data?.channel_name)
+                        intent.putExtra(AppConstant.APPiD,it.data?.app_id)
+                        intent.putExtra(AppConstant.TOKEN,it.data?.token)
+                        intent.putExtra(AppConstant.NAME,binding.textNeighborName.text.toString())
+                        intent.putExtra(AppConstant.IMAGE,profilePath)
+                        startActivity(intent)
+                    }
+                    is NetworkResult.Error ->{
+                        BaseApplication.dismissDialog()
+                        BaseApplication.alertError(requireContext(),it.message.toString(),false)
+                    }
+                    else ->{
+
+                    }
+                }
+            }
+        }
+    }
+
 
     private fun getNeighborProfile() {
         if (BaseApplication.isOnline(requireContext())) {
@@ -357,17 +387,15 @@ class NeighborProfileFragment : Fragment() {
             val intent = Intent(context, ChatActivity::class.java)
             intent.putExtra(AppConstant.NAME,viewModel.userName)
             intent.putExtra(AppConstant.PROFILE, profilePath)
-            intent.putExtra(AppConstant.CONTACT_USER_ID, viewModel.userId)
+            Log.d("TESTING_CHAT_ID","Inside Neighbour Scrren"+viewModel.userId)
+            intent.putExtra("contactUserId", viewModel.userId)
             startActivity(intent)
 
         }
 
         binding.imgCall.setOnClickListener {
-            val channelName = "call_${System.currentTimeMillis()}"
-            val intent = Intent(requireContext(), CallActivity::class.java).apply {
-                putExtra("channelName", channelName)
-            }
-            startActivity(intent)
+            Log.d("TESTING_IN_CALL","HERE INSIDE CALL")
+            callingAudioCallApi()
             /*startActivity(Intent(requireContext(), CallActivity::class.java))*/
         }
 

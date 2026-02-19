@@ -28,7 +28,7 @@ class SplashActivity : AppCompatActivity() {
     private fun initialize() {
         Handler().postDelayed({
             if (sessionManagement.getLoginSession()) {
-                val intent = Intent(this@SplashActivity, MainActivity::class.java)
+                val intent = Intent(this@SplashActivity, InCallActivity::class.java)
                 startActivity(intent)
                 finish()
             } else {

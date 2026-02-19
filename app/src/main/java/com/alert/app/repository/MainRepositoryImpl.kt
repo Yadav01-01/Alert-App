@@ -6,6 +6,7 @@ import com.alert.app.di.ApiInterfaceClass
 import com.alert.app.di.NetworkResult
 import com.alert.app.errormessage.MessageClass
 import com.alert.app.model.AddressModel
+import com.alert.app.model.CallChannel
 import com.alert.app.model.ChatUserModel
 import com.alert.app.model.contact.UserContactRequest
 import com.alert.app.model.contact.UserEditContactRequest
@@ -2156,4 +2157,45 @@ class MainRepositoryImpl @Inject constructor(private val apiInterface: ApiInterf
             emit(NetworkResult.Error(e.message ?: ""))
         }
     }
+
+    override suspend fun getCallInitiate(receiver_id: Int): Flow<NetworkResult<CallChannel>> = flow {
+        try {
+            apiInterface.callInitiate(receiver_id).apply {
+                if (isSuccessful) {
+                    body()?.let { resp ->
+                        if (resp.has("status") && resp.get("status").asBoolean) {
+                            val data = resp.get("data").asJsonObject
+                            val call = data.get("call").asJsonObject
+                            val gson = Gson()
+                            val callModel =  gson.fromJson(call, CallChannel::class.java)
+
+                            emit(NetworkResult.Success(callModel))
+                        }
+                        else {
+                            emit(NetworkResult.Error(resp.get("message").asString))
+                        }
+                    } ?: emit(NetworkResult.Error(AppConstant.unKnownError))
+                }
+                else {
+                    try {
+                        val jsonObj = this.errorBody()?.string()?.let { JSONObject(it) }
+                        emit(
+                            NetworkResult.Error(
+                                jsonObj?.getString("message")
+                                    ?: AppConstant.unKnownError
+                            )
+                        )
+                    } catch (e: JSONException) {
+                        e.printStackTrace()
+                        emit(NetworkResult.Error(AppConstant.unKnownError))
+                    }
+                }
+            }
+        } catch (e: Exception) {
+            emit(NetworkResult.Error(e.message ?: ""))
+        }
+    }
+
+
+
 }
