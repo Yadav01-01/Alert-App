@@ -24,6 +24,7 @@ import androidx.lifecycle.ViewModelProvider
 import androidx.navigation.ui.AppBarConfiguration
 import com.alert.app.R
 import com.alert.app.base.AppConstant
+import com.alert.app.base.BaseApplication
 import com.alert.app.calling.IncomingAudioCallService
 import com.alert.app.databinding.ActivityInCallBinding
 import com.alert.app.databinding.ActivityMainBinding
@@ -48,6 +49,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+
 @AndroidEntryPoint
 class InCallActivity : AppCompatActivity() {
 
@@ -57,7 +59,6 @@ class InCallActivity : AppCompatActivity() {
     private var ringtonePlayer: MediaPlayer? = null
 
     private val TAG = "AGORA_DEBUG"
-
     // ✅ TEST VALUES
     private var channelName = "call_fd9e3f48-2ab8-4d35-a061-b0d18e7443eb"
     private var appId = "3d45540a74844ab68670e75d586cc630"
@@ -218,17 +219,18 @@ class InCallActivity : AppCompatActivity() {
 
     fun observeIncomingCall(chatToken: String) {
         val firestore = FirebaseFirestore.getInstance()
+        val safeToken = BaseApplication.safeDocIdFromToken(chatToken)
+
         firestore.collection("calls")
-            .document(chatToken)
+            .document(safeToken)
             .addSnapshotListener { snapshot, error ->
                 if (error != null || snapshot == null || !snapshot.exists()) return@addSnapshotListener
-
                 val data = snapshot.data ?: return@addSnapshotListener
                 val status = data["status"] as? String ?: "ringing"
+
                 when (status) {
                     "ended" -> {
                         endCall()
-
                     }
                 }
             }
@@ -247,8 +249,6 @@ class InCallActivity : AppCompatActivity() {
 
         rtcEngine?.muteAllRemoteAudioStreams(false)
     }
-
-    // ================= EVENTS =================
 
     private val rtcEventHandler = object : IRtcEngineEventHandler() {
 
@@ -336,12 +336,10 @@ class InCallActivity : AppCompatActivity() {
     private fun endCall() {
         if (isCallEnded) return
         isCallEnded = true
-
         val firestore = FirebaseFirestore.getInstance()
-
         // Update Firestore so other party knows
         firestore.collection("calls")
-            .document(token)
+            .document(BaseApplication.safeDocIdFromToken(token))
             .update("status", "ended")
             .addOnSuccessListener { Log.d("CallFirestore", "Call ended") }
 
@@ -355,7 +353,6 @@ class InCallActivity : AppCompatActivity() {
         super.onDestroy()
         viewModel.stopTimer()
         cleanupAgora()
-
     }
 
 
@@ -372,9 +369,4 @@ class InCallActivity : AppCompatActivity() {
         ringtonePlayer?.release()
         ringtonePlayer = null
     }
-
-
-
 }
-
-

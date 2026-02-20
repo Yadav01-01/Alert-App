@@ -21,6 +21,9 @@ import com.alert.app.activity.InCallActivity
 import com.alert.app.activity.IncomingAudioCallActivity
 import com.alert.app.activity.IncomingCallActivity
 import com.alert.app.base.AppConstant
+import com.alert.app.base.BaseApplication
+import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.firestore.ListenerRegistration
 
 class IncomingAudioCallService : Service() {
 
@@ -210,11 +213,11 @@ class IncomingAudioCallService : Service() {
 //        const val NOTIFICATION_ID = 1001
 //        const val CHANNEL_ID = "incoming_call_channel"
 //    }
-private var mediaPlayer: MediaPlayer? = null
+    private var mediaPlayer: MediaPlayer? = null
     private val STOP_AFTER_MS = 60_000L
     private val handler = Handler(Looper.getMainLooper())
     private val stopRunnable = Runnable { stopSelf() }
-
+    private var callListener: ListenerRegistration? = null
     private var channelName = ""
     private var agoraToken = ""
     private var appId = ""
@@ -239,25 +242,61 @@ private var mediaPlayer: MediaPlayer? = null
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
             startForeground(
-                NOTIFICATION_ID,
-                notification,
+                NOTIFICATION_ID, notification,
                 ServiceInfo.FOREGROUND_SERVICE_TYPE_PHONE_CALL
             )
-        } else {
+        }
+        else {
             startForeground(NOTIFICATION_ID, notification)
         }
 
+        observeCallStatus()
+
         startRingtone()
 
-        // Auto stop after 60 sec if not answered
         handler.postDelayed(stopRunnable, STOP_AFTER_MS)
 
         return START_NOT_STICKY
     }
 
+    private fun observeCallStatus() {
+
+        if (agoraToken.isEmpty()) return
+
+        val firestore = FirebaseFirestore.getInstance()
+        val safeToken = BaseApplication.safeDocIdFromToken(agoraToken)
+
+        callListener = firestore.collection("calls")
+            .document(safeToken)
+            .addSnapshotListener { snapshot, error ->
+                if (error != null || snapshot == null || !snapshot.exists()) {
+                    stopServiceNow()
+                    return@addSnapshotListener
+                }
+
+                val status = snapshot.getString("status")
+
+                when (status) {
+                    "cancelled", "ended", "rejected" -> {
+                        stopServiceNow()
+                    }
+                }
+            }
+    }
+    private fun stopServiceNow() {
+        stopRingtone()
+        handler.removeCallbacks(stopRunnable)
+        callListener?.remove()
+        callListener = null
+        stopForeground(true)
+        stopSelf()
+    }
+
     override fun onDestroy() {
         stopRingtone()
         handler.removeCallbacks(stopRunnable)
+        callListener?.remove()
+        callListener = null
         super.onDestroy()
     }
 
@@ -305,9 +344,12 @@ private var mediaPlayer: MediaPlayer? = null
         )
 
         // 🔹 Decline Button
+
         val declineIntent = Intent(this, CallActionReceiver::class.java).apply {
             action = CallActionReceiver.ACTION_DECLINE
+            putExtra(AppConstant.TOKEN, agoraToken)
         }
+
 
         val declinePendingIntent = PendingIntent.getBroadcast(
             this,
@@ -399,7 +441,6 @@ private var mediaPlayer: MediaPlayer? = null
         const val NOTIFICATION_ID = 1001
         const val CHANNEL_ID = "incoming_call_channel"
     }
-
 
 
 

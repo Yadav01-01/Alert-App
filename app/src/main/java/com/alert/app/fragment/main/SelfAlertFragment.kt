@@ -93,7 +93,7 @@ class SelfAlertFragment : Fragment(), SelfAlertClick {
         if (BaseApplication.isOnline(requireContext())) {
             BaseApplication.openDialog()
             lifecycleScope.launch {
-                viewModel.getSelfAlerts("self").collect {
+                viewModel.getSelfAlerts("self","self").collect {
                     BaseApplication.dismissDialog()
                     when (it) {
                         is NetworkResult.Success -> {

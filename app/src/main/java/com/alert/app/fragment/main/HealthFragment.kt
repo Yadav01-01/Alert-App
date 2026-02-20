@@ -77,7 +77,7 @@ class HealthFragment : Fragment() {
 
 //        binding.rcyData.adapter = adapterSelfHealthList  // default
 
-        getSelfAlerts("self")
+        getSelfAlerts("health","self")
 
 //        initializeAdapterAlerts()
 
@@ -97,7 +97,7 @@ class HealthFragment : Fragment() {
             binding.self.setTextColor("#0B0202".toColorInt())
             binding.other.setTextColor("#777777".toColorInt())
             binding.rcyData.adapter = adapterSelfHealthList
-            getSelfAlerts("self")
+            getSelfAlerts("health","self")
         }
 
         binding.layOther.setOnClickListener {
@@ -110,7 +110,7 @@ class HealthFragment : Fragment() {
             adapterOtherHealthList.notifyDataSetChanged()
 
             binding.rcyData.adapter = adapterOtherHealthList
-            getSelfAlerts("health")
+            getSelfAlerts("health","other")
         }
 
 
@@ -124,11 +124,11 @@ class HealthFragment : Fragment() {
     }
 
 
-    private fun getSelfAlerts(type:String) {
+    private fun getSelfAlerts(type:String,alertFor:String) {
         if (BaseApplication.isOnline(requireContext())) {
             BaseApplication.openDialog()
             lifecycleScope.launch {
-                viewModel.getSelfAlerts(type).collect {
+                viewModel.getSelfAlerts(type,alertFor).collect {
                     BaseApplication.dismissDialog()
                     handleApiResponse(it,type)
                 }
@@ -167,31 +167,6 @@ class HealthFragment : Fragment() {
             showAlert(e.message, false)
         }
     }
-
- /*   private fun showDataInUI(data: MutableList<SelfAlert>,type:String) {
-        dataSelfAlert.clear()
-        try {
-            data.let {
-                dataSelfAlert.addAll(it)
-            }
-
-            if (dataSelfAlert.size>0){
-                binding.rcyData.visibility=View.VISIBLE
-                if (type.equals("self",true)) {
-                    adapterSelfHealthList.update(dataSelfAlert)
-                }else{
-                    adapterOtherHealthList.update(dataSelfAlert)
-                }
-            }else{
-                binding.rcyData.visibility=View.GONE
-            }
-
-        }catch (e:Exception){
-            showAlert(e.message, false)
-
-        }
-
-    }*/
 
     private fun showDataInUI(data: MutableList<SelfAlert>, type: String) {
         try {

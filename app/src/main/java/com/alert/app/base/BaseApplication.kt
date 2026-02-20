@@ -24,6 +24,7 @@ import com.airbnb.lottie.LottieAnimationView
 import com.alert.app.R
 import com.alert.app.activity.AuthActivity
 import com.alert.app.errormessage.MessageClass
+import java.security.MessageDigest
 import java.text.SimpleDateFormat
 import java.util.Locale
 
@@ -398,6 +399,18 @@ object BaseApplication {
 
     fun dismissDialog(){
         dialog?.dismiss()
+    }
+
+
+    fun safeDocIdFromToken(token: String): String {
+        if (token.isBlank()) {
+            throw IllegalArgumentException("Token cannot be blank")
+        }
+
+        val bytes = MessageDigest.getInstance("SHA-256")
+            .digest(token.toByteArray())
+
+        return bytes.joinToString("") { "%02x".format(it) }
     }
 
     fun isOnline(context: Context?): Boolean {

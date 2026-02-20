@@ -3,7 +3,11 @@ package com.alert.app.calling
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
+import android.util.Log
 import com.alert.app.activity.InCallActivity
+import com.alert.app.base.AppConstant
+import com.alert.app.base.BaseApplication
+import com.google.firebase.firestore.FirebaseFirestore
 
 class CallActionReceiver : BroadcastReceiver() {
 
@@ -26,7 +30,28 @@ class CallActionReceiver : BroadcastReceiver() {
             }
             ACTION_DECLINE -> {
                 // Stop ringtone and send decline to server
-                context.stopService(Intent(context, IncomingCallService::class.java))
+                val token = intent.getStringExtra(AppConstant.TOKEN).orEmpty()
+                if (token.isBlank()) return
+
+                val safeToken = BaseApplication.safeDocIdFromToken(token)
+
+                val firestore = FirebaseFirestore.getInstance()
+                firestore.collection("calls")
+                    .document(safeToken)
+                    .update("status", "ended")
+                    .addOnSuccessListener {
+                        Log.d("CallFirestore", "Call declined")
+                    }
+                    .addOnFailureListener {
+                        Log.e("CallFirestore", "Decline failed", it)
+                    }
+
+                // 🔕 Stop ringing service
+                context.stopService(
+                    Intent(context, IncomingAudioCallService::class.java)
+                )
+
+
                 // TODO: send decline signal to your server
             }
             else -> {}

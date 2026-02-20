@@ -130,7 +130,7 @@ class MainActivity : AppCompatActivity() {
                 tts.language = Locale.US
                 isTtsReady = true
 
-                speakTotalNotifications()
+               // speakTotalNotifications()
             }
         }
 

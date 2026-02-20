@@ -14,8 +14,8 @@ import javax.inject.Inject
 class HealthAlertViewModel @Inject constructor(private val repository: MainRepository) : ViewModel()  {
 
 
-    suspend fun getSelfAlerts(type: String?): Flow<NetworkResult<JsonObject>> {
-        return repository.getSelfAlerts(type).onEach {
+    suspend fun getSelfAlerts(type: String?,alertFor:String?): Flow<NetworkResult<JsonObject>> {
+        return repository.getSelfAlerts(type,alertFor).onEach {
         }
     }
 

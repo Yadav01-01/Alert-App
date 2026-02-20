@@ -174,7 +174,9 @@ interface ApiInterfaceClass {
 
     @FormUrlEncoded
     @POST(ApiEndPoint.getSelfAlerts)
-    suspend fun getSelfAlerts(@Field("type") type: String?): Response<JsonObject>
+    suspend fun getSelfAlerts(@Field("alert_type") type: String?,
+                              @Field("alertFor") alertFor :String?
+                              ): Response<JsonObject>
 
     @POST(ApiEndPoint.addSelfAlert)
     suspend fun addSelfAlert(@Body createSelfAlertRequest: CreateSelfAlertRequest): Response<JsonObject>
@@ -353,6 +355,7 @@ interface ApiInterfaceClass {
     suspend fun callInitiate(
         @Field("receiver_id") receiverId :Int
      ) : Response<JsonObject>
+
 
 
 

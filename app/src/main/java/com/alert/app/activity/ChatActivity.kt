@@ -93,7 +93,6 @@ class ChatActivity : AppCompatActivity() {
 
         workingForLiveLocationSharing()
         checkingOtherUserStatus()
-
     }
 
     private fun workingForLiveLocationSharing(){

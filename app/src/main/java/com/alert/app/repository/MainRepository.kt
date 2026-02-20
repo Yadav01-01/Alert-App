@@ -135,7 +135,7 @@ interface MainRepository {
 
     suspend fun getAlert(contactId: String): Flow<NetworkResult<JsonObject>>
 
-    suspend fun getSelfAlerts(type: String?): Flow<NetworkResult<JsonObject>>
+    suspend fun getSelfAlerts(type: String?,alertFor:String?): Flow<NetworkResult<JsonObject>>
 
     suspend fun addSelfAlert(createSelfAlertRequest: CreateSelfAlertRequest): Flow<NetworkResult<JsonObject>>
 
