@@ -58,6 +58,7 @@ class SelfAlertFragment : Fragment(), SelfAlertClick {
         (requireActivity() as MainActivity).setImgChatBoot().visibility =View.GONE
 
     }
+
     private fun setupRecyclerView() {
         adapter = SelfAlertAdapter(requireContext(), selfAlert,this)
         binding.rcyData.adapter = adapter

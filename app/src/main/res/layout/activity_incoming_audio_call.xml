@@ -1,16 +1,39 @@
 <?xml version="1.0" encoding="utf-8"?>
-<RelativeLayout
-    xmlns:android="http://schemas.android.com/apk/res/android"
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:padding="24dp"
-    android:background="@drawable/bg_gradient">
+    android:background="@drawable/profile_bg">
+
+
+    <LinearLayout
+        android:id="@+id/profile"
+        android:layout_width="wrap_content"
+        android:layout_marginTop="@dimen/_25sdp"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center_horizontal"
+        android:gravity="center_horizontal"
+         android:layout_centerHorizontal="true"
+        android:background="@drawable/shadow_circle">
+
+        <de.hdodenhof.circleimageview.CircleImageView
+            android:id="@+id/user_img"
+            android:layout_width="@dimen/_80sdp"
+            android:layout_height="@dimen/_80sdp"
+            app:civ_border_width="@dimen/_2sdp"
+            android:layout_gravity="center_horizontal"
+            app:civ_border_color="#FF264B9B"
+            android:src="@drawable/user_dummy_icon" />
+
+    </LinearLayout>
+
 
     <TextView
         android:id="@+id/tv_info"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text=""
+        android:text="Ringing"
         android:layout_below="@id/tv_caller"
         android:textColor="@color/white"
         android:textSize="@dimen/_15sdp"
@@ -25,32 +48,38 @@
         android:textColor="@color/white"
         android:textStyle="bold"
         android:textSize="@dimen/_19sdp"
+        android:layout_below="@+id/profile"
         android:layout_centerHorizontal="true"
-        android:layout_marginTop="80dp"
+        android:layout_marginTop="20dp"
         />
-    <Button
+
+    <ImageView
         android:id="@+id/btn_accept"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="Answer"
+        android:layout_width="@dimen/_70sdp"
+        android:layout_height="@dimen/_70sdp"
+        android:src="@drawable/ic_call_receive"
         android:visibility="visible"
         android:backgroundTint="@color/green"
         android:layout_alignParentBottom="true"
-        android:layout_marginBottom="48dp"
+        android:layout_marginBottom="78dp"
         android:layout_centerHorizontal="true"
         android:layout_alignParentStart="true"
-        android:layout_marginStart="24dp"/>
+        android:layout_marginStart="24dp"
+        />
 
-    <Button
+
+    <ImageView
         android:id="@+id/btn_decline"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="Decline"
+        android:layout_width="@dimen/_70sdp"
+        android:layout_height="@dimen/_70sdp"
         android:visibility="visible"
+        android:src="@drawable/ic_call_end"
         android:backgroundTint="@color/cb_errorRed"
         android:layout_alignParentBottom="true"
-        android:layout_marginBottom="48dp"
-      android:layout_alignParentEnd="true"
-        android:layout_marginEnd="24dp"/>
+        android:layout_marginBottom="78dp"
+        android:layout_alignParentEnd="true"
+        android:layout_marginEnd="24dp"
+        />
+
 
 </RelativeLayout>

@@ -154,27 +154,67 @@ class HealthAlertCalanderFragment : Fragment() {
             }
 
             // Listen for date range selection
-            setOnRangeSelectedListener { _, dates ->
-                if (dates.isNotEmpty()) {
+            setOnRangeSelectedListener { widget, dates ->
+            //    if (dates.isNotEmpty()) {
 
-                    val start = dates.first()
-                    val end = dates.last()
+//                    val start = dates.first()
+//                    val end = dates.last()
+//
+//                    // Save selected dates
+//                    startDateApi = start
+//                    endDateApi = end
+//
+//                    startDate = formatCalendarDay(start, dateFormat)
+//                    endDate = formatCalendarDay(end, dateFormat)
+//
+//                    binding.dateTv.text = "$startDate to $endDate"
+//
+//                    Log.d("CALENDAR", "Start Date: $startDate")
+//                    Log.d("CALENDAR", "End Date: $endDate")
+//
+//
+//                    //   binding.cal.visibility = View.GONE
+//                }
 
-                    // Save selected dates
-                    startDateApi = start
-                    endDateApi = end
-
-                    startDate = formatCalendarDay(start, dateFormat)
-                    endDate = formatCalendarDay(end, dateFormat)
-
-                    binding.dateTv.text = "$startDate to $endDate"
-
-                    Log.d("CALENDAR", "Start Date: $startDate")
-                    Log.d("CALENDAR", "End Date: $endDate")
 
 
-                    //   binding.cal.visibility = View.GONE
+               // }
+
+                if (dates.isEmpty()) return@setOnRangeSelectedListener
+
+                // ✅ SINGLE DATE
+                if (dates.size == 1) {
+
+                    val day = dates.first()
+
+                    // 🔥 FORCE CLEAR OLD RANGE
+                    widget.clearSelection()
+
+                    // ✅ SELECT SINGLE DATE PROPERLY
+                    widget.setDateSelected(day, true)
+
+                    startDateApi = day
+                    endDateApi = null
+
+                    startDate = formatCalendarDay(day)
+                    endDate = null
+
+                    binding.dateTv.text = startDate
+                    return@setOnRangeSelectedListener
                 }
+
+                // ✅ RANGE SELECTED
+                val start = dates.first()
+                val end = dates.last()
+
+                startDateApi = start
+                endDateApi = end
+
+                startDate = formatCalendarDay(start)
+                endDate = formatCalendarDay(end)
+
+                binding.dateTv.text = "$startDate to $endDate"
+
             }
         }
     }
@@ -258,10 +298,20 @@ class HealthAlertCalanderFragment : Fragment() {
                 restoreSelectedRange()
             }
         }
-
         binding.btnSetAlert.setOnClickListener {
             // if (selectedDate.isNullOrEmpty() || startTime.isNullOrEmpty()) {
-            if (startDate.isNullOrEmpty() || endDate.isNullOrEmpty() || startTime.isNullOrEmpty()) {
+//            if (startDate.isNullOrEmpty() || endDate.isNullOrEmpty() || startTime.isNullOrEmpty()) {
+//                AlertUtils.showAlert(
+//                    requireContext(),
+//                    "Please select date and start time",
+//                    false
+//                )
+//                return@setOnClickListener
+//            }
+
+
+            // Basic validation
+            if (startDateApi == null || startTime.isNullOrEmpty()) {
                 AlertUtils.showAlert(
                     requireContext(),
                     "Please select date and start time",
@@ -269,7 +319,18 @@ class HealthAlertCalanderFragment : Fragment() {
                 )
                 return@setOnClickListener
             }
-            val timeFormatted = convertTimeToHourMinute(startTime)
+
+
+            if (endDateApi == null) {
+                endDateApi = startDateApi
+            }
+
+
+            Log.d("TESTING_TIME",startTime.toString())
+
+            val timeFormatted = viewModel.convertTimeTo24Hour(startTime)
+
+            Log.d("TESTING_TIME",timeFormatted.toString())
 
             lifecycleScope.launch {
                 BaseApplication.openDialog()
@@ -308,22 +369,7 @@ class HealthAlertCalanderFragment : Fragment() {
         }
     }
 
-    @SuppressLint("DefaultLocale")
-    private fun convertTimeToHourMinute(time: String?): String {
-        if (time.isNullOrEmpty()) return "00:00"
 
-        val value = time.split(" ")[0].toIntOrNull() ?: return "00:00"
-
-        return when {
-            time.contains("Hour", true) -> {
-                String.format("%02d:00", value)
-            }
-            time.contains("Minute", true) -> {
-                String.format("00:%02d", value)
-            }
-            else -> "00:00"
-        }
-    }
 
     private fun showTimePicker(onTimeSelected: (String) -> Unit) {
         val calendar = Calendar.getInstance()

@@ -17,6 +17,7 @@ import kotlinx.coroutines.flow.onEach
 import retrofit2.http.Field
 import javax.inject.Inject
 import androidx.lifecycle.viewModelScope
+import com.alert.app.model.CallChannel
 import com.alert.app.model.MessageType
 import com.google.firebase.firestore.GeoPoint
 import kotlinx.coroutines.launch
@@ -62,7 +63,11 @@ class ChatScreenViewModel  @Inject constructor(
                 liveLocationMessageId = null
         }
     }
+    suspend fun getCallInitiate(receiver_id: Int): Flow<NetworkResult<CallChannel>>{
+        return repository1.getCallInitiate(receiver_id).onEach {
 
+        }
+    }
 
     suspend fun getChatList(): Flow<NetworkResult<MutableList<ChatUserModel>>> {
         return repository1.getChannelList().onEach {

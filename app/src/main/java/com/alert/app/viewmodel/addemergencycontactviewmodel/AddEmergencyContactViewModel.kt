@@ -2,6 +2,7 @@ package com.alert.app.viewmodel.addemergencycontactviewmodel
 
 import androidx.lifecycle.ViewModel
 import com.alert.app.di.NetworkResult
+import com.alert.app.model.CallChannel
 import com.alert.app.model.helpingneighbormodel.CreateHelpingNeighbor
 import com.alert.app.repository.MainRepository
 import com.google.gson.JsonObject
@@ -30,6 +31,12 @@ class AddEmergencyContactViewModel @Inject constructor(private val repository: M
 
     suspend fun getAllAlerts(): Flow<NetworkResult<JsonObject>> {
         return repository.getAllAlerts().onEach {
+        }
+    }
+
+    suspend fun getCallInitiate(receiver_id: Int): Flow<NetworkResult<CallChannel>>{
+        return repository.getCallInitiate(receiver_id).onEach {
+
         }
     }
 

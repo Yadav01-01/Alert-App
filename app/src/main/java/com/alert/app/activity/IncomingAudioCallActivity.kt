@@ -20,7 +20,9 @@ import com.alert.app.base.BaseApplication
 import com.alert.app.calling.IncomingAudioCallService
 import com.alert.app.calling.IncomingCallService
 import com.alert.app.databinding.ActivityIncomingAudioCallBinding
+import com.bumptech.glide.Glide
 import com.google.firebase.firestore.FirebaseFirestore
+import de.hdodenhof.circleimageview.CircleImageView
 
 class IncomingAudioCallActivity : AppCompatActivity() {
 
@@ -154,7 +156,10 @@ private lateinit var binding: ActivityIncomingAudioCallBinding
         image = intent.getStringExtra(AppConstant.IMAGE) ?: ""
 
         binding.tvCaller.text = callerName
-        binding.tvInfo.text = "Incoming Audio Call"
+        binding.tvInfo.text = "Ringing"
+
+
+        Glide.with(this).load(image).placeholder(R.drawable.user_img_icon).into(binding.userImg)
 
         Log.d(
             "IncomingCall",

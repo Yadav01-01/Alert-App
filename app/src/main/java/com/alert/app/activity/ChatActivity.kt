@@ -20,6 +20,7 @@ import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.lifecycleScope
 import com.alert.app.R
 import com.alert.app.base.AppConstant
+import com.alert.app.base.BaseApplication
 import com.alert.app.base.SessionManagement
 import com.alert.app.chatgpt.UserRepository
 import com.alert.app.di.NetworkResult
@@ -46,7 +47,7 @@ class ChatActivity : AppCompatActivity() {
     private var messageList : List<Message> = mutableListOf()
     private lateinit var  chatViewModel : ChatScreenViewModel
     var contactUserId :String =""
-
+    var userProfileImage :String =""
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
@@ -65,6 +66,14 @@ class ChatActivity : AppCompatActivity() {
 
         if(intent.hasExtra(AppConstant.CHAT_ID)){
             chatId = intent.getStringExtra(AppConstant.CHAT_ID)?:"-1"
+            val userId = SessionManagement(this).getUserId()
+            val parts = chatId.split("_")
+            val firstUserId = parts[0]
+            val secondUserId = parts[1]
+            if(firstUserId == userId.toString())contactUserId = secondUserId
+
+            if(secondUserId == userId.toString()) contactUserId = firstUserId
+
         }
 
         currentUserId = SessionManagement(this).getUserId().toString()
@@ -143,7 +152,7 @@ class ChatActivity : AppCompatActivity() {
 
         if(intent?.hasExtra(AppConstant.PROFILE) == true){
 
-            val userProfileImage = intent.getStringExtra(AppConstant.PROFILE)
+             userProfileImage = intent.getStringExtra(AppConstant.PROFILE).toString()
 
             Log.d("TESTING_USER_PROFILE","Profile is "+userProfileImage.toString())
 
@@ -184,10 +193,8 @@ class ChatActivity : AppCompatActivity() {
 
         binding.imgCall.setOnClickListener {
             val channelName = "call_${System.currentTimeMillis()}"
-            startActivity(
-                Intent(this, CallActivity::class.java)
-                    .putExtra("channelName", channelName)
-            )
+
+            callingAudioCallApi(contactUserId.toInt(),binding.userName.text.toString(),userProfileImage)
         }
     }
 
@@ -222,6 +229,64 @@ class ChatActivity : AppCompatActivity() {
                 }else {
                     sendMessage(text)
                     binding.edMsg.text.clear()
+                }
+            }
+        }
+
+
+    }
+
+
+
+    private fun callingAudioCallApi(receiverId:Int,name:String,profile:String?){
+        Log.d("TESTING_IN_CALL","HERE INSIDE CALL")
+
+        BaseApplication.openDialog()
+        lifecycleScope.launch {
+            chatViewModel.getCallInitiate(receiverId).collect {
+                when(it){
+
+                    is NetworkResult.Success ->{
+                        it.data?.token?.let {
+                            val safeToken = BaseApplication.safeDocIdFromToken(it)
+
+
+                            val firestore = FirebaseFirestore.getInstance()
+                            val callData = hashMapOf(
+                                "chatToken" to it,
+                                "status" to "ringing",
+                                "receiverId" to receiverId
+                            )
+
+                            firestore.collection("calls")
+                                .document(safeToken) // use chatToken as unique call ID
+                                .set(callData)
+                                .addOnSuccessListener {
+                                    Log.d("CallFirestore", "Call document created")
+                                }
+                                .addOnFailureListener { e ->
+                                    Log.e("CallFirestore", "Failed to create call doc", e)
+                                }
+                        }
+                        BaseApplication.dismissDialog()
+                        val intent = Intent(this@ChatActivity, InCallActivity::class.java)
+                        intent.putExtra(AppConstant.CHANNEL, it.data?.channel_name)
+                        intent.putExtra(AppConstant.APPiD,it.data?.app_id)
+                        intent.putExtra(AppConstant.TOKEN,it.data?.token)
+                        intent.putExtra(AppConstant.NAME,name)
+                        intent.putExtra(AppConstant.IMAGE, profile)
+                        startActivity(intent)
+                    }
+
+                    is NetworkResult.Error ->{
+                        BaseApplication.dismissDialog()
+                        BaseApplication.alertError(this@ChatActivity,it.message.toString(),false)
+                    }
+
+                    else ->{
+
+                    }
+
                 }
             }
         }

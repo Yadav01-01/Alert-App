@@ -13,12 +13,16 @@ data class SelfAlert(
     val end_date: String?,
     val start_time: String?,
     val end_time: String?,
-    val duration: String?, // Nullable, since it can be null
-    val show_user_id: String?,
+    val duration: Int?,
+    val alert_duration_minutes: Int?,
+    val show_user_id: Int?,
+    val relation_id: Int?,
     val status: Int?,
     val response_status: Int?,
+    val response_description: String?,
     val created_at: String?,
     val created_by: String?,
     val updated_at: String?,
-    val updated_by: String? // Nullable
+    val updated_by: String?,
+    val deleted_at: String?
 )

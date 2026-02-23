@@ -145,9 +145,10 @@ class IncomingCallService : Service() {
 
     // -------------------------------
     // RINGTONE (single instance)
-    // -------------------------------
+
     private fun startRingtone() {
-        // Double ringing fix
+
+
         if (mediaPlayer != null && mediaPlayer!!.isPlaying) return
 
         stopRingtone() // stop any previous player

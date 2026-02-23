@@ -37,17 +37,12 @@ class HealthFragment : Fragment() {
     private lateinit var viewModel: HealthAlertViewModel
     private lateinit var adapterSelfHealthList: SelfHealthListAdapter
     private lateinit var adapterOtherHealthList: OtherHealthListAdapter
-
     private val selfAlertList: MutableList<SelfAlert> = mutableListOf()
     private val otherAlertList: MutableList<SelfAlert> = mutableListOf()
-
     private val dataSelfAlert:MutableList<SelfAlert> = mutableListOf()
 
     override fun onCreateView(
-        inflater: LayoutInflater,
-        container: ViewGroup?,
-        savedInstanceState: Bundle?
-    ): View {
+        inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View {
         binding = FragmentHelthBinding.inflate(layoutInflater, container, false)
         return binding.root
     }
@@ -57,6 +52,7 @@ class HealthFragment : Fragment() {
 
         viewModel = ViewModelProvider(this)[HealthAlertViewModel::class.java]
 
+        Log.d("Testing_Health","Inside the Health fragment")
         initView()
     }
 
@@ -79,7 +75,7 @@ class HealthFragment : Fragment() {
 
         getSelfAlerts("health","self")
 
-//        initializeAdapterAlerts()
+
 
         // This line use for system back button
         requireActivity().onBackPressedDispatcher.addCallback(
@@ -105,10 +101,8 @@ class HealthFragment : Fragment() {
             binding.view2.visibility = View.VISIBLE
             binding.self.setTextColor("#777777".toColorInt())
             binding.other.setTextColor("#0B0202".toColorInt())
-
             otherAlertList.clear()
             adapterOtherHealthList.notifyDataSetChanged()
-
             binding.rcyData.adapter = adapterOtherHealthList
             getSelfAlerts("health","other")
         }
@@ -130,7 +124,7 @@ class HealthFragment : Fragment() {
             lifecycleScope.launch {
                 viewModel.getSelfAlerts(type,alertFor).collect {
                     BaseApplication.dismissDialog()
-                    handleApiResponse(it,type)
+                    handleApiResponse(it,alertFor)
                 }
             }
         } else {

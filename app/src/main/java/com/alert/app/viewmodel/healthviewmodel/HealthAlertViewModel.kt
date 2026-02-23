@@ -41,7 +41,19 @@ class HealthAlertViewModel @Inject constructor(private val repository: MainRepos
             contact
         )
     }
+    fun convertTimeTo24Hour(time: String?): String {
+        if (time.isNullOrBlank()) return "00:00"
 
+        return try {
+            val inputFormat = java.text.SimpleDateFormat("hh:mm a", java.util.Locale.US)
+            val outputFormat = java.text.SimpleDateFormat("HH:mm", java.util.Locale.US)
+
+            val date = inputFormat.parse(time) ?: return "00:00"
+            outputFormat.format(date)
+        } catch (e: Exception) {
+            "00:00"
+        }
+    }
 
 
 

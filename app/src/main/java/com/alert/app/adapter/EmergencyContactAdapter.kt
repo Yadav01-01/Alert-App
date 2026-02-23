@@ -108,7 +108,7 @@ class EmergencyContactAdapter(
         }
 
         holder.binding.imgCall.setOnClickListener {
-            onClickContact.onClick("call",data.contactId.toString())
+            onClickContact.onClick("call",data.contactId.toString()+"--"+data.contactUserId.toString())
         }
 
         holder.itemView.setOnClickListener {

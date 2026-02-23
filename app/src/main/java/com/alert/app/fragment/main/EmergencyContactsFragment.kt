@@ -26,6 +26,7 @@ import com.alert.app.R
 import com.alert.app.activity.CallActivity
 import com.alert.app.activity.ChatActivity
 import com.alert.app.activity.ContactDetailScreenActivity
+import com.alert.app.activity.InCallActivity
 import com.alert.app.activity.MainActivity
 import com.alert.app.adapter.EmergencyContactAdapter
 import com.alert.app.base.AppConstant
@@ -43,6 +44,7 @@ import com.alert.app.model.helpingneighbormodel.CreateHelpingNeighbor
 import com.alert.app.viewmodel.addemergencycontactviewmodel.AddEmergencyContactViewModel
 import com.google.android.material.bottomsheet.BottomSheetDialog
 import com.google.android.material.textfield.MaterialAutoCompleteTextView
+import com.google.firebase.firestore.FirebaseFirestore
 import com.google.gson.Gson
 import com.google.gson.JsonObject
 import com.hbb20.CountryCodePicker
@@ -473,10 +475,21 @@ class EmergencyContactsFragment : Fragment(), OnClickContact {
         }
         if(data.equals("call",true)){
             val channelName = "call_${System.currentTimeMillis()}"
-            val intent = Intent(requireContext(), CallActivity::class.java).apply {
-                putExtra("channelName", channelName)
+
+            val parts = id.split("--")
+
+            val contactId = parts[0]       // "123"
+            val contactUserId = parts[1]
+            getEmergencyContactList.forEach {
+                Log.d("TESTING_IDS","contactId"+it.contactId+" mysceen"+contactId.toInt() +" "+contactUserId)
+                if(it.contactId == contactId.toInt()){
+                    val FullName = it.firstName+" "+it.lastName
+                   val profilePath = it.profilePic
+                    callingAudioCallApi(contactUserId.toInt(),FullName,profilePath)
+                }
             }
-            startActivity(intent)
+
+
         }
         if(data.equals("chat",true)){
             val intent = Intent(context, ChatActivity::class.java)
@@ -496,6 +509,60 @@ class EmergencyContactsFragment : Fragment(), OnClickContact {
 
             intent.putExtra("contactUserId", contactUserId.toInt())
             startActivity(intent)
+        }
+    }
+
+    private fun callingAudioCallApi(receiverId:Int,name:String,profile:String?){
+        Log.d("TESTING_IN_CALL","HERE INSIDE CALL")
+
+        BaseApplication.openDialog()
+        lifecycleScope.launch {
+            viewModel.getCallInitiate(receiverId).collect {
+                when(it){
+
+                    is NetworkResult.Success ->{
+                        it.data?.token?.let {
+                            val safeToken = BaseApplication.safeDocIdFromToken(it)
+
+
+                            val firestore = FirebaseFirestore.getInstance()
+                            val callData = hashMapOf(
+                                "chatToken" to it,
+                                "status" to "ringing",
+                                "receiverId" to receiverId
+                            )
+
+                            firestore.collection("calls")
+                                .document(safeToken) // use chatToken as unique call ID
+                                .set(callData)
+                                .addOnSuccessListener {
+                                    Log.d("CallFirestore", "Call document created")
+                                }
+                                .addOnFailureListener { e ->
+                                    Log.e("CallFirestore", "Failed to create call doc", e)
+                                }
+                        }
+                        BaseApplication.dismissDialog()
+                        val intent = Intent(requireActivity(), InCallActivity::class.java)
+                        intent.putExtra(AppConstant.CHANNEL, it.data?.channel_name)
+                        intent.putExtra(AppConstant.APPiD,it.data?.app_id)
+                        intent.putExtra(AppConstant.TOKEN,it.data?.token)
+                        intent.putExtra(AppConstant.NAME,name)
+                        intent.putExtra(AppConstant.IMAGE, profile)
+                        startActivity(intent)
+                    }
+
+                    is NetworkResult.Error ->{
+                        BaseApplication.dismissDialog()
+                        BaseApplication.alertError(requireContext(),it.message.toString(),false)
+                    }
+
+                    else ->{
+
+                    }
+
+                }
+            }
         }
     }
 

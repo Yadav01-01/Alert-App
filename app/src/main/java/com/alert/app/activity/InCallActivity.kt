@@ -53,6 +53,8 @@ import kotlinx.coroutines.withContext
 @AndroidEntryPoint
 class InCallActivity : AppCompatActivity() {
 
+    private var isSpeakerMuted = false
+    private var isMuted = false
     private lateinit var binding: ActivityInCallBinding
     private var rtcEngine: RtcEngine? = null
     private lateinit var viewModel: InCallViewModel
@@ -120,6 +122,10 @@ class InCallActivity : AppCompatActivity() {
             }
         })
 
+        binding.imgMike.setOnClickListener {
+            toggleMute()
+        }
+
     }
 
     override fun onResume() {
@@ -156,6 +162,25 @@ class InCallActivity : AppCompatActivity() {
             )
         } else {
             arrayOf(Manifest.permission.RECORD_AUDIO)
+        }
+    }
+
+
+    // MUte and Unmute task
+
+    private fun toggleMute() {
+        isMuted = !isMuted
+
+        rtcEngine?.muteLocalAudioStream(isMuted)
+
+        if (isMuted) {
+            Log.d(TAG, "MIC MUTED")
+           // binding.imgMike.setImageResource(R.drawable.ic_mic_off)
+            Toast.makeText(this, "Muted", Toast.LENGTH_SHORT).show()
+        } else {
+            Log.d(TAG, "MIC UNMUTED")
+            //binding.imgMute.setImageResource(R.drawable.ic_mic_on)
+            Toast.makeText(this, "Unmuted", Toast.LENGTH_SHORT).show()
         }
     }
 
@@ -254,11 +279,7 @@ class InCallActivity : AppCompatActivity() {
 
         override fun onJoinChannelSuccess(channel: String?, uid: Int, elapsed: Int) {
             runOnUiThread {
-                Toast.makeText(
-                    this@InCallActivity,
-                    "JOINED CHANNEL ✅ uid=$uid",
-                    Toast.LENGTH_LONG
-                ).show()
+
 
                 startRinging()
 
@@ -268,11 +289,7 @@ class InCallActivity : AppCompatActivity() {
 
         override fun onUserJoined(uid: Int, elapsed: Int) {
             runOnUiThread {
-                Toast.makeText(
-                    this@InCallActivity,
-                    "REMOTE USER JOINED ✅ uid=$uid",
-                    Toast.LENGTH_LONG
-                ).show()
+
 
                 stopRinging()     // 🔕 STOP RINGING
 
@@ -284,11 +301,7 @@ class InCallActivity : AppCompatActivity() {
 
         override fun onUserOffline(uid: Int, reason: Int) {
             runOnUiThread {
-                Toast.makeText(
-                    this@InCallActivity,
-                    "REMOTE USER LEFT ❌ reason=$reason",
-                    Toast.LENGTH_LONG
-                ).show()
+
                 Log.e(TAG, "REMOTE USER LEFT reason=$reason")
                 endCall()
             }
@@ -296,11 +309,7 @@ class InCallActivity : AppCompatActivity() {
 
         override fun onConnectionLost() {
             runOnUiThread {
-                Toast.makeText(
-                    this@InCallActivity,
-                    "CONNECTION LOST ❌",
-                    Toast.LENGTH_LONG
-                ).show()
+
                 Log.e(TAG, "CONNECTION LOST")
                 endCall()
             }
@@ -308,11 +317,7 @@ class InCallActivity : AppCompatActivity() {
 
         override fun onError(err: Int) {
             runOnUiThread {
-                Toast.makeText(
-                    this@InCallActivity,
-                    "AGORA ERROR ❌ code=$err",
-                    Toast.LENGTH_LONG
-                ).show()
+
                 Log.e(TAG, "AGORA ERROR code=$err")
             }
         }

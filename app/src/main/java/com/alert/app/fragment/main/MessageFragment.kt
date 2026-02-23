@@ -37,7 +37,6 @@ class MessageFragment : Fragment() {
 
         private var _binding: FragmentMessageBinding? = null
         private val binding get() = _binding!!
-
         private lateinit var swipeAdapter: SwipeAdapter
         private val chattingViewModel: ChatScreenViewModel by viewModels()
         private val mainActivity: MainActivity?
@@ -154,8 +153,6 @@ class MessageFragment : Fragment() {
             super.onDestroyView()
             _binding = null // Memory leak se bachne ke liye
         }
-
-
 
 }
 
