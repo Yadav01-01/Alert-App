@@ -1,6 +1,7 @@
 package com.alert.app.viewmodel
 
 import android.content.Context
+import android.util.Log
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
@@ -48,6 +49,18 @@ class ChatScreenViewModel  @Inject constructor(
         }
     }
 
+    fun deleteChatForMe(chatId: String,currentUserId:String) {
+        repository.deleteChatForMe(chatId = chatId,
+            currentUserId){ success ->
+            if (success) {
+                Log.d("TESTING_MESSAGE","I AM HERE IN DELETE SUCCESS")
+
+            } else {
+                Log.d("TESTING_MESSAGE","I AM HERE IN DELETE fAILURE")
+
+            }
+        }
+    }
 
     fun updateLiveLocation(chatId: String, geoPoint: GeoPoint) {
         val messageId = liveLocationMessageId ?: return

@@ -114,8 +114,7 @@ class ChatActivity : AppCompatActivity() {
 
         workingForLiveLocationSharing()
 
-       checkingOtherUserStatus()
-       // observeUserStatus()
+        checkingOtherUserStatus()
 
     }
 
