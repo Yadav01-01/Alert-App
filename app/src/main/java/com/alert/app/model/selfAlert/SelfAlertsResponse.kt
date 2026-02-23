@@ -24,5 +24,8 @@ data class SelfAlert(
     val created_by: String?,
     val updated_at: String?,
     val updated_by: String?,
-    val deleted_at: String?
+    val deleted_at: String?,
+    val alert_user_name: String?,    // NEW
+    val relation_name: String?,      // NEW
+    val alert_time: String?
 )

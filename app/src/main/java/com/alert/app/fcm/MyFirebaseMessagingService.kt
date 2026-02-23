@@ -49,7 +49,7 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
     @RequiresPermission(Manifest.permission.POST_NOTIFICATIONS)
     private fun callphoneWithRing(remoteMessage: RemoteMessage) {
 
-        if(remoteMessage.data.get("type").equals("self_alert")) {
+        if(remoteMessage.data.get("type").equals("self_alert") || remoteMessage.data.get("type").equals("health_alert")) {
             val title = remoteMessage.data.get("title").toString()
             val body = remoteMessage.data.get("body").toString()
             startIncomingCallService(title, body)

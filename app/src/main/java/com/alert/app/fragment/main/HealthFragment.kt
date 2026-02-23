@@ -173,7 +173,7 @@ class HealthFragment : Fragment() {
                 otherAlertList.clear()
                 otherAlertList.addAll(data)
                 adapterOtherHealthList.refresh()
-             //   adapterOtherHealthList.update(data)
+                adapterOtherHealthList.update(data)
                 binding.rcyData.adapter = adapterOtherHealthList
             }
 
