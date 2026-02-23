@@ -56,6 +56,7 @@ import org.json.JSONObject
 @AndroidEntryPoint
 class VerificationCode : Fragment() {
     private var binding: FragmentVerificationCodeBinding?=null
+
     private val startTimeInMillis: Long = 120000
     private var mTimeLeftInMillis = startTimeInMillis
     private var screenType:String?=""

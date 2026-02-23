@@ -88,6 +88,7 @@ import com.alert.app.base.BaseApplication.alertError
 import com.alert.app.errormessage.AlertUtils
 
 import com.alert.app.errormessage.AlertUtils.showAlert
+import com.alert.app.model.SpinnerModel
 import com.alert.app.model.contact.AddContactResponse1
 import com.alert.app.model.helpingneighbormodel.AddNeighborModel
 import com.alert.app.model.helpingneighbormodel.CreateHelpingNeighbor
@@ -904,7 +905,7 @@ class FromMapFragment : Fragment(), OnClickEventDropDownType, OnMapReadyCallback
     private lateinit var binding: FragmentFromMapBinding
     private var type: String = ""
 
-    val data: MutableList<TimeModel> = mutableListOf()
+    val data: MutableList<SpinnerModel> = mutableListOf()
 
     lateinit var popupWindow: PopupWindow
     private lateinit var googleMap: GoogleMap
@@ -1212,11 +1213,12 @@ class FromMapFragment : Fragment(), OnClickEventDropDownType, OnMapReadyCallback
         dialog.show()
         dialog.window!!.setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_STATE_ALWAYS_VISIBLE)
 
-        val stringList = data.map { it.toString() }
+      //  val stringList = data.map { it.toString() }
+/*        val stringList = data.map { it.name }
         val dataAdapter = ArrayAdapter(requireContext(), R.layout.drop_down_item, stringList)
         tvRelation.setAdapter(dataAdapter)
 
-        tvRelation.setOnClickListener {
+       tvRelation.setOnClickListener {
             val inflater = requireContext().getSystemService(LAYOUT_INFLATER_SERVICE) as LayoutInflater?
             val popupView: View? = inflater?.inflate(R.layout.item_select_layout, null)
             popupWindow = PopupWindow(popupView, tvRelation.width, RelativeLayout.LayoutParams.WRAP_CONTENT, true)
@@ -1229,7 +1231,23 @@ class FromMapFragment : Fragment(), OnClickEventDropDownType, OnMapReadyCallback
             popupWindow.setOnDismissListener {
                 tvRelation.setCompoundDrawablesWithIntrinsicBounds(0, 0, R.drawable.arrow_bottom, 0)
             }
+        }*/
+        // Setup Relation Dropdown
+        val relationList = data.map { it.name }
+        val relationAdapter = ArrayAdapter(requireContext(),
+            R.layout.drop_down_item,
+            relationList)
+        tvRelation.setAdapter(relationAdapter)
+
+        // Use setOnItemClickListener instead of setOnClickListener
+        tvRelation.setOnItemClickListener { _, _, position, _ ->
+            selectedRelationId = data[position].id
+            tvRelation.setText(relationList[position], false)
         }
+     /*   tvRelation.setOnItemClickListener { _, _, position, _ ->
+            selectedRelationId = data[position].id
+            tvRelation.setText(stringList[position], false)
+        }*/
 
         btnOkay.setOnClickListener {
             user?.let {

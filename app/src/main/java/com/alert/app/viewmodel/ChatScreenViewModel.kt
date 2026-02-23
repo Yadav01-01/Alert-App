@@ -27,7 +27,8 @@ import java.util.Date
 class ChatScreenViewModel  @Inject constructor(
     private val repository1: MainRepository,
     private val repository: ChatRepository
-    ) : ViewModel(){
+    ) : ViewModel()
+{
 
     var currentUserId:String =""
     private var chatJob: Job? = null

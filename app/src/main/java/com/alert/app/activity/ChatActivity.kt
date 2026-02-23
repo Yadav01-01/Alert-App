@@ -33,6 +33,17 @@ import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 import java.util.concurrent.TimeUnit
+import androidx.lifecycle.lifecycleScope
+import androidx.lifecycle.repeatOnLifecycle
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.flowWithLifecycle
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.flow.catch
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.launchIn
+import kotlinx.coroutines.flow.onEach
+import kotlinx.coroutines.flow.onStart
 
 @AndroidEntryPoint
 class ChatActivity : AppCompatActivity() {
@@ -40,6 +51,7 @@ class ChatActivity : AppCompatActivity() {
     private lateinit var binding: ActivityChatBinding
     private lateinit var adapter: ChatAdapter
     private var popup: EmojiPopup? = null
+    private var statusJob: Job? = null
     private lateinit var viewModel : ChatViewModel
     private val firestore = FirebaseFirestore.getInstance()
     private var chatId = "123"
@@ -89,7 +101,7 @@ class ChatActivity : AppCompatActivity() {
         }
 
         setupClicks()
-
+        Log.d("FINAL_CHAT_ID", "Loading messages for chatId: $chatId")
         viewModel.loadMessages(chatId,currentUserId)
         viewModel.messages.observe(this) { messages ->
               messageList = messages
@@ -101,7 +113,12 @@ class ChatActivity : AppCompatActivity() {
         }
 
         workingForLiveLocationSharing()
+<<<<<<< HEAD
+       checkingOtherUserStatus()
+       // observeUserStatus()
+=======
         checkingOtherUserStatus()
+>>>>>>> 936a5d1183412f3d73443959fd2f54b6905796f6
     }
 
     private fun workingForLiveLocationSharing(){
@@ -211,7 +228,7 @@ class ChatActivity : AppCompatActivity() {
     }
 
     private fun setupRecyclerView() {
-        adapter = ChatAdapter(currentUserId,mutableListOf())
+        adapter = ChatAdapter(currentUserId)
 
         binding.rvMessages.layoutManager = LinearLayoutManager(this).apply {
                 stackFromEnd = true
@@ -332,6 +349,136 @@ class ChatActivity : AppCompatActivity() {
                      }
                  }
              }
+    }
+    override fun onResume() {
+        super.onResume()
+        // Re-observe status when activity comes to foreground
+        observeUserStatus()
+    }
+/*    private fun observeUserStatus() {
+        // Use lifecycleScope.launch with repeatOnLifecycle properly
+        lifecycleScope.launch {
+            // This ensures the flow collection is tied to the lifecycle
+            repeatOnLifecycle(Lifecycle.State.RESUMED) {
+                val repository = UserRepository()
+                val otherUserId = getOtherUserId(chatId, currentUserId)
+
+                repository.observeUserOnlineStatus(otherUserId)
+                    .collect { (isOnline, lastSeen) ->
+                        updateUserStatusUI(isOnline, lastSeen)
+                    }
+            }
+        }
+    }*/
+private fun observeUserStatus() {
+    val repository = UserRepository()
+    val otherUserId = getOtherUserId(chatId, currentUserId)
+
+    Log.d("USER_STATUS", "🔵 Starting to observe status for user: $otherUserId")
+
+    // Cancel previous job if any
+    statusJob?.cancel()
+
+    statusJob = repository.observeUserOnlineStatus(otherUserId)
+        .flowWithLifecycle(lifecycle, Lifecycle.State.RESUMED)
+        .onEach { (isOnline, lastSeen) ->
+            Log.d("USER_STATUS", "📨 Status received in Activity - isOnline: $isOnline, lastSeen: $lastSeen")
+            updateUserStatusUI(isOnline, lastSeen)
+        }
+        .onStart {
+            Log.d("USER_STATUS", "▶️ Flow started for user: $otherUserId")
+        }
+        .catch { e ->
+            Log.e("USER_STATUS", "💥 Error in status flow", e)
+        }
+        .launchIn(lifecycleScope)
+}
+
+    // Add this property at class level
+
+
+    private fun updateUserStatusUI(isOnline: Boolean, lastSeen: com.google.firebase.Timestamp?) {
+        binding.tvStatus.text = when {
+            isOnline -> {
+                Log.d("USER_STATUS_UI", "User is ONLINE")
+                binding.imgUpload.visibility = View.VISIBLE
+                "Online"
+            }
+            lastSeen != null -> {
+                val lastSeenText = getLastSeenText(lastSeen)
+                Log.d("USER_STATUS_UI", "User is OFFLINE - last seen: $lastSeenText")
+                binding.imgUpload.visibility = View.GONE
+                "Last seen ${lastSeenText}"
+            }
+            else -> {
+                Log.d("USER_STATUS_UI", "User status UNKNOWN - no lastSeen data")
+                binding.imgUpload.visibility = View.GONE
+                "Offline"
+            }
+        }
+    }
+    private fun getLastSeenText(timestamp: com.google.firebase.Timestamp): String {
+        val now = System.currentTimeMillis()
+        val lastSeenTime = timestamp.seconds * 1000
+        val diffInMillis = now - lastSeenTime
+        val diffInMinutes = TimeUnit.MILLISECONDS.toMinutes(now - lastSeenTime)
+        Log.d("LAST_SEEN", "Current time: $now")
+        Log.d("LAST_SEEN", "Last seen time: $lastSeenTime")
+        Log.d("LAST_SEEN", "Difference in millis: $diffInMillis")
+        val diffInHours = TimeUnit.MILLISECONDS.toHours(now - lastSeenTime)
+        val diffInDays = TimeUnit.MILLISECONDS.toDays(now - lastSeenTime)
+        Log.d("LAST_SEEN", "Minutes: $diffInMinutes, Hours: $diffInHours, Days: $diffInDays")
+       // return when {
+           /* diffInMinutes < 1 -> {
+                "just now"
+            }
+            diffInMinutes < 60 -> "$diffInMinutes minutes ago"
+            diffInHours < 24 -> {
+                val hours = diffInHours
+                "$hours hour${if (hours > 1) "s" else ""} ago"
+            }
+            diffInDays == 1L -> "yesterday at ${getFormattedTime(lastSeenTime)}"
+            diffInDays < 7 -> "$diffInDays days ago"
+            else -> {
+                // Show full date for older messages
+                val dateFormat = SimpleDateFormat("MMM dd, yyyy 'at' hh:mm a", Locale.getDefault())
+                dateFormat.format(Date(lastSeenTime))
+            }*/
+            return when {
+                diffInMinutes < 1 -> {
+                    Log.d("LAST_SEEN", "Case: just now")
+                    "just now"
+                }
+                diffInMinutes < 60 -> {
+                    Log.d("LAST_SEEN", "Case: $diffInMinutes minutes ago")
+                    "$diffInMinutes minutes ago"
+                }
+                diffInHours < 24 -> {
+                    val hours = diffInHours
+                    Log.d("LAST_SEEN", "Case: $hours hours ago")
+                    "$hours hour${if (hours > 1) "s" else ""} ago"
+                }
+                diffInDays == 1L -> {
+                    val time = getFormattedTime(lastSeenTime)
+                    Log.d("LAST_SEEN", "Case: yesterday at $time")
+                    "yesterday at $time"
+                }
+                diffInDays < 7 -> {
+                    Log.d("LAST_SEEN", "Case: $diffInDays days ago")
+                    "$diffInDays days ago"
+                }
+                else -> {
+                    val dateFormat = SimpleDateFormat("MMM dd, yyyy 'at' hh:mm a", Locale.getDefault())
+                    val formattedDate = dateFormat.format(Date(lastSeenTime))
+                    Log.d("LAST_SEEN", "Case: full date - $formattedDate")
+                    formattedDate
+                }
+            }
+    }
+
+    private fun getFormattedTime(timestamp: Long): String {
+        val timeFormat = SimpleDateFormat("hh:mm a", Locale.getDefault())
+        return timeFormat.format(Date(timestamp))
     }
 
     private fun sendMessage(messageText: String) {

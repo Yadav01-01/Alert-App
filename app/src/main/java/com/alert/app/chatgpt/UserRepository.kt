@@ -1,10 +1,17 @@
 package com.alert.app.chatgpt
 
+import android.util.Log
 import com.google.firebase.Timestamp
 import com.google.firebase.firestore.FirebaseFirestore
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.callbackFlow
+
+import kotlinx.coroutines.channels.awaitClose
+import kotlinx.coroutines.flow.callbackFlow
+
+
+
 
 class UserRepository {
 
@@ -13,9 +20,10 @@ class UserRepository {
     fun observeUserOnlineStatus(
         userId: String
     ): Flow<Pair<Boolean, Timestamp?>> = callbackFlow {
-
+        Log.d("USER_STATUS_REPO", "Observing status for userId: $userId")
         // 🔥 CRASH FIX
         if (userId.isBlank()) {
+            Log.e("USER_STATUS_REPO", "userId is blank, closing flow")
             close()
             return@callbackFlow
         }
