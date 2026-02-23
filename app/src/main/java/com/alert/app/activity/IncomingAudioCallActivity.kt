@@ -16,9 +16,11 @@ import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
 import com.alert.app.R
 import com.alert.app.base.AppConstant
+import com.alert.app.base.BaseApplication
 import com.alert.app.calling.IncomingAudioCallService
 import com.alert.app.calling.IncomingCallService
 import com.alert.app.databinding.ActivityIncomingAudioCallBinding
+import com.google.firebase.firestore.FirebaseFirestore
 
 class IncomingAudioCallActivity : AppCompatActivity() {
 
@@ -186,8 +188,19 @@ private lateinit var binding: ActivityIncomingAudioCallBinding
         }
 
         binding.btnDecline.setOnClickListener {
-            stopService(Intent(this, IncomingAudioCallService::class.java))
-            finish()
+            val firestore = FirebaseFirestore.getInstance()
+            // Update Firestore so other party knows
+            firestore.collection("calls")
+                .document(BaseApplication.safeDocIdFromToken(agoraToken))
+                .update("status", "ended")
+                .addOnSuccessListener {
+
+                    Log.d("CallFirestore", "Call ended")
+
+                    stopService(Intent(this, IncomingAudioCallService::class.java))
+                    finish()
+                }
+
         }
     }
 

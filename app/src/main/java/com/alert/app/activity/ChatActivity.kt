@@ -104,8 +104,12 @@ class ChatActivity : AppCompatActivity() {
         }
 
         workingForLiveLocationSharing()
+<<<<<<< HEAD
        checkingOtherUserStatus()
        // observeUserStatus()
+=======
+        checkingOtherUserStatus()
+>>>>>>> 936a5d1183412f3d73443959fd2f54b6905796f6
     }
 
     private fun workingForLiveLocationSharing(){

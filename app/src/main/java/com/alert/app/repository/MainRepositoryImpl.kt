@@ -802,10 +802,10 @@ class MainRepositoryImpl @Inject constructor(private val apiInterface: ApiInterf
 
         }
 
-    override suspend fun getSelfAlerts(type: String?): Flow<NetworkResult<JsonObject>> =
+    override suspend fun getSelfAlerts(type: String?,alertFor:String?): Flow<NetworkResult<JsonObject>> =
         flow {
             try {
-                apiInterface.getSelfAlerts(type).apply {
+                apiInterface.getSelfAlerts(type,alertFor).apply {
                     if (isSuccessful) {
                         body()?.let { resp ->
                             if (resp.has("status") && resp.get("status").asBoolean) {

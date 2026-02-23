@@ -16,8 +16,8 @@ class SelfAlertViewModel @Inject constructor(private val repository: MainReposit
 
 
 
-    suspend fun getSelfAlerts(type: String?): Flow<NetworkResult<JsonObject>> {
-        return repository.getSelfAlerts(type).onEach {
+    suspend fun getSelfAlerts(type: String?,alertFor:String?): Flow<NetworkResult<JsonObject>> {
+        return repository.getSelfAlerts(type,alertFor).onEach {
         }
     }
 

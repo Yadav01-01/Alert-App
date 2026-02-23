@@ -240,8 +240,12 @@ class NeighborProfileFragment : Fragment() {
         lifecycleScope.launch {
             viewModel.getCallInitiate(viewModel.userId.toInt()).collect {
                 when(it){
+
                     is NetworkResult.Success ->{
                         it.data?.token?.let {
+                            val safeToken = BaseApplication.safeDocIdFromToken(it)
+
+
                             val firestore = FirebaseFirestore.getInstance()
                             val callData = hashMapOf(
                                 "chatToken" to it,
@@ -250,7 +254,7 @@ class NeighborProfileFragment : Fragment() {
                             )
 
                             firestore.collection("calls")
-                                .document(it) // use chatToken as unique call ID
+                                .document(safeToken) // use chatToken as unique call ID
                                 .set(callData)
                                 .addOnSuccessListener {
                                     Log.d("CallFirestore", "Call document created")
@@ -268,13 +272,16 @@ class NeighborProfileFragment : Fragment() {
                         intent.putExtra(AppConstant.IMAGE,profilePath)
                         startActivity(intent)
                     }
+
                     is NetworkResult.Error ->{
                         BaseApplication.dismissDialog()
                         BaseApplication.alertError(requireContext(),it.message.toString(),false)
                     }
+
                     else ->{
 
                     }
+
                 }
             }
         }
