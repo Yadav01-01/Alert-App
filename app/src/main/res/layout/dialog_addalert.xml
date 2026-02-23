@@ -77,11 +77,13 @@
                 android:layout_marginTop="@dimen/_10sdp"
                 android:background="@drawable/bg_border"
                 android:gravity="center">
+                <!--app:boxBackgroundColor="@color/white"-->
                 <com.google.android.material.textfield.TextInputLayout
+                    android:id="@+id/tilRelation"
                     style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox.ExposedDropdownMenu"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    app:boxBackgroundColor="@color/white"
+
                     android:layout_marginStart="@dimen/_10sdp"
                     android:layout_marginEnd="@dimen/_10sdp"
                     app:endIconDrawable="@drawable/arrow_bottom"
@@ -94,6 +96,8 @@
                         android:layout_width="match_parent"
                         android:layout_height="match_parent"
                         android:id="@+id/tvRelation"
+                        android:focusable="false"
+                        android:clickable="true"
                         android:fontFamily="@font/urbanist_semibold"
                         android:inputType="none"
                         android:paddingHorizontal="20dp"

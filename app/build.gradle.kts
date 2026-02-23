@@ -185,7 +185,7 @@ dependencies {
     implementation ("com.google.android.gms:play-services-auth:20.7.0")
 
     ////agora voice calling
-    implementation ("io.agora.rtc:full-sdk:3.5.0")
+    implementation("io.agora.rtc:voice-sdk:4.5.0")
 
     implementation ("com.google.android.gms:play-services-maps:18.2.0")
     implementation ("com.google.android.gms:play-services-location:21.2.0")
