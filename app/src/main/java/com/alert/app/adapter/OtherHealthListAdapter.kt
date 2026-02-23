@@ -32,15 +32,19 @@ class OtherHealthListAdapter(
 
         holder.binding.apply {
             title.text = alertData.title
-            contactName.text = alertData.title
+            contactName.text = alertData.alert_user_name
             time.text = alertData.start_time
             relation.text = alertData.end_date
             description.text = alertData.description
         }
 
+        holder.binding.tvAlert.text = "Alert Duration: "+ alertData.duration
+
         holder.binding.tvAlert.setOnClickListener {
-            showTimePopup(holder.binding.tvAlert)
+          //  showTimePopup(holder.binding.tvAlert)
         }
+
+
     }
 
     override fun getItemCount(): Int = dataSelfAlert.size

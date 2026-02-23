@@ -5,6 +5,7 @@ import android.app.Dialog
 import android.content.Context
 import android.graphics.Color
 import android.graphics.drawable.ColorDrawable
+import android.util.Log
 import android.view.*
 import android.widget.ImageView
 import android.widget.TextView
@@ -44,8 +45,14 @@ class ContactListAdapter(
     @SuppressLint("SetTextI18n", "NotifyDataSetChanged")
     override fun onBindViewHolder(holder: ViewHolder, position: Int) {
         val data = list[position]
+        Log.d("testing_name","above is"+data.first_name +" "+data.last_name)
 
-        holder.binding.tvName.text = "${data.first_name} ${data.last_name.orEmpty()}".trim()
+
+        holder.binding.tvName.text = if (data.last_name.isNullOrBlank()) {
+            data.first_name
+        } else {
+            "${data.first_name} ${data.last_name}".trim()
+        }
         holder.binding.tvRelation.text = data.relation
         data.profile_pic.let {
             Glide.with(context)

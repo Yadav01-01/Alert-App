@@ -804,7 +804,7 @@ class MainRepositoryImpl @Inject constructor(private val apiInterface: ApiInterf
 
     override suspend fun getSelfAlerts(type: String?,alertFor:String?): Flow<NetworkResult<JsonObject>> =
         flow {
-            try {
+//            try {
                 apiInterface.getSelfAlerts(type,alertFor).apply {
                     if (isSuccessful) {
                         body()?.let { resp ->
@@ -829,13 +829,13 @@ class MainRepositoryImpl @Inject constructor(private val apiInterface: ApiInterf
                         }
                     }
                 }
-            } catch (e: HttpException) {
-                emit(NetworkResult.Error(e.message ?: ""))
-            } catch (e: IOException) {
-                emit(NetworkResult.Error(e.message ?: ""))
-            } catch (e: Exception) {
-                emit(NetworkResult.Error(e.message ?: ""))
-            }
+//            } catch (e: HttpException) {
+//                emit(NetworkResult.Error(e.message ?: ""))
+//            } catch (e: IOException) {
+//                emit(NetworkResult.Error(e.message ?: ""))
+//            } catch (e: Exception) {
+//                emit(NetworkResult.Error(e.message ?: ""))
+//            }
 
         }
 

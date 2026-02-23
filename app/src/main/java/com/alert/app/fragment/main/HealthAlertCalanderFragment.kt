@@ -31,8 +31,8 @@ import java.text.SimpleDateFormat
 import java.util.Calendar
 import java.util.Locale
 import androidx.core.view.isVisible
-
 @AndroidEntryPoint
+
 class HealthAlertCalanderFragment : Fragment() {
 
     private lateinit var binding: FragmentHealthAlertCalanderBinding
