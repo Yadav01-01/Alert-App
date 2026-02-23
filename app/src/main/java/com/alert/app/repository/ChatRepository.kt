@@ -153,8 +153,52 @@ class ChatRepository @Inject constructor(private val firestore: FirebaseFirestor
     }
 
 
+//    fun observeChatList(
+//        users: List<ChatUserModel>, myUserId: String
+//    ): Flow<List<ChatListItem>> = callbackFlow {
+//
+//        val chatIds = users.mapNotNull { it.chat_id }
+//
+//        if (chatIds.isEmpty()) {
+//            trySend(emptyList())
+//            close()
+//            return@callbackFlow
+//        }
+//
+//        val listener = firestore.collection("chats")
+//            .whereIn(FieldPath.documentId(), chatIds)
+//            .addSnapshotListener { snapshot, error ->
+//
+//                if (error != null || snapshot == null) {
+//                    trySend(emptyList())
+//                    return@addSnapshotListener
+//                }
+//                val chatMap = snapshot.documents.associateBy { it.id }
+//                val result = users.mapNotNull { user ->
+//                val chatDoc = chatMap[user.chat_id] ?: return@mapNotNull null
+//                    val isLiveLocation = chatDoc.getString("type") == "location"
+//                    ChatListItem(
+//                        chatId = user.chat_id!!,
+//                        userId = user.id!!,
+//                        fullName = user.full_name.orEmpty(),
+//                        profile = user.profile.orEmpty(),
+//                        lastMessage = chatDoc.getString("lastMessage"),
+//                        lastMessageTime = chatDoc.getTimestamp("lastMessageTime"), // ✅ FIX
+//                        unreadCount = chatDoc
+//                            .getLong("unreadCount_$myUserId")
+//                            ?.toInt() ?: 0,
+//                        isLiveLocation = isLiveLocation
+//                    )
+//                }.sortedByDescending { it.lastMessageTime?.toDate()?.time ?: 0 }
+//
+//                trySend(result)
+//            }
+//        awaitClose { listener.remove() }
+//    }
+
     fun observeChatList(
-        users: List<ChatUserModel>, myUserId: String
+        users: List<ChatUserModel>,
+        myUserId: String
     ): Flow<List<ChatListItem>> = callbackFlow {
 
         val chatIds = users.mapNotNull { it.chat_id }
@@ -173,29 +217,49 @@ class ChatRepository @Inject constructor(private val firestore: FirebaseFirestor
                     trySend(emptyList())
                     return@addSnapshotListener
                 }
-                val chatMap = snapshot.documents.associateBy { it.id }
-                val result = users.mapNotNull { user ->
-                val chatDoc = chatMap[user.chat_id] ?: return@mapNotNull null
+
+                val result = snapshot.documents.mapNotNull { chatDoc ->
+
+                    val chatId = chatDoc.id
+                    val user = users.find { it.chat_id == chatId } ?: return@mapNotNull null
+
+                    // 🔥 delete-for-me time
+                    val deletedAtMap =
+                        chatDoc.get("deletedAt") as? Map<String, Long> ?: emptyMap()
+
+                    val deleteTime = deletedAtMap[myUserId] ?: 0L
+
+                    val lastMessageTime =
+                        chatDoc.getTimestamp("lastMessageTime")?.toDate()?.time ?: 0L
+
+                    // ❌ Agar last message delete time se pehle ka hai → chat mat dikhao
+                    if (lastMessageTime <= deleteTime) {
+                        return@mapNotNull null
+                    }
+
                     val isLiveLocation = chatDoc.getString("type") == "location"
+
                     ChatListItem(
-                        chatId = user.chat_id!!,
+                        chatId = chatId,
                         userId = user.id!!,
                         fullName = user.full_name.orEmpty(),
                         profile = user.profile.orEmpty(),
                         lastMessage = chatDoc.getString("lastMessage"),
-                        lastMessageTime = chatDoc.getTimestamp("lastMessageTime"), // ✅ FIX
+                        lastMessageTime = chatDoc.getTimestamp("lastMessageTime"),
                         unreadCount = chatDoc
                             .getLong("unreadCount_$myUserId")
                             ?.toInt() ?: 0,
                         isLiveLocation = isLiveLocation
                     )
-                }.sortedByDescending { it.lastMessageTime?.toDate()?.time ?: 0 }
+                }.sortedByDescending {
+                    it.lastMessageTime?.toDate()?.time ?: 0
+                }
 
                 trySend(result)
             }
+
         awaitClose { listener.remove() }
     }
-
 
         suspend fun markChatRead(chatId: String, myUserId: String) {
         firestore.collection("chats")

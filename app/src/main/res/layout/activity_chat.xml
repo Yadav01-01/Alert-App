@@ -72,9 +72,9 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:fontFamily="@font/urbanist_medium"
-                    android:text="Active now"
+                    android:text=""
                     android:textColor="#797C7B"
-                    android:visibility="gone"
+                    android:visibility="visible"
                     android:textSize="@dimen/_12sdp" />
             </LinearLayout>
             <ImageView

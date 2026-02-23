@@ -32,7 +32,7 @@ import java.util.Locale
 import java.util.concurrent.TimeUnit
 
 
-class SwipeAdapter(private val context: Context) :
+class SwipeAdapter(private val context: Context, private val onDeleteClick: (ChatListItem) -> Unit) :
     ListAdapter<ChatListItem, SwipeAdapter.SwipeViewHolder>(DiffCallback()) {
 
 
@@ -52,7 +52,9 @@ class SwipeAdapter(private val context: Context) :
 
         // Swipe handling
         viewBinderHelper.bind(holder.swipeLayout, item.chatId)
-
+        holder.imgDelete.setOnClickListener {
+            onDeleteClick(item)
+        }
         holder.tvName.text = item.fullName
 
         holder.tvLastMessage.text = if (item.isLiveLocation) {
@@ -150,6 +152,7 @@ class SwipeAdapter(private val context: Context) :
         val imgAppbar: LinearLayout = itemView.findViewById(R.id.img_appbar)
         val userImage: CircleImageView = itemView.findViewById(R.id.user_img_message)
         val timeAgo: TextView = itemView.findViewById(R.id.tv_time_ago)
+        val imgDelete: ImageView = itemView.findViewById(R.id.img_delete)
     }
 
     // ---------------------------

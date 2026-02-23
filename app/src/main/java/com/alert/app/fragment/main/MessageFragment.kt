@@ -75,11 +75,6 @@ class MessageFragment : Fragment() {
                 }
 
             })
-
-
-
-
-
             return binding.root
         }
 
@@ -109,7 +104,13 @@ class MessageFragment : Fragment() {
         }
 
         private fun setupRecyclerView() {
-            swipeAdapter = SwipeAdapter(requireContext())
+            swipeAdapter = SwipeAdapter(requireContext()){ item ->
+
+                chattingViewModel.deleteChatForMe(
+                    chatId = item.chatId,
+                    currentUserId = chattingViewModel.currentUserId
+                )
+            }
             binding.rcyData.apply {
                 layoutManager = LinearLayoutManager(requireContext())
                 adapter = swipeAdapter

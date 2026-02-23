@@ -5,7 +5,9 @@ import android.content.Context
 import android.os.Build
 import androidx.lifecycle.ProcessLifecycleOwner
 import com.alert.app.BuildConfig
-import com.alert.app.chatgpt.AppLifecycleObserver
+//import com.alert.app.chatgpt.AppLifecycleObserver
+import com.alert.app.AppLifecycleObserver
+import com.alert.app.chatgpt.UserRepository
 import com.google.firebase.FirebaseApp
 import com.google.firebase.crashlytics.FirebaseCrashlytics
 import dagger.hilt.android.HiltAndroidApp
@@ -19,7 +21,7 @@ public class MyApplication : Application() {
         super.onCreate()
         instance = this
         FirebaseApp.initializeApp(this)
-
+       // val userId = SessionManagement(context = applicationContext).getUserId()
         val dexOutputDir: File = codeCacheDir
         dexOutputDir.setReadOnly()
         // Crashlytics configuration
@@ -30,11 +32,12 @@ public class MyApplication : Application() {
             FirebaseCrashlytics.getInstance().setCrashlyticsCollectionEnabled(true)
         }
 
-        lifecycleObserver = AppLifecycleObserver(SessionManagement(this).getUserId().toString())
-
+     //   lifecycleObserver = AppLifecycleObserver(SessionManagement(this).getUserId().toString())
+        val repository = UserRepository()
         ProcessLifecycleOwner.get()
             .lifecycle
-            .addObserver(lifecycleObserver)
+            //.addObserver(lifecycleObserver)
+            .addObserver(AppLifecycleObserver(repository, SessionManagement(this).getUserId().toString()))
     }
 
     companion object {
