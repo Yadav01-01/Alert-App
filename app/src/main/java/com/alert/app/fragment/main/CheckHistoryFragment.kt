@@ -121,7 +121,6 @@ class CheckHistoryFragment : Fragment(), OnClickContact {
         BaseApplication.alertError(context, message, status)
     }
 
-
     @SuppressLint("SetTextI18n")
     private fun handleSuccessApiResponse(data: String, type: String) {
         try {
@@ -130,7 +129,9 @@ class CheckHistoryFragment : Fragment(), OnClickContact {
             if (apiModel.code == 200 && apiModel.status) {
                 if (apiModel.data != null) {
                     showDataInUI(apiModel.data, type)
-                }
+                }/*else{
+                    showAlert(apiModel.message, false)
+                }*/
             } else {
                 handleError(apiModel.code, apiModel.message)
             }
@@ -151,6 +152,8 @@ class CheckHistoryFragment : Fragment(), OnClickContact {
                 adapter.update(dataSelfAlert)
             } else {
                 binding.rcyData.visibility = View.GONE
+                showAlert("No alerts found.", false)
+
             }
 
         } catch (e: Exception) {

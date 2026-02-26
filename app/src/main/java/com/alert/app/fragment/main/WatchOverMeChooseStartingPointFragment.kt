@@ -3,7 +3,7 @@ package com.alert.app.fragment.main
 import android.Manifest
 import android.annotation.SuppressLint
 import android.content.pm.PackageManager
-import android.graphics.Color
+import android.location.Geocoder
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
@@ -12,6 +12,7 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.Toast
 import androidx.core.app.ActivityCompat
+import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
 import com.alert.app.R
 import com.alert.app.activity.MainActivity
@@ -24,48 +25,126 @@ import com.google.android.gms.maps.OnMapReadyCallback
 import com.google.android.gms.maps.model.*
 import com.google.android.libraries.places.api.Places
 import com.google.android.libraries.places.api.net.PlacesClient
+import com.google.android.libraries.places.widget.AutocompleteSupportFragment
 import com.google.maps.android.PolyUtil
 import com.google.maps.android.SphericalUtil
 import org.json.JSONObject
 import java.net.URL
+import java.util.Locale
 import kotlin.concurrent.thread
-
+import android.graphics.Bitmap
+import android.graphics.BitmapFactory
+import android.graphics.Canvas
+import android.graphics.Color
+import android.graphics.Paint
+import android.graphics.Typeface
+import android.util.Log
+import android.widget.TextView
+import androidx.lifecycle.ViewModelProvider
+import androidx.lifecycle.lifecycleScope
+import androidx.work.BackoffPolicy
+import androidx.work.Constraints
+import androidx.work.ExistingPeriodicWorkPolicy
+import androidx.work.NetworkType
+import androidx.work.PeriodicWorkRequestBuilder
+import androidx.work.WorkInfo
+import androidx.work.WorkManager
+import androidx.work.workDataOf
+import com.alert.app.LocationUpdateWorker
+import com.alert.app.adapter.CustomInfoWindowAdapter
+import com.alert.app.base.BaseApplication
+import com.alert.app.base.SessionManagement
+import com.alert.app.di.NetworkResult
+import com.alert.app.errormessage.AlertUtils
+import com.alert.app.errormessage.MessageClass
+import com.alert.app.model.checkhistory.CheckInHistoryAlertResponse
+import com.alert.app.model.watchoverme.JourneyStarted
+import com.alert.app.viewmodel.checkhistory.CheckHistoryViewModel
+import com.alert.app.viewmodel.watchovermeviewmodel.WatchOverMeViewModel
+import com.google.android.gms.maps.SupportMapFragment
+import com.google.android.libraries.places.widget.listener.PlaceSelectionListener
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+import okhttp3.OkHttpClient
+import okhttp3.Request
+import com.google.android.libraries.places.api.model.Place
+import com.google.gson.Gson
+import com.google.gson.JsonObject
+import dagger.hilt.android.AndroidEntryPoint
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
+import okhttp3.MediaType.Companion.toMediaType
+import okhttp3.RequestBody.Companion.toRequestBody
+import java.util.Arrays
+import java.util.concurrent.TimeUnit
+@AndroidEntryPoint
 class WatchOverMeChooseStartingPointFragment : Fragment(), OnMapReadyCallback {
-
     private lateinit var binding: FragmentWatchovermechoosestartingpointBinding
-    private lateinit var mMap: GoogleMap
+    private lateinit var viewModel: WatchOverMeViewModel
+    private lateinit var googleMap: GoogleMap
+    private var shouldFollowRider = true
     private lateinit var fusedLocationClient: FusedLocationProviderClient
     private lateinit var locationCallback: LocationCallback
     private lateinit var placesClient: PlacesClient
     private lateinit var currentLocationAdapter: PlaceAutoSuggestAdapter
     private lateinit var destinationAdapter: PlaceAutoSuggestAdapter
+    private val handler = Handler(Looper.getMainLooper())
+    private var simulationRunnable: Runnable? = null
 
-    private var destinationLatLng: LatLng? = null
-    private var currentLatLng: LatLng? = null
-    private var pickupSpotLatLng: LatLng? = null // Starting point
-    private var routePoints: List<LatLng> = listOf()
-    private var userPathPoints: MutableList<LatLng> = mutableListOf()
-    private var deviationPathPoints: MutableList<LatLng> = mutableListOf()
-
-    private var optimalRoutePolyline: Polyline? = null
-    private var correctPathPolyline: Polyline? = null
-    private var wrongPathPolyline: Polyline? = null
-    private var userRoutePolyline: Polyline? = null
-    private var deviationRoutePolyline: Polyline? = null
-    private var userMarker: Marker? = null
+    private var riderMarker: Marker? = null
     private var pickupMarker: Marker? = null
     private var destinationMarker: Marker? = null
 
-    private var isDeviated = false
-    private var deviationStartPoint: LatLng? = null
-    private var lastCorrectPoint: LatLng? = null
+    // Selected places
+    private var pickupLocation: LatLng? = null
+    private var destinationLocation: LatLng? = null
 
-    private val handler = Handler(Looper.getMainLooper())
-    private var simulationRunnable: Runnable? = null
-    private var isSimulationMode = false
+    // Autocomplete fragments
+    private lateinit var destinationAutocompleteFragment: AutocompleteSupportFragment
+
+    private var correctRefPolyline: Polyline? = null
+    private val trailSegments = mutableListOf<Polyline>()
+    private var correctRoutePoints: List<LatLng> = listOf()
+    private val actualPathPoints = mutableListOf<LatLng>()
+
+    private enum class RouteChoice { NONE, CORRECT }
+    private var routeChoice = RouteChoice.NONE
+    private var isDelivering = false
+    private var currentStepIndex = 0
+
+    private var deliveryStartTime = 0L
+    private var wrongRouteStartTime = 0L
+    private var totalDistanceMiles = 0.0
+    private var wrongDistanceMiles = 0.0
+
+    private var currentSegmentIsCorrect = true
+    private val currentSegmentPoints = mutableListOf<LatLng>()
+    private var riderOnCorrectRoute = true
+
+    private var deviationStartPoint: LatLng? = null
+    private var wrongPathGrowingPolyline: Polyline? = null
+    private val currentWrongSegmentPoints = mutableListOf<LatLng>()
+
+    // 🔴 IMPORTANT: 30 meters threshold (0.01864 miles = ~30 meters)
+    private val DEVIATION_THRESHOLD_MILES = 30.0 / 1609.34  // ~0.01864 miles (30 meters)
+    private val DESTINATION_THRESHOLD_MILES = 5.0 / 1609.34  // ~0.003107 miles
+
+    // ─── Handlers ────────────────────────────────────────────────────
+    private val mainHandler = Handler(Looper.getMainLooper())
+    private var uiRunnable: Runnable? = null
+    private val UI_REFRESH_MS = 500L
+    private val LOC_PERM_REQUEST = 100
+
+    // 🔴 NEW: Properties for continuous location updates
+    private var currentJourneyId: String = ""
+    private var continuousLocationUpdateJob: Job? = null
+    private var isUpdatingLocation = false
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View {
         binding = FragmentWatchovermechoosestartingpointBinding.inflate(layoutInflater, container, false)
+        viewModel = ViewModelProvider(this)[WatchOverMeViewModel::class.java]
 
         if (!Places.isInitialized()) {
             Places.initialize(requireContext(), getString(R.string.api_key))
@@ -76,667 +155,796 @@ class WatchOverMeChooseStartingPointFragment : Fragment(), OnMapReadyCallback {
         destinationAdapter = PlaceAutoSuggestAdapter(requireContext(), placesClient)
 
         fusedLocationClient = LocationServices.getFusedLocationProviderClient(requireActivity())
+
+        setupPlaceAutocomplete()
+        setupButtons()
+        setCurrentLocationInPickup()
         binding.map.onCreate(savedInstanceState)
         binding.map.getMapAsync(this)
 
         return binding.root
     }
 
+    private fun setCurrentLocationInPickup() {
+        if (ActivityCompat.checkSelfPermission(requireActivity(), Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
+            fusedLocationClient.lastLocation.addOnSuccessListener { location ->
+                if (location != null) {
+                    val geocoder = Geocoder(requireActivity(), Locale.getDefault())
+                    try {
+                        val addresses = geocoder.getFromLocation(location.latitude, location.longitude, 1)
+                        if (addresses != null && addresses.isNotEmpty()) {
+                            val addressText = addresses[0].getAddressLine(0)
+                            pickupLocation = LatLng(location.latitude, location.longitude)
+                            binding.etPickup.setText(addressText)
+                            if (::googleMap.isInitialized) updateMapForSelectedPlaces()
+                            Toast.makeText(requireActivity(), "Current location set as pickup", Toast.LENGTH_SHORT).show()
+                        }
+                    } catch (e: Exception) {
+                        e.printStackTrace()
+                        pickupLocation = LatLng(location.latitude, location.longitude)
+                        binding.etPickup.setText("${location.latitude}, ${location.longitude}")
+                        if (::googleMap.isInitialized) updateMapForSelectedPlaces()
+                    }
+                } else {
+                    Toast.makeText(requireActivity(), "Unable to get current location", Toast.LENGTH_SHORT).show()
+                }
+            }
+        } else {
+            ActivityCompat.requestPermissions(requireActivity(), arrayOf(Manifest.permission.ACCESS_FINE_LOCATION), LOC_PERM_REQUEST)
+        }
+    }
+
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
-
-        binding.edtCurrentAddress.setAdapter(currentLocationAdapter)
-        binding.edtDestinationAddress.setAdapter(destinationAdapter)
-
-        // Set click listeners for the new buttons
-        binding.btnCorrectPath.setOnClickListener {
-            showCorrectPath()
-        }
-
-        binding.btnWrongPath.setOnClickListener {
-            showWrongPath()
-        }
-
-        // Set test locations for demo
-        setTestLocations()
     }
 
-    private fun setTestLocations() {
-        // Delhi locations for testing
-        pickupSpotLatLng = LatLng(28.6139, 77.2090) // Connaught Place, Delhi
-        destinationLatLng = LatLng(28.6304, 77.2177) // Near GTB Nagar
+    private fun setupPlaceAutocomplete() {
+        destinationAutocompleteFragment = AutocompleteSupportFragment.newInstance()
+        childFragmentManager.beginTransaction()
+            .replace(R.id.destination_autocomplete_container, destinationAutocompleteFragment)
+            .commitNow()
 
-        // Update UI
-        binding.edtCurrentAddress.setText("Connaught Place, Delhi")
-        binding.edtDestinationAddress.setText("GTB Nagar, Delhi")
-
-        // Draw initial route if map is ready
-        if (::mMap.isInitialized) {
-            drawRouteToDestination()
-        }
-    }
-
-  /*  private fun showCorrectPath() {
-        // Clear previous paths
-        clearAllPolylines()
-
-        if (routePoints.isNotEmpty()) {
-            // Show the correct path in green
-            correctPathPolyline = mMap.addPolyline(
-                PolylineOptions()
-                    .addAll(routePoints)
-                    .color(Color.GREEN)
-                    .width(15f)
-                    .zIndex(5f)
+        destinationAutocompleteFragment.setPlaceFields(
+            Arrays.asList(
+                Place.Field.ID, Place.Field.NAME, Place.Field.LAT_LNG, Place.Field.ADDRESS
             )
-
-            Toast.makeText(requireContext(), "Showing Correct Path (Green)", Toast.LENGTH_SHORT).show()
-
-            // Simulate walking on correct path
-            simulatePath(routePoints)
-        } else {
-            Toast.makeText(requireContext(), "Please wait, route is loading...", Toast.LENGTH_SHORT).show()
-            drawRouteToDestination()
-
-            // Retry after delay
-            handler.postDelayed({
-                if (routePoints.isNotEmpty()) {
-                    showCorrectPath()
-                }
-            }, 3000)
-        }
-    }*/
-  private fun showCorrectPath() {
-      isSimulationMode = true
-      if (routePoints.isEmpty()) {
-          Toast.makeText(requireContext(), "Route loading...", Toast.LENGTH_SHORT).show()
-          return
-      }
-
-      clearAllPolylines()
-
-      isDeviated = false
-      deviationPathPoints.clear()
-
-      // Full route BLUE
-      correctPathPolyline = mMap.addPolyline(
-          PolylineOptions()
-              .addAll(routePoints)
-              .color(Color.parseColor("#1E88E5")) // Blue like image
-              .width(14f)
-              .zIndex(5f)
-      )
-
-      simulatePath(routePoints)
-  }
-
-    private fun showWrongPath() {
-        isSimulationMode = true
-        if (routePoints.isEmpty() || pickupSpotLatLng == null) {
-            Toast.makeText(requireContext(), "Route loading...", Toast.LENGTH_SHORT).show()
-            return
-        }
-
-        clearAllPolylines()
-
-        // Correct route part (BLUE)
-        correctPathPolyline = mMap.addPolyline(
-            PolylineOptions()
-                .addAll(routePoints)
-                .color(Color.parseColor("#1E88E5"))
-                .width(14f)
-                .zIndex(3f)
         )
+        destinationAutocompleteFragment.setHint("Search destination")
+        destinationAutocompleteFragment.setOnPlaceSelectedListener(object : PlaceSelectionListener {
+            override fun onPlaceSelected(place: Place) {
+                destinationLocation = place.latLng
+                updateMapForSelectedPlaces()
+            }
+            override fun onError(status: com.google.android.gms.common.api.Status) {
+                Toast.makeText(requireActivity(), "Error: ${status.statusMessage}", Toast.LENGTH_SHORT).show()
+            }
+        })
+    }
 
-        // Create wrong deviation path
-        val wrongPath = createWrongPathNearby(pickupSpotLatLng!!)
+    private fun setupButtons() {
+        binding.btnExplore.setOnClickListener {
+            if (pickupLocation == null) {
+                Toast.makeText(requireActivity(), "Please select pickup location", Toast.LENGTH_SHORT).show()
+                return@setOnClickListener
+            }
+            if (destinationLocation == null) {
+                Toast.makeText(requireActivity(), "Please select destination", Toast.LENGTH_SHORT).show()
+                return@setOnClickListener
+            }
+            startJourney( pickupLocation!!.latitude.toString(),
+                pickupLocation!!.longitude.toString(),
+                destinationLocation!!.latitude.toString(),
+                destinationLocation!!.longitude.toString())
+            setupRoutesAndStart()
+            startDelivery()
+        }
+    }
 
-        // RED deviation
-        wrongPathPolyline = mMap.addPolyline(
+    private fun setupRoutesAndStart() {
+        if (pickupLocation != null && destinationLocation != null) {
+            binding.progressBar?.visibility = View.VISIBLE
+            getStreetRoute(pickupLocation!!, destinationLocation!!)
+            binding.btnExplore.visibility = View.GONE
+        }
+    }
+
+    private fun getStreetRoute(start: LatLng, end: LatLng) {
+        CoroutineScope(Dispatchers.IO).launch {
+            try {
+                val routePoints = getRouteFromDirectionsAPI(start, end)
+                withContext(Dispatchers.Main) {
+                    binding.progressBar?.visibility = View.GONE
+                    if (routePoints.isNotEmpty()) {
+                        correctRoutePoints = routePoints
+                        drawCorrectReferenceLine()
+                        placeMarkers()
+                        fitCamera()
+                        Toast.makeText(requireActivity(), "Street-accurate route loaded!", Toast.LENGTH_SHORT).show()
+                    } else {
+                        generateGridRoute(start, end)
+                        Toast.makeText(requireActivity(), "Using grid-based route", Toast.LENGTH_SHORT).show()
+                    }
+                }
+            } catch (e: Exception) {
+                withContext(Dispatchers.Main) {
+                    binding.progressBar?.visibility = View.GONE
+                    generateGridRoute(start, end)
+                    Toast.makeText(requireActivity(), "Using grid-based route: ${e.message}", Toast.LENGTH_SHORT).show()
+                }
+            }
+        }
+    }
+
+    private suspend fun getRouteFromDirectionsAPI(origin: LatLng, destination: LatLng): List<LatLng> {
+        return withContext(Dispatchers.IO) {
+            try {
+                val url = "https://maps.googleapis.com/maps/api/directions/json" +
+                        "?origin=${origin.latitude},${origin.longitude}" +
+                        "&destination=${destination.latitude},${destination.longitude}" +
+                        "&mode=driving" +
+                        "&key=${getString(R.string.api_key)}" +
+                        "&alternatives=false"
+
+                val client = OkHttpClient.Builder()
+                    .connectTimeout(10, java.util.concurrent.TimeUnit.SECONDS)
+                    .build()
+                val request = Request.Builder().url(url).build()
+                val response = client.newCall(request).execute()
+
+                if (response.isSuccessful) {
+                    val json = JSONObject(response.body?.string() ?: "")
+                    val routes = json.getJSONArray("routes")
+                    if (routes.length() > 0) {
+                        val route = routes.getJSONObject(0)
+                        val encodedPolyline = route.getJSONObject("overview_polyline").getString("points")
+                        return@withContext decodePolyline(encodedPolyline)
+                    }
+                }
+                emptyList()
+            } catch (e: Exception) {
+                e.printStackTrace()
+                emptyList()
+            }
+        }
+    }
+
+    private fun decodePolyline(encoded: String): List<LatLng> {
+        val poly = mutableListOf<LatLng>()
+        var index = 0
+        val len = encoded.length
+        var lat = 0
+        var lng = 0
+
+        while (index < len) {
+            var b: Int; var shift = 0; var result = 0
+            do {
+                b = encoded[index++].code - 63
+                result = result or (b and 0x1f shl shift)
+                shift += 5
+            } while (b >= 0x20)
+            val dlat = if (result and 1 != 0) (result shr 1).inv() else result shr 1
+            lat += dlat
+
+            shift = 0; result = 0
+            do {
+                b = encoded[index++].code - 63
+                result = result or (b and 0x1f shl shift)
+                shift += 5
+            } while (b >= 0x20)
+            val dlng = if (result and 1 != 0) (result shr 1).inv() else result shr 1
+            lng += dlng
+
+            poly.add(LatLng(lat.toDouble() / 1e5, lng.toDouble() / 1e5))
+        }
+        return poly
+    }
+
+    private fun generateGridRoute(start: LatLng, end: LatLng) {
+        val points = mutableListOf<LatLng>()
+        points.add(start)
+        val latDiff = end.latitude - start.latitude
+        val lngDiff = end.longitude - start.longitude
+        val steps = 20
+        for (i in 1 until steps) {
+            val fraction = i.toDouble() / steps
+            val offset = Math.sin(fraction * Math.PI * 4) * 0.002
+            val lat = start.latitude + (latDiff * fraction) + (if (i % 4 == 0) offset else 0.0)
+            val lng = start.longitude + (lngDiff * fraction) + (if (i % 4 == 2) offset else 0.0)
+            points.add(LatLng(lat, lng))
+        }
+        points.add(end)
+        correctRoutePoints = points
+        drawCorrectReferenceLine()
+        placeMarkers()
+        fitCamera()
+    }
+
+    private fun drawCorrectReferenceLine() {
+        correctRefPolyline?.remove()
+        if (correctRoutePoints.isNotEmpty()) {
+            correctRefPolyline = googleMap.addPolyline(
+                PolylineOptions()
+                    .addAll(correctRoutePoints)
+                    .color(Color.parseColor("#2196F3"))
+                    .width(8f)
+                    .zIndex(1f)
+                    .geodesic(false)
+                    .clickable(true)
+            )
+        }
+    }
+
+    override fun onMapReady(map: GoogleMap) {
+        googleMap = map
+        googleMap.apply {
+            uiSettings.isZoomControlsEnabled = true
+            uiSettings.isCompassEnabled = true
+            uiSettings.isMapToolbarEnabled = false
+            mapType = GoogleMap.MAP_TYPE_NORMAL
+        }
+        checkLocationPermission()
+
+        // 🔴 Disable default my location icon
+        try {
+            googleMap.setMyLocationEnabled(false)
+        } catch (e: SecurityException) {
+            e.printStackTrace()
+        }
+
+        if (pickupLocation != null) updateMapForSelectedPlaces()
+    }
+
+    private fun updateMapForSelectedPlaces() {
+        if (pickupLocation != null && destinationLocation != null) {
+            getStreetRoute(pickupLocation!!, destinationLocation!!)
+            placeMarkers()
+            fitCamera()
+        } else if (pickupLocation != null) {
+            pickupMarker?.remove()
+            pickupMarker = googleMap.addMarker(
+                MarkerOptions()
+                    .position(pickupLocation!!)
+                    .icon(createCustomMarker("Pickup Spot", "0 Min", "0 M"))
+                    .anchor(0.5f, 1.5f)
+                    .zIndex(3f)
+            )
+            pickupMarker?.tag = "PICKUP|Not started|0.0 mi"
+        } else if (destinationLocation != null) {
+            destinationMarker?.remove()
+            destinationMarker = googleMap.addMarker(
+                MarkerOptions()
+                    .position(destinationLocation!!)
+                    .icon(createCustomMarker("Destination", "3 Min", "900 M"))
+                    .anchor(0.5f, 1.5f)
+                    .zIndex(3f)
+            )
+            destinationMarker?.tag = "DEST|-- min|-- mi"
+        }
+    }
+
+    private fun updateDestinationMarker(etaMin: Int, distanceStr: String) {
+        if (destinationMarker == null || destinationLocation == null || !isAdded) return
+
+        val displayDistance = when {
+            distanceStr.contains("mi") -> {
+                val miles = distanceStr.replace(" mi", "").toDoubleOrNull() ?: 0.0
+                if (miles < 0.1) {
+                    "${(miles * 1609.34).toInt()} M"
+                } else {
+                    "${String.format("%.1f", miles)} Mi"
+                }
+            }
+            else -> distanceStr
+        }
+
+        val newIcon = createCustomMarker("Destination", "$etaMin Min", displayDistance)
+        if (newIcon != null) {
+            destinationMarker?.setIcon(newIcon)
+            destinationMarker?.tag = "DEST|$etaMin min|$displayDistance"
+        }
+    }
+
+    private fun placeMarkers() {
+        if (pickupLocation != null) {
+            pickupMarker?.remove()
+
+            val (initialDistance, initialTime) = if (destinationLocation != null) {
+                val dist = distanceMiles(pickupLocation!!, destinationLocation!!)
+                val time = (dist / 15 * 60).toInt()
+                Pair(formatMiles(dist), "$time Min")
+            } else {
+                Pair("0 M", "0 Min")
+            }
+
+            pickupMarker = googleMap.addMarker(
+                MarkerOptions()
+                    .position(pickupLocation!!)
+                    .icon(createCustomMarker("Pickup Spot", initialTime, initialDistance))
+                    .anchor(0.5f, 1.5f)
+                    .zIndex(3f)
+            )
+            pickupMarker?.tag = "PICKUP|Not started|0.0 mi"
+        }
+
+        if (destinationLocation != null) {
+            destinationMarker?.remove()
+            destinationMarker = googleMap.addMarker(
+                MarkerOptions()
+                    .position(destinationLocation!!)
+                    .icon(createCustomMarker("Destination", "-- Min", "-- M"))
+                    .anchor(0.5f, 1.5f)
+                    .zIndex(3f)
+            )
+            destinationMarker?.tag = "DEST|-- min|-- mi"
+        }
+    }
+
+    private fun fitCamera() {
+        if (pickupLocation != null && destinationLocation != null) {
+            val bounds = LatLngBounds.Builder()
+                .include(pickupLocation!!).include(destinationLocation!!).build()
+            googleMap.animateCamera(CameraUpdateFactory.newLatLngBounds(bounds, 200))
+        } else if (pickupLocation != null) {
+            googleMap.animateCamera(CameraUpdateFactory.newLatLngZoom(pickupLocation!!, 14f))
+        }
+    }
+
+    private fun startDelivery() {
+        routeChoice = RouteChoice.CORRECT
+        isDelivering = true
+        currentStepIndex = 0
+        deliveryStartTime = System.currentTimeMillis()
+        wrongRouteStartTime = 0L
+        totalDistanceMiles = 0.0
+        wrongDistanceMiles = 0.0
+        riderOnCorrectRoute = true
+
+        deviationStartPoint = null
+        wrongPathGrowingPolyline?.remove()
+        wrongPathGrowingPolyline = null
+        currentWrongSegmentPoints.clear()
+
+        actualPathPoints.clear()
+        trailSegments.forEach { it.remove() }
+        trailSegments.clear()
+        currentSegmentPoints.clear()
+        currentSegmentIsCorrect = true
+
+        if (pickupLocation != null) {
+            currentSegmentPoints.add(pickupLocation!!)
+            actualPathPoints.add(pickupLocation!!)
+
+            riderMarker?.remove()
+
+            // 🔴 Always start with correct path icon
+            riderMarker = googleMap.addMarker(
+                MarkerOptions()
+                    .position(pickupLocation!!)
+                    .icon(getCorrectPathIcon())
+                    .zIndex(5f)
+                    .anchor(0.5f, 0.5f)
+            )
+        }
+
+        toast("✅ Delivery started! Stay on the green path")
+        startRealTimeTracking()
+        startUiLoop()
+    }
+
+    // 🔴 Helper function to get correct path icon
+    private fun getCorrectPathIcon(): BitmapDescriptor {
+        val bitmap = BitmapFactory.decodeResource(resources, R.drawable.ic_curretpathicon)
+        val scaledBitmap = Bitmap.createScaledBitmap(bitmap, 90, 90, false)
+        return BitmapDescriptorFactory.fromBitmap(scaledBitmap)
+    }
+
+    // 🔴 Helper function to get wrong path icon
+    private fun getWrongPathIcon(): BitmapDescriptor {
+        val bitmap = BitmapFactory.decodeResource(resources, R.drawable.ic_wrongpathicon)
+        val scaledBitmap = Bitmap.createScaledBitmap(bitmap, 90, 90, false)
+        return BitmapDescriptorFactory.fromBitmap(scaledBitmap)
+    }
+
+    private fun startRealTimeTracking() {
+        if (correctRoutePoints.isEmpty()) return
+
+        fusedLocationClient = LocationServices.getFusedLocationProviderClient(requireActivity())
+
+        val locationRequest = LocationRequest.Builder(
+            Priority.PRIORITY_HIGH_ACCURACY,
+            3000L  // 3 seconds interval - more responsive
+        ).apply {
+            setMinUpdateIntervalMillis(1000L)  // 1 second min interval
+            setMaxUpdateDelayMillis(5000L)     // 5 seconds max delay
+        }.build()
+
+        locationCallback = object : LocationCallback() {
+            override fun onLocationResult(locationResult: LocationResult) {
+                locationResult.lastLocation?.let { location ->
+                    val currentLoc = LatLng(location.latitude, location.longitude)
+
+                    // 🔴 Process real location only - no simulation
+                    processLiveLocation(currentLoc)
+                }
+            }
+        }
+
+        if (ActivityCompat.checkSelfPermission(
+                requireActivity(),
+                Manifest.permission.ACCESS_FINE_LOCATION
+            ) == PackageManager.PERMISSION_GRANTED
+        ) {
+            fusedLocationClient.requestLocationUpdates(
+                locationRequest,
+                locationCallback,
+                Looper.getMainLooper()
+            )
+        }
+    }
+
+    private fun processLiveLocation(currentLoc: LatLng) {
+        // 1. Destination check
+        if (destinationLocation != null) {
+            val distToDest = distanceMiles(currentLoc, destinationLocation!!)
+            if (distToDest <= DESTINATION_THRESHOLD_MILES) {
+                riderMarker?.position = destinationLocation!!
+                onArrived()
+                stopAllUpdates()
+                return
+            }
+        }
+
+        // 2. Route deviation check - 🔴 Using 30 meters threshold
+        val isDeviating = checkForDeviation(currentLoc)
+
+        if (isDeviating) {
+            handleWrongPath(currentLoc)
+        } else {
+            handleCorrectPath(currentLoc)
+
+            // Find nearest point on route for progress tracking
+            val nearestPointInfo = findNearestPointOnRoute(currentLoc)
+            currentStepIndex = nearestPointInfo.second
+        }
+
+        // 3. Update UI
+        updatePathStatusUI(isDeviating)
+
+        // 🔴 Update marker icon based on deviation status
+        updateRiderIconBasedOnDeviation(isDeviating)
+
+        riderMarker?.position = currentLoc
+        actualPathPoints.add(currentLoc)
+        drawActualPath()
+
+        // 4. Camera follow
+        if (shouldFollowRider) {
+            googleMap.animateCamera(
+                CameraUpdateFactory.newLatLngZoom(currentLoc, 17f),
+                500,
+                null
+            )
+        }
+    }
+
+    // 🔴 New function to update icon based on deviation
+    private fun updateRiderIconBasedOnDeviation(isDeviating: Boolean) {
+        val icon = if (isDeviating) getWrongPathIcon() else getCorrectPathIcon()
+        riderMarker?.setIcon(icon)
+    }
+
+    private fun findNearestPointOnRoute(currentLoc: LatLng): Pair<LatLng, Int> {
+        var minDistance = Double.MAX_VALUE
+        var nearestPoint = correctRoutePoints.first()
+        var nearestIndex = 0
+
+        correctRoutePoints.forEachIndexed { index, point ->
+            val distance = distanceMiles(currentLoc, point)
+            if (distance < minDistance) {
+                minDistance = distance
+                nearestPoint = point
+                nearestIndex = index
+            }
+        }
+
+        return Pair(nearestPoint, nearestIndex)
+    }
+
+    // 🔴 Updated: Stop all updates (location tracking + continuous API calls)
+    private fun stopAllUpdates() {
+        stopContinuousLocationUpdates()
+        if (::fusedLocationClient.isInitialized && ::locationCallback.isInitialized) {
+            fusedLocationClient.removeLocationUpdates(locationCallback)
+        }
+    }
+
+    // 🔴 Deviation Check - 30 meters threshold
+    private fun checkForDeviation(currentLocation: LatLng): Boolean {
+        var minDistance = Double.MAX_VALUE
+        for (point in correctRoutePoints) {
+            val distance = distanceMiles(currentLocation, point)
+            if (distance < minDistance) minDistance = distance
+        }
+
+        // 🔴 Return true if distance > 30 meters (0.01864 miles)
+        return minDistance > DEVIATION_THRESHOLD_MILES
+    }
+
+    private fun handleWrongPath(location: LatLng) {
+        if (riderOnCorrectRoute) {
+            riderOnCorrectRoute = false
+            currentSegmentIsCorrect = false
+            wrongRouteStartTime = System.currentTimeMillis()
+
+            deviationStartPoint = if (actualPathPoints.isNotEmpty()) {
+                actualPathPoints.last()
+            } else {
+                location
+            }
+
+            currentWrongSegmentPoints.clear()
+            deviationStartPoint?.let { currentWrongSegmentPoints.add(it) }
+            currentWrongSegmentPoints.add(location)
+
+            if (currentSegmentPoints.size > 1) {
+                commitCurrentSegment(true)
+            }
+        } else {
+            currentWrongSegmentPoints.add(location)
+        }
+
+        drawGrowingWrongPath()
+
+        if (currentWrongSegmentPoints.size > 1) {
+            val prevLoc = currentWrongSegmentPoints[currentWrongSegmentPoints.size - 2]
+            wrongDistanceMiles += distanceMiles(prevLoc, location)
+        }
+    }
+
+    private fun drawGrowingWrongPath() {
+        if (currentWrongSegmentPoints.size < 2) return
+
+        wrongPathGrowingPolyline?.remove()
+
+        wrongPathGrowingPolyline = googleMap.addPolyline(
             PolylineOptions()
-                .addAll(wrongPath)
+                .addAll(currentWrongSegmentPoints)
                 .color(Color.RED)
                 .width(14f)
-                .zIndex(6f)
+                .pattern(listOf(Dash(30f), Gap(10f)))
+                .zIndex(10f)
+                .geodesic(true)
         )
-
-        simulatePath(wrongPath)
     }
 
- /*   private fun showWrongPath() {
-        // Clear previous paths
-        clearAllPolylines()
+    private fun handleCorrectPath(location: LatLng) {
+        if (!riderOnCorrectRoute) {
+            riderOnCorrectRoute = true
+            currentSegmentIsCorrect = true
 
-        if (routePoints.isNotEmpty() && pickupSpotLatLng != null) {
-            // Create a wrong path near the starting point
-            val wrongPath = createWrongPathNearby(pickupSpotLatLng!!)
+            if (currentWrongSegmentPoints.size > 1) {
+                val permanentWrongPoly = googleMap.addPolyline(
+                    PolylineOptions()
+                        .addAll(currentWrongSegmentPoints)
+                        .color(Color.RED)
+                        .width(12f)
+                        .pattern(listOf(Dash(20f), Gap(8f)))
+                        .zIndex(3f)
+                        .geodesic(false)
+                )
+                trailSegments.add(permanentWrongPoly)
+            }
 
-            // Show wrong path in red
-            wrongPathPolyline = mMap.addPolyline(
-                PolylineOptions()
-                    .addAll(wrongPath)
-                    .color(Color.RED)
-                    .width(15f)
-                    .zIndex(5f)
-            )
+            wrongPathGrowingPolyline?.remove()
+            wrongPathGrowingPolyline = null
 
-            Toast.makeText(requireContext(), "Showing Wrong Path (Red) - Near Start Point", Toast.LENGTH_SHORT).show()
+            deviationStartPoint = null
+            currentWrongSegmentPoints.clear()
 
-            // Simulate walking on wrong path
-            simulatePath(wrongPath)
+            if (currentSegmentPoints.size > 1) {
+                commitCurrentSegment(false)
+            }
+            currentSegmentPoints.clear()
+            currentSegmentPoints.add(location)
         } else {
-            Toast.makeText(requireContext(), "Please wait, route is loading...", Toast.LENGTH_SHORT).show()
-            drawRouteToDestination()
+            currentSegmentPoints.add(location)
         }
-    }*/
 
-    private fun createWrongPathNearby(startPoint: LatLng): List<LatLng> {
-        val wrongPath = mutableListOf<LatLng>()
-        wrongPath.add(startPoint)
-
-        // Generate points that deviate from the correct path
-        // First deviation - go in opposite direction
-        wrongPath.add(LatLng(startPoint.latitude + 0.002, startPoint.longitude + 0.002))
-        wrongPath.add(LatLng(startPoint.latitude + 0.003, startPoint.longitude + 0.003))
-        wrongPath.add(LatLng(startPoint.latitude + 0.002, startPoint.longitude + 0.005))
-        wrongPath.add(LatLng(startPoint.latitude, startPoint.longitude + 0.004))
-        wrongPath.add(LatLng(startPoint.latitude - 0.001, startPoint.longitude + 0.002))
-
-        // Add some points that try to get back but still wrong
-        wrongPath.add(LatLng(startPoint.latitude - 0.002, startPoint.longitude))
-        wrongPath.add(LatLng(startPoint.latitude - 0.001, startPoint.longitude - 0.002))
-
-        return wrongPath
+        if (currentSegmentPoints.size > 1) {
+            val prevLoc = currentSegmentPoints[currentSegmentPoints.size - 2]
+            totalDistanceMiles += distanceMiles(prevLoc, location)
+        }
     }
 
-    private fun clearAllPolylines() {
-        correctPathPolyline?.remove()
-        wrongPathPolyline?.remove()
-        optimalRoutePolyline?.remove()
-        userRoutePolyline?.remove()
-        deviationRoutePolyline?.remove()
+    private fun drawActualPath() {
+        liveSegmentPolyline?.remove()
+        if (actualPathPoints.size < 2) return
 
-        // Stop any ongoing simulation
-        simulationRunnable?.let { handler.removeCallbacks(it) }
+        if (!riderOnCorrectRoute) return
+
+        liveSegmentPolyline = googleMap.addPolyline(
+            PolylineOptions()
+                .addAll(actualPathPoints)
+                .color(Color.parseColor("#1ABC9C"))
+                .width(12f)
+                .zIndex(4f)
+                .geodesic(false)
+        )
     }
 
-    private fun simulatePath(points: List<LatLng>) {
-        // Reset all tracking variables
-        userPathPoints.clear()
-        deviationPathPoints.clear()
-        isDeviated = false
-        deviationStartPoint = null
-        lastCorrectPoint = pickupSpotLatLng
+    private var liveSegmentPolyline: Polyline? = null
 
-        // Clear previous user path
-        userRoutePolyline?.remove()
-        deviationRoutePolyline?.remove()
-        userMarker?.remove()
+    private fun updatePathStatusUI(isDeviating: Boolean) {
+        // Optional: Update UI text if needed
+    }
 
-        // Simulate walking through each point
-        var index = 0
-        simulationRunnable = object : Runnable {
+    private fun commitCurrentSegment(wasCorrect: Boolean) {
+        if (currentSegmentPoints.size < 2) { currentSegmentPoints.clear(); return }
+        val poly = googleMap.addPolyline(buildSegmentOptions(wasCorrect, currentSegmentPoints))
+        trailSegments.add(poly)
+        currentSegmentPoints.clear()
+    }
+
+    private fun buildSegmentOptions(isCorrect: Boolean, points: List<LatLng>): PolylineOptions {
+        return if (isCorrect) {
+            PolylineOptions().addAll(points).color(Color.parseColor("#1ABC9C")).width(9f).zIndex(3f).geodesic(false)
+        } else {
+            PolylineOptions().addAll(points).color(Color.RED).width(9f)
+                .pattern(listOf(Dash(20f), Gap(10f))).zIndex(3f).geodesic(false)
+        }
+    }
+
+    private fun startUiLoop() {
+        uiRunnable = object : Runnable {
             override fun run() {
-                if (index < points.size) {
-                    val point = points[index]
+                if (!isDelivering) return
+                val now = System.currentTimeMillis()
 
-                    // Check if this point is on the correct route
-                    val isOnRoute = PolyUtil.isLocationOnPath(point, routePoints, true, 100.0)
+                val elapsedSec = (now - deliveryStartTime) / 1000L
+                val fromTimeStr = when {
+                    elapsedSec < 60 -> "${elapsedSec}s"
+                    else -> "${elapsedSec / 60}min ${elapsedSec % 60}s"
+                }
+                val fromDistStr = formatMiles(totalDistanceMiles)
 
-                    // Update user location
-                    updateUserLocationForSimulation(point, isOnRoute)
+                updatePickupMarker(fromTimeStr, fromDistStr)
 
-                    index++
+                if (correctRoutePoints.isNotEmpty() && destinationLocation != null) {
+                    val currLoc = riderMarker?.position ?: correctRoutePoints[currentStepIndex.coerceAtMost(correctRoutePoints.size - 1)]
 
-                    // Schedule next point
-                    handler.postDelayed(this, 1500) // 1.5 second delay
+                    val distToDest = distanceMiles(currLoc, destinationLocation!!)
+                    val etaMin = (distToDest / 15 * 60).toInt()
+                    val toDistStr = formatDistanceWithUnit(distToDest)
+
+                    updateDestinationMarker(etaMin, toDistStr)
+                }
+
+                mainHandler.postDelayed(this, UI_REFRESH_MS)
+            }
+        }
+        mainHandler.post(uiRunnable!!)
+    }
+
+    private fun updatePickupMarker(timeStr: String, distanceStr: String) {
+        if (pickupMarker == null || pickupLocation == null || !isAdded) return
+        val displayDistance = when {
+            distanceStr.contains("mi") -> {
+                val miles = distanceStr.replace(" mi", "").toDoubleOrNull() ?: 0.0
+                if (miles < 0.1) {
+                    "${(miles * 1609.34).toInt()} M"
+                } else {
+                    "${String.format("%.2f", miles)} Mi"
                 }
             }
+            else -> distanceStr
         }
 
-        simulationRunnable?.run()
+        val newIcon = createCustomMarker("Pickup Spot", timeStr, displayDistance)
+        if (newIcon != null) {
+            pickupMarker?.setIcon(newIcon)
+            pickupMarker?.tag = "PICKUP|$timeStr|$displayDistance"
+        }
     }
 
-    private fun updateUserLocationForSimulation(newLatLng: LatLng, isOnRoute: Boolean) {
-        this.currentLatLng = newLatLng
-
-        if (isOnRoute) {
-            // User is on correct route
-            if (isDeviated) {
-                handleBackOnRoute()
-            } else {
-                userPathPoints.add(newLatLng)
-                lastCorrectPoint = newLatLng
+    private fun formatDistanceWithUnit(distanceMiles: Double): String {
+        return when {
+            distanceMiles < 0.1 -> {
+                val meters = (distanceMiles * 1609.34).toInt()
+                "${meters} M"
             }
-        } else {
-            // User is off route
-            if (!isDeviated) {
-                handleStartDeviation(newLatLng)
-            } else {
-                deviationPathPoints.add(newLatLng)
+            distanceMiles < 1.0 -> {
+                String.format("%.2f Mi", distanceMiles)
+            }
+            else -> {
+                String.format("%.1f Mi", distanceMiles)
             }
         }
+    }
 
-        drawUserPosition(newLatLng, isOnRoute)
-        updateUiStatus(isOnRoute)
+    private fun onArrived() {
+        isDelivering = false
+        stopLoops()
+        stopAllUpdates() // 🔴 Stop all updates including continuous API calls
 
-        // Animate camera to follow simulation
-       // mMap.animateCamera(CameraUpdateFactory.newLatLngZoom(newLatLng, 16f))
-        mMap.animateCamera(
-            CameraUpdateFactory.newCameraPosition(
-                CameraPosition.Builder()
-                    .target(newLatLng)
-                    .zoom(17f)
-                    .tilt(45f)
-                    .build()
+        if (!riderOnCorrectRoute && currentWrongSegmentPoints.size > 1) {
+            val finalWrongPoly = googleMap.addPolyline(
+                PolylineOptions()
+                    .addAll(currentWrongSegmentPoints)
+                    .color(Color.RED).width(12f)
+                    .pattern(listOf(Dash(20f), Gap(8f))).zIndex(3f).geodesic(false)
             )
-        )
+            trailSegments.add(finalWrongPoly)
+            wrongPathGrowingPolyline?.remove()
+            wrongPathGrowingPolyline = null
+        }
 
+        destinationLocation?.let { riderMarker?.position = it }
+
+        drawActualPath()
+
+        val totalMin = (System.currentTimeMillis() - deliveryStartTime) / 60000
+        val totalDist = formatMiles(totalDistanceMiles)
+
+        val message = if (wrongDistanceMiles > 0) {
+            val wrongDist = formatMiles(wrongDistanceMiles)
+            "⚠️ Delivery completed!\nWrong path: $wrongDist\nTotal distance: $totalDist in ${totalMin}min"
+        } else {
+            "✅ Perfect delivery!\nYou stayed on correct path!\nTotal distance: $totalDist in ${totalMin}min"
+        }
+
+        toast(message)
     }
 
-    override fun onMapReady(googleMap: GoogleMap) {
-        mMap = googleMap
-        enableMyLocation()
+    private fun stopLoops() {
+        uiRunnable?.let { mainHandler.removeCallbacks(it) }
+        uiRunnable = null
+    }
 
-        // Draw route if locations are set
-        if (pickupSpotLatLng != null && destinationLatLng != null) {
-            drawRouteToDestination()
+    private fun checkLocationPermission() {
+        if (ContextCompat.checkSelfPermission(requireActivity(), Manifest.permission.ACCESS_FINE_LOCATION)
+            != PackageManager.PERMISSION_GRANTED) {
+            ActivityCompat.requestPermissions(requireActivity(),
+                arrayOf(Manifest.permission.ACCESS_FINE_LOCATION), LOC_PERM_REQUEST)
+        } else {
+            enableMyLocation()
         }
     }
 
     private fun enableMyLocation() {
-        if (ActivityCompat.checkSelfPermission(
-                requireContext(),
-                Manifest.permission.ACCESS_FINE_LOCATION
-            ) == PackageManager.PERMISSION_GRANTED
-        ) {
-            mMap.isMyLocationEnabled = true
-            startLocationUpdates()
-        } else {
-            ActivityCompat.requestPermissions(
-                requireActivity(),
-                arrayOf(Manifest.permission.ACCESS_FINE_LOCATION),
-                LOCATION_PERMISSION_REQUEST_CODE
-            )
+        if (ActivityCompat.checkSelfPermission(requireActivity(), Manifest.permission.ACCESS_FINE_LOCATION)
+            == PackageManager.PERMISSION_GRANTED) {
+            // 🔴 Don't enable default my location - we use custom marker
+            // googleMap.isMyLocationEnabled = true
         }
     }
 
-    @SuppressLint("MissingPermission")
-    private fun startLocationUpdates() {
-        val locationRequest = LocationRequest.create().apply {
-            interval = 10000
-            fastestInterval = 5000
-            priority = LocationRequest.PRIORITY_HIGH_ACCURACY
-        }
-
-        locationCallback = object : LocationCallback() {
-            override fun onLocationResult(locationResult: LocationResult) {
-                locationResult ?: return
-                for (location in locationResult.locations) {
-                    val newLatLng = LatLng(location.latitude, location.longitude)
-
-                    // Set pickup spot if it's not set yet
-                    if (pickupSpotLatLng == null) {
-                        pickupSpotLatLng = newLatLng
-                        lastCorrectPoint = newLatLng
-                        userPathPoints.add(newLatLng)
-
-                        // Draw the route now that we have pickup spot
-                        if (destinationLatLng != null) {
-                            drawRouteToDestination()
-                        }
-                    }
-                    updateUserLocation(LatLng(location.latitude, location.longitude), false)
-                }
-            }
-        }
-
-        fusedLocationClient.requestLocationUpdates(locationRequest, locationCallback, null)
-    }
-
-    /*private fun updateUserLocation(newLatLng: LatLng, isSimulated: Boolean) {
-        this.currentLatLng = newLatLng
-
-        // Check if user is on correct route
-        val isOnRoute = PolyUtil.isLocationOnPath(newLatLng, routePoints, true, 100.0)
-
-        if (isOnRoute) {
-            // User is on correct route
-            if (isDeviated) {
-                // User was deviated but now back on route
-                handleBackOnRoute()
-            } else {
-                // User continues on correct route
-                userPathPoints.add(newLatLng)
-                lastCorrectPoint = newLatLng
-            }
-        } else {
-            // User is off route
-            if (!isDeviated) {
-                // Start of deviation
-                handleStartDeviation(newLatLng)
-            } else {
-                // Continue deviation
-                deviationPathPoints.add(newLatLng)
-            }
-        }
-
-        drawUserPosition(newLatLng, isOnRoute)
-        updateUiStatus(isOnRoute)
-
-        if (!isSimulated) {
-           // mMap.animateCamera(CameraUpdateFactory.newLatLngZoom(newLatLng, 15f))
-            mMap.animateCamera(
-                CameraUpdateFactory.newCameraPosition(
-                    CameraPosition.Builder()
-                        .target(newLatLng)
-                        .zoom(17f)
-                        .tilt(45f)
-                        .build()
-                )
-            )
-
-        }
-    }*/
-    private fun updateUserLocation(newLatLng: LatLng, isSimulated: Boolean) {
-
-        this.currentLatLng = newLatLng
-
-        // 🔥 Only check deviation in simulation mode
-        if (isSimulationMode) {
-            val isOnRoute = PolyUtil.isLocationOnPath(newLatLng, routePoints, true, 150.0)
-
-            if (isOnRoute) {
-                if (isDeviated) {
-                    handleBackOnRoute()
-                } else {
-                    userPathPoints.add(newLatLng)
-                    lastCorrectPoint = newLatLng
-                }
-            } else {
-                if (!isDeviated) {
-                    handleStartDeviation(newLatLng)
-                } else {
-                    deviationPathPoints.add(newLatLng)
-                }
-            }
-
-            drawUserPosition(newLatLng, isOnRoute)
-            updateUiStatus(isOnRoute)
-        } else {
-            // ✅ Normal GPS tracking without deviation detection
-            drawUserPosition(newLatLng, true)
-        }
-
-        if (!isSimulated) {
-            mMap.animateCamera(
-                CameraUpdateFactory.newCameraPosition(
-                    CameraPosition.Builder()
-                        .target(newLatLng)
-                        .zoom(17f)
-                        .tilt(45f)
-                        .build()
-                )
-            )
+    override fun onRequestPermissionsResult(
+        requestCode: Int, permissions: Array<out String>, grantResults: IntArray
+    ) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
+        if (requestCode == LOC_PERM_REQUEST
+            && grantResults.isNotEmpty()
+            && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+            enableMyLocation()
+            setCurrentLocationInPickup()
         }
     }
 
-
-    private fun handleStartDeviation(deviationPoint: LatLng) {
-        isDeviated = true
-        deviationStartPoint = lastCorrectPoint ?: pickupSpotLatLng
-        deviationPathPoints.clear()
-        deviationStartPoint?.let { deviationPathPoints.add(it) }
-        deviationPathPoints.add(deviationPoint)
-
-        Toast.makeText(requireContext(), "Route deviation detected!", Toast.LENGTH_LONG).show()
+    private fun distanceMiles(point1: LatLng, point2: LatLng): Double {
+        val R = 3959.0
+        val latDistance = Math.toRadians(point2.latitude - point1.latitude)
+        val lonDistance = Math.toRadians(point2.longitude - point1.longitude)
+        val a = Math.sin(latDistance / 2) * Math.sin(latDistance / 2) +
+                Math.cos(Math.toRadians(point1.latitude)) *
+                Math.cos(Math.toRadians(point2.latitude)) *
+                Math.sin(lonDistance / 2) * Math.sin(lonDistance / 2)
+        val c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a))
+        return R * c
     }
 
-    private fun handleBackOnRoute() {
-        isDeviated = false
-        deviationPathPoints.clear()
-        deviationRoutePolyline?.remove()
-        deviationRoutePolyline = null
+    private fun formatMiles(miles: Double): String = String.format("%.1f mi", miles)
 
-        Toast.makeText(requireContext(), "Back on correct route", Toast.LENGTH_SHORT).show()
-
-        // Update last correct point
-        lastCorrectPoint = currentLatLng
-        currentLatLng?.let { userPathPoints.add(it) }
-    }
-
-    /*private fun drawUserPosition(position: LatLng, isOnRoute: Boolean) {
-        // Update user marker
-        userMarker?.remove()
-        userMarker = mMap.addMarker(
-            MarkerOptions()
-                .position(position)
-                .icon(BitmapDescriptorFactory.fromResource(R.drawable.track_image)) // Custom user icon
-                .title(if (isOnRoute) "On Route" else "Off Route")
-                .snippet("Current Location")
-        )
-
-        // Draw user path (blue line when on route)
-        if (userPathPoints.size > 1) {
-            userRoutePolyline?.remove()
-            userRoutePolyline = mMap.addPolyline(
-                PolylineOptions()
-                    .addAll(userPathPoints)
-                    .color(Color.BLUE)
-                    .width(8f)
-                    .zIndex(3f)
-            )
-        }
-
-        // Draw deviation path (red line when off route)
-        if (isDeviated && deviationPathPoints.size > 1) {
-            deviationRoutePolyline?.remove()
-            deviationRoutePolyline = mMap.addPolyline(
-                PolylineOptions()
-                    .addAll(deviationPathPoints)
-                    .color(Color.RED)
-                    .width(8f)
-                    .zIndex(4f)
-            )
-        }
-    }*/
-
-    private fun drawUserPosition(position: LatLng, isOnRoute: Boolean) {
-
-        if (userMarker == null) {
-            userMarker = mMap.addMarker(
-                MarkerOptions()
-                    .position(position)
-                    .icon(BitmapDescriptorFactory.fromResource(R.drawable.track_image))
-                    .anchor(0.5f, 0.5f)
-            )
-        } else {
-            userMarker?.position = position
-        }
-
-        // Draw blue travelled path
-        if (userPathPoints.size > 1) {
-            userRoutePolyline?.remove()
-            userRoutePolyline = mMap.addPolyline(
-                PolylineOptions()
-                    .addAll(userPathPoints)
-                    .color(Color.parseColor("#1E88E5"))
-                    .width(10f)
-                    .zIndex(4f)
-            )
-        }
-
-        // Draw red deviation
-        if (isDeviated && deviationPathPoints.size > 1) {
-            deviationRoutePolyline?.remove()
-            deviationRoutePolyline = mMap.addPolyline(
-                PolylineOptions()
-                    .addAll(deviationPathPoints)
-                    .color(Color.RED)
-                    .width(10f)
-                    .zIndex(7f)
-            )
-        }
-    }
-
-/*    private fun updateUiStatus(isOnRoute: Boolean) {
-        val mainActivity = requireActivity() as MainActivity
-        if (isOnRoute) {
-            mainActivity.setImgseetimer().visibility = View.GONE
-            mainActivity.setHeading().text = calculateETAAndDistance()
-            mainActivity.setTitle().text = "On Correct Path"
-            mainActivity.setSubTitle().text = "Continue following this route"
-        } else {
-            mainActivity.setImgseetimer().visibility = View.VISIBLE
-            mainActivity.setHeading().text = "Off Route - ${calculateDistanceFromRoute()} away"
-            mainActivity.setTitle().text = "Warning!"
-            mainActivity.setSubTitle().text = "You have deviated from the planned route"
-        }
-    }*/
-private fun updateUiStatus(isOnRoute: Boolean) {
-
-    val mainActivity = requireActivity() as MainActivity
-
-    if (isOnRoute) {
-
-        mainActivity.setImgseetimer().visibility = View.GONE
-        mainActivity.setHeading().text = calculateETAAndDistance()
-
-        mainActivity.setTitle().text = "Kudoos!!!"
-        mainActivity.setSubTitle().text =
-            "You are on Right path. Go on with same path."
-
-    } else {
-
-        mainActivity.setImgseetimer().visibility = View.VISIBLE
-        mainActivity.setHeading().text =
-            "${calculateDistanceFromRoute()} away"
-
-        mainActivity.setTitle().text = "Oooopss!!!"
-        mainActivity.setSubTitle().text =
-            "Seems like you have distracted from the actual path. Your emergency contact has been notified."
-    }
-}
-
-
-    private fun calculateETAAndDistance(): String {
-        if (routePoints.isEmpty() || currentLatLng == null) return "Calculating route..."
-
-        val nearestPoint = routePoints.minByOrNull {
-            SphericalUtil.computeDistanceBetween(currentLatLng!!, it)
-        } ?: return "Route not available"
-
-        val nearestPointIndex = routePoints.indexOf(nearestPoint)
-        val remainingRoute = routePoints.drop(nearestPointIndex)
-
-        val remainingDistance = if (remainingRoute.size > 1) {
-            SphericalUtil.computeLength(remainingRoute)
-        } else {
-            destinationLatLng?.let { SphericalUtil.computeDistanceBetween(currentLatLng!!, it) } ?: 0.0
-        }
-
-        val etaMinutes = (remainingDistance / 83.33).toInt() // Assuming 5km/h walking speed
-        return "${etaMinutes} min (${"%.1f".format(remainingDistance / 1000)} km) to destination"
-    }
-
-    private fun calculateDistanceFromRoute(): String {
-        if (routePoints.isEmpty() || currentLatLng == null) return "Unknown"
-
-        val nearestPoint = routePoints.minByOrNull {
-            SphericalUtil.computeDistanceBetween(currentLatLng!!, it)
-        } ?: return "Unknown"
-
-        val distance = SphericalUtil.computeDistanceBetween(currentLatLng!!, nearestPoint)
-        return if (distance < 1000) "${distance.toInt()} meters" else "%.1f km".format(distance / 1000)
-    }
-
-    private fun drawRouteToDestination() {
-        if (pickupSpotLatLng == null || destinationLatLng == null) return
-
-        val apiKey = getString(R.string.api_key)
-        val url = "https://maps.googleapis.com/maps/api/directions/json?" +
-                "origin=${pickupSpotLatLng!!.latitude},${pickupSpotLatLng!!.longitude}" +
-                "&destination=${destinationLatLng!!.latitude},${destinationLatLng!!.longitude}" +
-                "&mode=walking&key=$apiKey"
-
-        thread {
-            try {
-                val result = URL(url).readText()
-                val jsonObject = JSONObject(result)
-                processDirectionsResponse(jsonObject)
-            } catch (e: Exception) {
-                requireActivity().runOnUiThread {
-                    Toast.makeText(requireContext(), "Error: ${e.message}", Toast.LENGTH_LONG).show()
-                }
-            }
-        }
-    }
-
-    private fun processDirectionsResponse(jsonObject: JSONObject) {
-        val routes = jsonObject.getJSONArray("routes")
-        if (routes.length() > 0) {
-            val points = routes.getJSONObject(0)
-                .getJSONObject("overview_polyline")
-                .getString("points")
-
-            routePoints = PolyUtil.decode(points)
-
-            requireActivity().runOnUiThread {
-                drawMapRoute()
-            }
-        }
-    }
-
-    private fun drawMapRoute() {
-        mMap.clear()
-        userPathPoints.clear()
-        deviationPathPoints.clear()
-        isSimulationMode = false
-        isDeviated = false
-        // Draw optimal route (gray/light blue color) - will be hidden initially
-        optimalRoutePolyline = mMap.addPolyline(
-            PolylineOptions()
-                .addAll(routePoints)
-                .color(Color.parseColor("#87CEEB")) // Light blue color
-                .width(12f)
-                .zIndex(1f)
-        )
-
-        // Make it slightly transparent to show it's the base route
-        optimalRoutePolyline?.isVisible = true
-
-        // Add pickup spot marker
-        if (pickupSpotLatLng != null) {
-            pickupMarker = mMap.addMarker(
-                MarkerOptions()
-                    .position(pickupSpotLatLng!!)
-                    .title("Starting Point")
-                    .icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_GREEN))
-            )
-
-            // Initialize user path with pickup spot
-            userPathPoints.add(pickupSpotLatLng!!)
-            lastCorrectPoint = pickupSpotLatLng
-        }
-
-        // Add destination marker
-        if (destinationLatLng != null) {
-            destinationMarker = mMap.addMarker(
-                MarkerOptions()
-                    .position(destinationLatLng!!)
-                    .title("Destination")
-                    .icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_RED))
-            )
-        }
-
-        // Move camera to show entire route
-        if (routePoints.isNotEmpty()) {
-            val bounds = routePoints.fold(LatLngBounds.Builder()) { builder, latLng ->
-                builder.include(latLng)
-            }.build()
-            mMap.animateCamera(CameraUpdateFactory.newLatLngBounds(bounds, 100))
-        }
-    }
+    private fun toast(msg: String) = Toast.makeText(requireContext(), msg, Toast.LENGTH_SHORT).show()
 
     override fun onResume() {
         super.onResume()
@@ -746,31 +954,1459 @@ private fun updateUiStatus(isOnRoute: Boolean) {
     override fun onPause() {
         super.onPause()
         binding.map.onPause()
+        // Don't stop updates on pause, let them continue
     }
 
     override fun onDestroyView() {
         super.onDestroyView()
-        binding.map.onDestroy()
-        fusedLocationClient.removeLocationUpdates(locationCallback)
+        stopAllUpdates() // 🔴 Stop all updates
+        stopLoops()
         simulationRunnable?.let { handler.removeCallbacks(it) }
+        riderMarker = null
+        pickupMarker = null
+        destinationMarker = null
     }
 
     companion object {
         private const val LOCATION_PERMISSION_REQUEST_CODE = 101
     }
+
+    private fun createCustomMarker(title: String, time: String = "", distance: String = ""): BitmapDescriptor? {
+        if (!isAdded) {
+            Log.e("MarkerError", "Fragment not attached, cannot create marker")
+            return null
+        }
+        return try {
+            val markerView =
+                LayoutInflater.from(requireContext()).inflate(R.layout.layout_marker_info, null)
+
+            val tvTimeView = markerView.findViewById<TextView>(R.id.tvTime)
+            val tvDistanceView = markerView.findViewById<TextView>(R.id.tvDistance)
+            val tvTitleView = markerView.findViewById<TextView>(R.id.tvTitle)
+
+            Log.d("MarkerDebug", "tvTime found: ${tvTimeView != null}")
+            Log.d("MarkerDebug", "tvDistance found: ${tvDistanceView != null}")
+            Log.d("MarkerDebug", "tvTitle found: ${tvTitleView != null}")
+
+            tvTimeView?.text = time
+            tvDistanceView?.text = distance
+            tvTitleView?.text = title
+
+            tvTimeView?.setTextColor(Color.WHITE)
+            tvDistanceView?.setTextColor(Color.WHITE)
+            tvTitleView?.setTextColor(Color.BLACK)
+
+            markerView.measure(
+                View.MeasureSpec.makeMeasureSpec(0, View.MeasureSpec.UNSPECIFIED),
+                View.MeasureSpec.makeMeasureSpec(0, View.MeasureSpec.UNSPECIFIED)
+            )
+            markerView.layout(0, 0, markerView.measuredWidth, markerView.measuredHeight)
+
+            val bitmap = Bitmap.createBitmap(
+                markerView.measuredWidth,
+                markerView.measuredHeight,
+                Bitmap.Config.ARGB_8888
+            )
+            val canvas = Canvas(bitmap)
+            markerView.draw(canvas)
+
+            return BitmapDescriptorFactory.fromBitmap(bitmap)
+
+        } catch (e: Exception) {
+            Log.e("MarkerError", "Error creating marker: ${e.message}")
+            null
+        }
+    }
+
+    private fun startJourney(
+        currentLatitude : String,
+        currentLongitude : String,
+        destinationLatitude : String,
+        destinationLongitude : String) {
+        if (BaseApplication.isOnline(requireContext())) {
+            BaseApplication.openDialog()
+            lifecycleScope.launch {
+                viewModel.startJourney(currentLatitude,currentLongitude,destinationLatitude,destinationLongitude).collect {
+                    BaseApplication.dismissDialog()
+                    try {
+                        Log.d("@@@ addMea List ", "data :- $it")
+                        if (it.data!!.code == 200 && it.data!!.status) {
+                            val journeyId = it.data?.data?.journey_id
+                            if (journeyId != null) {
+                                currentJourneyId = journeyId.toString()
+                                // 🔴 Start continuous location updates instead of periodic WorkManager
+                                startContinuousLocationUpdates(currentJourneyId)
+                            }
+                            showAlert(it.data!!.message, false)
+                        } else {
+                            handleError(it.data!!.code, it.data!!.message)
+                        }
+                    } catch (e: Exception) {
+                        showAlert(e.message, false)
+                    }
+                }
+            }
+        } else {
+            AlertUtils.showAlert(requireContext(), MessageClass.networkError, false)
+        }
+    }
+
+    // This is common function for show the alert box
+    private fun showAlert(message: String?, status: Boolean) {
+        BaseApplication.alertError(context, message, status)
+    }
+
+    private fun handleError(code: Int?, message: String?) {
+        if (code == MessageClass.deactivatedUser || code == MessageClass.deletedUser) {
+            showAlert(message, true)
+        } else {
+            showAlert(message, false)
+        }
+    }
+
+    // 🔴 NEW: Continuous location updates using coroutine (every 5 seconds)
+    private fun startContinuousLocationUpdates(journeyId: String) {
+        Log.d("RetrofitLog", "🚀 Starting CONTINUOUS location updates for journey: $journeyId")
+
+        currentJourneyId = journeyId
+        isUpdatingLocation = true
+
+        // Cancel any existing job
+        continuousLocationUpdateJob?.cancel()
+
+        // Start continuous updates using coroutine
+        continuousLocationUpdateJob = lifecycleScope.launch {
+            while (isUpdatingLocation) {
+                try {
+                    // Get current location from marker
+                    val currentLocation = riderMarker?.position
+
+                    if (currentLocation != null) {
+                        Log.d("RetrofitLog", "📍 Current location: (${currentLocation.latitude}, ${currentLocation.longitude})")
+
+                        // Call API directly using coroutine
+                        updateLiveLocationDirectly(
+                            journeyId = journeyId,
+                            token = getAuthToken(),
+                            latitude = currentLocation.latitude,
+                            longitude = currentLocation.longitude
+                        )
+                    } else {
+                        Log.w("RetrofitLog", "⚠️ Rider marker location is null")
+                    }
+
+                    // Wait for 5 seconds
+                    delay(5000)
+
+                } catch (e: Exception) {
+                    Log.e("RetrofitLog", "❌ Error in continuous update loop: ${e.message}")
+                    e.printStackTrace()
+                    // Still wait and continue
+                    delay(5000)
+                }
+            }
+        }
+
+        Log.d("RetrofitLog", "✅ Continuous updates coroutine started")
+    }
+
+    // Direct API call function
+    private suspend fun updateLiveLocationDirectly(
+        journeyId: String,
+        token: String,
+        latitude: Double,
+        longitude: Double
+    ) {
+        withContext(Dispatchers.IO) {
+            try {
+                Log.d("RetrofitLog", "📡 Making direct API call at ${System.currentTimeMillis()}")
+
+                val client = OkHttpClient.Builder()
+                    .connectTimeout(30, TimeUnit.SECONDS)
+                    .writeTimeout(30, TimeUnit.SECONDS)
+                    .readTimeout(30, TimeUnit.SECONDS)
+                    .build()
+
+                val json = JSONObject().apply {
+                    put("journey_id", journeyId)
+                    put("latitude", latitude.toString())
+                    put("longitude", longitude.toString())
+                }
+
+                val request = Request.Builder()
+                    .url("https://alertapp.tgastaging.com/api/update_live_location")
+                    .post(json.toString().toRequestBody("application/json".toMediaType()))
+                    .addHeader("Authorization", "Bearer $token")
+                    .addHeader("Content-Type", "application/json")
+                    .build()
+
+                val response = client.newCall(request).execute()
+
+                Log.d("RetrofitLog", "📥 Response Code: ${response.code}")
+
+                if (response.isSuccessful) {
+                    val responseBody = response.body?.string()
+                    Log.d("RetrofitLog", "✅ API Success: $responseBody")
+                } else {
+                    Log.e("RetrofitLog", "❌ API Failed: ${response.code}")
+                }
+
+            } catch (e: Exception) {
+                Log.e("RetrofitLog", "❌ Network Error: ${e.message}")
+                e.printStackTrace()
+            }
+        }
+    }
+
+    // Stop function for continuous updates
+    private fun stopContinuousLocationUpdates() {
+        Log.d("RetrofitLog", "🛑 Stopping continuous location updates")
+        isUpdatingLocation = false
+        continuousLocationUpdateJob?.cancel()
+        continuousLocationUpdateJob = null
+    }
+
+    // Function to get auth token
+    private fun getAuthToken(): String {
+        return SessionManagement(requireActivity()).getUserToken().toString()
+    }
 }
+/*@AndroidEntryPoint
+class WatchOverMeChooseStartingPointFragment : Fragment(), OnMapReadyCallback {
+    private lateinit var binding: FragmentWatchovermechoosestartingpointBinding
+    private lateinit var viewModel: WatchOverMeViewModel
+    private lateinit var googleMap: GoogleMap
+    private var shouldFollowRider = true
+    private lateinit var fusedLocationClient: FusedLocationProviderClient
+    private lateinit var locationCallback: LocationCallback
+    private lateinit var placesClient: PlacesClient
+    private lateinit var currentLocationAdapter: PlaceAutoSuggestAdapter
+    private lateinit var destinationAdapter: PlaceAutoSuggestAdapter
+    private val handler = Handler(Looper.getMainLooper())
+    private var simulationRunnable: Runnable? = null
+
+    private var riderMarker: Marker? = null
+    private var pickupMarker: Marker? = null
+    private var destinationMarker: Marker? = null
+
+    // Selected places
+    private var pickupLocation: LatLng? = null
+    private var destinationLocation: LatLng? = null
+
+    // Autocomplete fragments
+    private lateinit var destinationAutocompleteFragment: AutocompleteSupportFragment
+
+    private var correctRefPolyline: Polyline? = null
+    private val trailSegments = mutableListOf<Polyline>()
+    private var correctRoutePoints: List<LatLng> = listOf()
+    private val actualPathPoints = mutableListOf<LatLng>()
+
+    private enum class RouteChoice { NONE, CORRECT }
+    private var routeChoice = RouteChoice.NONE
+    private var isDelivering = false
+    private var currentStepIndex = 0
+
+    private var deliveryStartTime = 0L
+    private var wrongRouteStartTime = 0L
+    private var totalDistanceMiles = 0.0
+    private var wrongDistanceMiles = 0.0
+
+    private var currentSegmentIsCorrect = true
+    private val currentSegmentPoints = mutableListOf<LatLng>()
+    private var riderOnCorrectRoute = true
+
+    private var deviationStartPoint: LatLng? = null
+    private var wrongPathGrowingPolyline: Polyline? = null
+    private val currentWrongSegmentPoints = mutableListOf<LatLng>()
+
+    // 🔴 IMPORTANT: 30 meters threshold (0.01864 miles = ~30 meters)
+    private val DEVIATION_THRESHOLD_MILES = 30.0 / 1609.34  // ~0.01864 miles (30 meters)
+    private val DESTINATION_THRESHOLD_MILES = 5.0 / 1609.34  // ~0.003107 miles
+
+    // ─── Handlers ────────────────────────────────────────────────────
+    private val mainHandler = Handler(Looper.getMainLooper())
+    private var uiRunnable: Runnable? = null
+    private val UI_REFRESH_MS = 500L
+    private val LOC_PERM_REQUEST = 100
+    // Add this property
+    private var locationUpdateWorkManager: WorkManager? = null
+    private var currentJourneyId: String = ""
+    private var continuousLocationUpdateJob: Job? = null
+    private var isUpdatingLocation = false
+
+    override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View {
+        binding = FragmentWatchovermechoosestartingpointBinding.inflate(layoutInflater, container, false)
+        viewModel = ViewModelProvider(this)[WatchOverMeViewModel::class.java]
+
+        if (!Places.isInitialized()) {
+            Places.initialize(requireContext(), getString(R.string.api_key))
+        }
+        placesClient = Places.createClient(requireContext())
+
+        currentLocationAdapter = PlaceAutoSuggestAdapter(requireContext(), placesClient)
+        destinationAdapter = PlaceAutoSuggestAdapter(requireContext(), placesClient)
+
+        fusedLocationClient = LocationServices.getFusedLocationProviderClient(requireActivity())
+
+        setupPlaceAutocomplete()
+        setupButtons()
+        setCurrentLocationInPickup()
+        binding.map.onCreate(savedInstanceState)
+        binding.map.getMapAsync(this)
+
+        return binding.root
+    }
+
+    private fun setCurrentLocationInPickup() {
+        if (ActivityCompat.checkSelfPermission(requireActivity(), Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
+            fusedLocationClient.lastLocation.addOnSuccessListener { location ->
+                if (location != null) {
+                    val geocoder = Geocoder(requireActivity(), Locale.getDefault())
+                    try {
+                        val addresses = geocoder.getFromLocation(location.latitude, location.longitude, 1)
+                        if (addresses != null && addresses.isNotEmpty()) {
+                            val addressText = addresses[0].getAddressLine(0)
+                            pickupLocation = LatLng(location.latitude, location.longitude)
+                            binding.etPickup.setText(addressText)
+                            if (::googleMap.isInitialized) updateMapForSelectedPlaces()
+                            Toast.makeText(requireActivity(), "Current location set as pickup", Toast.LENGTH_SHORT).show()
+                        }
+                    } catch (e: Exception) {
+                        e.printStackTrace()
+                        pickupLocation = LatLng(location.latitude, location.longitude)
+                        binding.etPickup.setText("${location.latitude}, ${location.longitude}")
+                        if (::googleMap.isInitialized) updateMapForSelectedPlaces()
+                    }
+                } else {
+                    Toast.makeText(requireActivity(), "Unable to get current location", Toast.LENGTH_SHORT).show()
+                }
+            }
+        } else {
+            ActivityCompat.requestPermissions(requireActivity(), arrayOf(Manifest.permission.ACCESS_FINE_LOCATION), LOC_PERM_REQUEST)
+        }
+    }
+
+    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+        super.onViewCreated(view, savedInstanceState)
+    }
+
+    private fun setupPlaceAutocomplete() {
+        destinationAutocompleteFragment = AutocompleteSupportFragment.newInstance()
+        childFragmentManager.beginTransaction()
+            .replace(R.id.destination_autocomplete_container, destinationAutocompleteFragment)
+            .commitNow()
+
+        destinationAutocompleteFragment.setPlaceFields(
+            Arrays.asList(
+                Place.Field.ID, Place.Field.NAME, Place.Field.LAT_LNG, Place.Field.ADDRESS
+            )
+        )
+        destinationAutocompleteFragment.setHint("Search destination")
+        destinationAutocompleteFragment.setOnPlaceSelectedListener(object : PlaceSelectionListener {
+            override fun onPlaceSelected(place: Place) {
+                destinationLocation = place.latLng
+                updateMapForSelectedPlaces()
+            }
+            override fun onError(status: com.google.android.gms.common.api.Status) {
+                Toast.makeText(requireActivity(), "Error: ${status.statusMessage}", Toast.LENGTH_SHORT).show()
+            }
+        })
+    }
+
+    private fun setupButtons() {
+        binding.btnExplore.setOnClickListener {
+            if (pickupLocation == null) {
+                Toast.makeText(requireActivity(), "Please select pickup location", Toast.LENGTH_SHORT).show()
+                return@setOnClickListener
+            }
+            if (destinationLocation == null) {
+                Toast.makeText(requireActivity(), "Please select destination", Toast.LENGTH_SHORT).show()
+                return@setOnClickListener
+            }
+            startJourney( pickupLocation!!.latitude.toString(),
+                pickupLocation!!.longitude.toString(),
+                destinationLocation!!.latitude.toString(),
+                destinationLocation!!.longitude.toString())
+            setupRoutesAndStart()
+            startDelivery()
+        }
+    }
+
+    private fun setupRoutesAndStart() {
+        if (pickupLocation != null && destinationLocation != null) {
+            binding.progressBar?.visibility = View.VISIBLE
+            getStreetRoute(pickupLocation!!, destinationLocation!!)
+            binding.btnExplore.visibility = View.GONE
+        }
+    }
+
+    private fun getStreetRoute(start: LatLng, end: LatLng) {
+        CoroutineScope(Dispatchers.IO).launch {
+            try {
+                val routePoints = getRouteFromDirectionsAPI(start, end)
+                withContext(Dispatchers.Main) {
+                    binding.progressBar?.visibility = View.GONE
+                    if (routePoints.isNotEmpty()) {
+                        correctRoutePoints = routePoints
+                        drawCorrectReferenceLine()
+                        placeMarkers()
+                        fitCamera()
+                        Toast.makeText(requireActivity(), "Street-accurate route loaded!", Toast.LENGTH_SHORT).show()
+                    } else {
+                        generateGridRoute(start, end)
+                        Toast.makeText(requireActivity(), "Using grid-based route", Toast.LENGTH_SHORT).show()
+                    }
+                }
+            } catch (e: Exception) {
+                withContext(Dispatchers.Main) {
+                    binding.progressBar?.visibility = View.GONE
+                    generateGridRoute(start, end)
+                    Toast.makeText(requireActivity(), "Using grid-based route: ${e.message}", Toast.LENGTH_SHORT).show()
+                }
+            }
+        }
+    }
+
+    private suspend fun getRouteFromDirectionsAPI(origin: LatLng, destination: LatLng): List<LatLng> {
+        return withContext(Dispatchers.IO) {
+            try {
+                val url = "https://maps.googleapis.com/maps/api/directions/json" +
+                        "?origin=${origin.latitude},${origin.longitude}" +
+                        "&destination=${destination.latitude},${destination.longitude}" +
+                        "&mode=driving" +
+                        "&key=${getString(R.string.api_key)}" +
+                        "&alternatives=false"
+
+                val client = OkHttpClient.Builder()
+                    .connectTimeout(10, java.util.concurrent.TimeUnit.SECONDS)
+                    .build()
+                val request = Request.Builder().url(url).build()
+                val response = client.newCall(request).execute()
+
+                if (response.isSuccessful) {
+                    val json = JSONObject(response.body?.string() ?: "")
+                    val routes = json.getJSONArray("routes")
+                    if (routes.length() > 0) {
+                        val route = routes.getJSONObject(0)
+                        val encodedPolyline = route.getJSONObject("overview_polyline").getString("points")
+                        return@withContext decodePolyline(encodedPolyline)
+                    }
+                }
+                emptyList()
+            } catch (e: Exception) {
+                e.printStackTrace()
+                emptyList()
+            }
+        }
+    }
+
+    private fun decodePolyline(encoded: String): List<LatLng> {
+        val poly = mutableListOf<LatLng>()
+        var index = 0
+        val len = encoded.length
+        var lat = 0
+        var lng = 0
+
+        while (index < len) {
+            var b: Int; var shift = 0; var result = 0
+            do {
+                b = encoded[index++].code - 63
+                result = result or (b and 0x1f shl shift)
+                shift += 5
+            } while (b >= 0x20)
+            val dlat = if (result and 1 != 0) (result shr 1).inv() else result shr 1
+            lat += dlat
+
+            shift = 0; result = 0
+            do {
+                b = encoded[index++].code - 63
+                result = result or (b and 0x1f shl shift)
+                shift += 5
+            } while (b >= 0x20)
+            val dlng = if (result and 1 != 0) (result shr 1).inv() else result shr 1
+            lng += dlng
+
+            poly.add(LatLng(lat.toDouble() / 1e5, lng.toDouble() / 1e5))
+        }
+        return poly
+    }
+
+    private fun generateGridRoute(start: LatLng, end: LatLng) {
+        val points = mutableListOf<LatLng>()
+        points.add(start)
+        val latDiff = end.latitude - start.latitude
+        val lngDiff = end.longitude - start.longitude
+        val steps = 20
+        for (i in 1 until steps) {
+            val fraction = i.toDouble() / steps
+            val offset = Math.sin(fraction * Math.PI * 4) * 0.002
+            val lat = start.latitude + (latDiff * fraction) + (if (i % 4 == 0) offset else 0.0)
+            val lng = start.longitude + (lngDiff * fraction) + (if (i % 4 == 2) offset else 0.0)
+            points.add(LatLng(lat, lng))
+        }
+        points.add(end)
+        correctRoutePoints = points
+        drawCorrectReferenceLine()
+        placeMarkers()
+        fitCamera()
+    }
+
+    private fun drawCorrectReferenceLine() {
+        correctRefPolyline?.remove()
+        if (correctRoutePoints.isNotEmpty()) {
+            correctRefPolyline = googleMap.addPolyline(
+                PolylineOptions()
+                    .addAll(correctRoutePoints)
+                    .color(Color.parseColor("#2196F3"))
+                    .width(8f)
+                    .zIndex(1f)
+                    .geodesic(false)
+                    .clickable(true)
+            )
+        }
+    }
+
+    override fun onMapReady(map: GoogleMap) {
+        googleMap = map
+        googleMap.apply {
+            uiSettings.isZoomControlsEnabled = true
+            uiSettings.isCompassEnabled = true
+            uiSettings.isMapToolbarEnabled = false
+            mapType = GoogleMap.MAP_TYPE_NORMAL
+        }
+        checkLocationPermission()
+
+        // 🔴 Disable default my location icon
+        try {
+            googleMap.setMyLocationEnabled(false)
+        } catch (e: SecurityException) {
+            e.printStackTrace()
+        }
+
+        if (pickupLocation != null) updateMapForSelectedPlaces()
+    }
+
+    private fun updateMapForSelectedPlaces() {
+        if (pickupLocation != null && destinationLocation != null) {
+            getStreetRoute(pickupLocation!!, destinationLocation!!)
+            placeMarkers()
+            fitCamera()
+        } else if (pickupLocation != null) {
+            pickupMarker?.remove()
+            pickupMarker = googleMap.addMarker(
+                MarkerOptions()
+                    .position(pickupLocation!!)
+                    .icon(createCustomMarker("Pickup Spot", "0 Min", "0 M"))
+                    .anchor(0.5f, 1.5f)
+                    .zIndex(3f)
+            )
+            pickupMarker?.tag = "PICKUP|Not started|0.0 mi"
+        } else if (destinationLocation != null) {
+            destinationMarker?.remove()
+            destinationMarker = googleMap.addMarker(
+                MarkerOptions()
+                    .position(destinationLocation!!)
+                    .icon(createCustomMarker("Destination", "3 Min", "900 M"))
+                    .anchor(0.5f, 1.5f)
+                    .zIndex(3f)
+            )
+            destinationMarker?.tag = "DEST|-- min|-- mi"
+        }
+    }
+
+    private fun updateDestinationMarker(etaMin: Int, distanceStr: String) {
+//        if (destinationMarker == null || destinationLocation == null) return
+        if (destinationMarker == null || destinationLocation == null || !isAdded) return
+
+        val displayDistance = when {
+            distanceStr.contains("mi") -> {
+                val miles = distanceStr.replace(" mi", "").toDoubleOrNull() ?: 0.0
+                if (miles < 0.1) {
+                    "${(miles * 1609.34).toInt()} M"
+                } else {
+                    "${String.format("%.1f", miles)} Mi"
+                }
+            }
+            else -> distanceStr
+        }
+
+        val newIcon = createCustomMarker("Destination", "$etaMin Min", displayDistance)
+        if (newIcon != null) {
+            destinationMarker?.setIcon(newIcon)
+            destinationMarker?.tag = "DEST|$etaMin min|$displayDistance"
+        }
+    }
+
+    private fun placeMarkers() {
+        if (pickupLocation != null) {
+            pickupMarker?.remove()
+
+            val (initialDistance, initialTime) = if (destinationLocation != null) {
+                val dist = distanceMiles(pickupLocation!!, destinationLocation!!)
+                val time = (dist / 15 * 60).toInt()
+                Pair(formatMiles(dist), "$time Min")
+            } else {
+                Pair("0 M", "0 Min")
+            }
+
+            pickupMarker = googleMap.addMarker(
+                MarkerOptions()
+                    .position(pickupLocation!!)
+                    .icon(createCustomMarker("Pickup Spot", initialTime, initialDistance))
+                    .anchor(0.5f, 1.5f)
+                    .zIndex(3f)
+            )
+            pickupMarker?.tag = "PICKUP|Not started|0.0 mi"
+        }
+
+        if (destinationLocation != null) {
+            destinationMarker?.remove()
+            destinationMarker = googleMap.addMarker(
+                MarkerOptions()
+                    .position(destinationLocation!!)
+                    .icon(createCustomMarker("Destination", "-- Min", "-- M"))
+                    .anchor(0.5f, 1.5f)
+                    .zIndex(3f)
+            )
+            destinationMarker?.tag = "DEST|-- min|-- mi"
+        }
+    }
+
+    private fun fitCamera() {
+        if (pickupLocation != null && destinationLocation != null) {
+            val bounds = LatLngBounds.Builder()
+                .include(pickupLocation!!).include(destinationLocation!!).build()
+            googleMap.animateCamera(CameraUpdateFactory.newLatLngBounds(bounds, 200))
+        } else if (pickupLocation != null) {
+            googleMap.animateCamera(CameraUpdateFactory.newLatLngZoom(pickupLocation!!, 14f))
+        }
+    }
+
+    private fun startDelivery() {
+        routeChoice = RouteChoice.CORRECT
+        isDelivering = true
+        currentStepIndex = 0
+        deliveryStartTime = System.currentTimeMillis()
+        wrongRouteStartTime = 0L
+        totalDistanceMiles = 0.0
+        wrongDistanceMiles = 0.0
+        riderOnCorrectRoute = true
+
+        deviationStartPoint = null
+        wrongPathGrowingPolyline?.remove()
+        wrongPathGrowingPolyline = null
+        currentWrongSegmentPoints.clear()
+
+        actualPathPoints.clear()
+        trailSegments.forEach { it.remove() }
+        trailSegments.clear()
+        currentSegmentPoints.clear()
+        currentSegmentIsCorrect = true
+
+        if (pickupLocation != null) {
+            currentSegmentPoints.add(pickupLocation!!)
+            actualPathPoints.add(pickupLocation!!)
+
+            riderMarker?.remove()
+
+            // 🔴 Always start with correct path icon
+            riderMarker = googleMap.addMarker(
+                MarkerOptions()
+                    .position(pickupLocation!!)
+                    .icon(getCorrectPathIcon())
+                    .zIndex(5f)
+                    .anchor(0.5f, 0.5f)
+            )
+        }
+
+        toast("✅ Delivery started! Stay on the green path")
+        startRealTimeTracking()
+        startUiLoop()
+    }
+
+    // 🔴 Helper function to get correct path icon
+    private fun getCorrectPathIcon(): BitmapDescriptor {
+        val bitmap = BitmapFactory.decodeResource(resources, R.drawable.ic_curretpathicon)
+        val scaledBitmap = Bitmap.createScaledBitmap(bitmap, 90, 90, false)
+        return BitmapDescriptorFactory.fromBitmap(scaledBitmap)
+    }
+
+    // 🔴 Helper function to get wrong path icon
+    private fun getWrongPathIcon(): BitmapDescriptor {
+        val bitmap = BitmapFactory.decodeResource(resources, R.drawable.ic_wrongpathicon)
+        val scaledBitmap = Bitmap.createScaledBitmap(bitmap, 90, 90, false)
+        return BitmapDescriptorFactory.fromBitmap(scaledBitmap)
+    }
+
+    private fun startRealTimeTracking() {
+        if (correctRoutePoints.isEmpty()) return
+
+        fusedLocationClient = LocationServices.getFusedLocationProviderClient(requireActivity())
+
+        val locationRequest = LocationRequest.Builder(
+            Priority.PRIORITY_HIGH_ACCURACY,
+            3000L  // 3 seconds interval - more responsive
+        ).apply {
+            setMinUpdateIntervalMillis(1000L)  // 1 second min interval
+            setMaxUpdateDelayMillis(5000L)     // 5 seconds max delay
+        }.build()
+
+        locationCallback = object : LocationCallback() {
+            override fun onLocationResult(locationResult: LocationResult) {
+                locationResult.lastLocation?.let { location ->
+                    val currentLoc = LatLng(location.latitude, location.longitude)
+
+                    // 🔴 Process real location only - no simulation
+                    processLiveLocation(currentLoc)
+                }
+            }
+        }
+
+        if (ActivityCompat.checkSelfPermission(
+                requireActivity(),
+                Manifest.permission.ACCESS_FINE_LOCATION
+            ) == PackageManager.PERMISSION_GRANTED
+        ) {
+            fusedLocationClient.requestLocationUpdates(
+                locationRequest,
+                locationCallback,
+                Looper.getMainLooper()
+            )
+        }
+    }
+
+    private fun processLiveLocation(currentLoc: LatLng) {
+        // 1. Destination check
+        if (destinationLocation != null) {
+            val distToDest = distanceMiles(currentLoc, destinationLocation!!)
+            if (distToDest <= DESTINATION_THRESHOLD_MILES) {
+                riderMarker?.position = destinationLocation!!
+                onArrived()
+                stopLocationUpdates()
+                return
+            }
+        }
+
+        // 2. Route deviation check - 🔴 Using 30 meters threshold
+        val isDeviating = checkForDeviation(currentLoc)
+
+        if (isDeviating) {
+            handleWrongPath(currentLoc)
+        } else {
+            handleCorrectPath(currentLoc)
+
+            // Find nearest point on route for progress tracking
+            val nearestPointInfo = findNearestPointOnRoute(currentLoc)
+            currentStepIndex = nearestPointInfo.second
+        }
+
+        // 3. Update UI
+        updatePathStatusUI(isDeviating)
+
+        // 🔴 Update marker icon based on deviation status
+        updateRiderIconBasedOnDeviation(isDeviating)
+
+        riderMarker?.position = currentLoc
+        actualPathPoints.add(currentLoc)
+        drawActualPath()
+
+        // 4. Camera follow
+        if (shouldFollowRider) {
+            googleMap.animateCamera(
+                CameraUpdateFactory.newLatLngZoom(currentLoc, 17f),
+                500,
+                null
+            )
+        }
+    }
+
+    // 🔴 New function to update icon based on deviation
+    private fun updateRiderIconBasedOnDeviation(isDeviating: Boolean) {
+        val icon = if (isDeviating) getWrongPathIcon() else getCorrectPathIcon()
+        riderMarker?.setIcon(icon)
+    }
+
+    private fun findNearestPointOnRoute(currentLoc: LatLng): Pair<LatLng, Int> {
+        var minDistance = Double.MAX_VALUE
+        var nearestPoint = correctRoutePoints.first()
+        var nearestIndex = 0
+
+        correctRoutePoints.forEachIndexed { index, point ->
+            val distance = distanceMiles(currentLoc, point)
+            if (distance < minDistance) {
+                minDistance = distance
+                nearestPoint = point
+                nearestIndex = index
+            }
+        }
+
+        return Pair(nearestPoint, nearestIndex)
+    }
+
+    private fun stopLocationUpdates() {
+        locationUpdateWorkManager?.cancelUniqueWork(LocationUpdateWorker.WORK_NAME)
+        if (::fusedLocationClient.isInitialized && ::locationCallback.isInitialized) {
+            fusedLocationClient.removeLocationUpdates(locationCallback)
+        }
+    }
+
+    // 🔴 Deviation Check - 30 meters threshold
+    private fun checkForDeviation(currentLocation: LatLng): Boolean {
+        var minDistance = Double.MAX_VALUE
+        for (point in correctRoutePoints) {
+            val distance = distanceMiles(currentLocation, point)
+            if (distance < minDistance) minDistance = distance
+        }
+
+        // 🔴 Return true if distance > 30 meters (0.01864 miles)
+        return minDistance > DEVIATION_THRESHOLD_MILES
+    }
+
+    private fun handleWrongPath(location: LatLng) {
+        if (riderOnCorrectRoute) {
+            riderOnCorrectRoute = false
+            currentSegmentIsCorrect = false
+            wrongRouteStartTime = System.currentTimeMillis()
+
+            deviationStartPoint = if (actualPathPoints.isNotEmpty()) {
+                actualPathPoints.last()
+            } else {
+                location
+            }
+
+            currentWrongSegmentPoints.clear()
+            deviationStartPoint?.let { currentWrongSegmentPoints.add(it) }
+            currentWrongSegmentPoints.add(location)
+
+            if (currentSegmentPoints.size > 1) {
+                commitCurrentSegment(true)
+            }
+        } else {
+            currentWrongSegmentPoints.add(location)
+        }
+
+        drawGrowingWrongPath()
+
+        if (currentWrongSegmentPoints.size > 1) {
+            val prevLoc = currentWrongSegmentPoints[currentWrongSegmentPoints.size - 2]
+            wrongDistanceMiles += distanceMiles(prevLoc, location)
+        }
+    }
+
+    private fun drawGrowingWrongPath() {
+        if (currentWrongSegmentPoints.size < 2) return
+
+        wrongPathGrowingPolyline?.remove()
+
+        wrongPathGrowingPolyline = googleMap.addPolyline(
+            PolylineOptions()
+                .addAll(currentWrongSegmentPoints)
+                .color(Color.RED)
+                .width(14f)
+                .pattern(listOf(Dash(30f), Gap(10f)))
+                .zIndex(10f)
+                .geodesic(true)
+        )
+    }
+
+    private fun handleCorrectPath(location: LatLng) {
+        if (!riderOnCorrectRoute) {
+            riderOnCorrectRoute = true
+            currentSegmentIsCorrect = true
+
+            if (currentWrongSegmentPoints.size > 1) {
+                val permanentWrongPoly = googleMap.addPolyline(
+                    PolylineOptions()
+                        .addAll(currentWrongSegmentPoints)
+                        .color(Color.RED)
+                        .width(12f)
+                        .pattern(listOf(Dash(20f), Gap(8f)))
+                        .zIndex(3f)
+                        .geodesic(false)
+                )
+                trailSegments.add(permanentWrongPoly)
+            }
+
+            wrongPathGrowingPolyline?.remove()
+            wrongPathGrowingPolyline = null
+
+            deviationStartPoint = null
+            currentWrongSegmentPoints.clear()
+
+            if (currentSegmentPoints.size > 1) {
+                commitCurrentSegment(false)
+            }
+            currentSegmentPoints.clear()
+            currentSegmentPoints.add(location)
+        } else {
+            currentSegmentPoints.add(location)
+        }
+
+        if (currentSegmentPoints.size > 1) {
+            val prevLoc = currentSegmentPoints[currentSegmentPoints.size - 2]
+            totalDistanceMiles += distanceMiles(prevLoc, location)
+        }
+    }
+
+    private fun drawActualPath() {
+        liveSegmentPolyline?.remove()
+        if (actualPathPoints.size < 2) return
+
+        if (!riderOnCorrectRoute) return
+
+        liveSegmentPolyline = googleMap.addPolyline(
+            PolylineOptions()
+                .addAll(actualPathPoints)
+                .color(Color.parseColor("#1ABC9C"))
+                .width(12f)
+                .zIndex(4f)
+                .geodesic(false)
+        )
+    }
+
+    private var liveSegmentPolyline: Polyline? = null
+
+    private fun updatePathStatusUI(isDeviating: Boolean) {
+        // Optional: Update UI text if needed
+    }
+
+    private fun commitCurrentSegment(wasCorrect: Boolean) {
+        if (currentSegmentPoints.size < 2) { currentSegmentPoints.clear(); return }
+        val poly = googleMap.addPolyline(buildSegmentOptions(wasCorrect, currentSegmentPoints))
+        trailSegments.add(poly)
+        currentSegmentPoints.clear()
+    }
+
+    private fun buildSegmentOptions(isCorrect: Boolean, points: List<LatLng>): PolylineOptions {
+        return if (isCorrect) {
+            PolylineOptions().addAll(points).color(Color.parseColor("#1ABC9C")).width(9f).zIndex(3f).geodesic(false)
+        } else {
+            PolylineOptions().addAll(points).color(Color.RED).width(9f)
+                .pattern(listOf(Dash(20f), Gap(10f))).zIndex(3f).geodesic(false)
+        }
+    }
+
+    private fun startUiLoop() {
+        uiRunnable = object : Runnable {
+            override fun run() {
+                if (!isDelivering) return
+                val now = System.currentTimeMillis()
+
+                val elapsedSec = (now - deliveryStartTime) / 1000L
+                val fromTimeStr = when {
+                    elapsedSec < 60 -> "${elapsedSec}s"
+                    else -> "${elapsedSec / 60}min ${elapsedSec % 60}s"
+                }
+                val fromDistStr = formatMiles(totalDistanceMiles)
+
+                updatePickupMarker(fromTimeStr, fromDistStr)
+
+                if (correctRoutePoints.isNotEmpty() && destinationLocation != null) {
+                    val currLoc = riderMarker?.position ?: correctRoutePoints[currentStepIndex.coerceAtMost(correctRoutePoints.size - 1)]
+
+                    val distToDest = distanceMiles(currLoc, destinationLocation!!)
+                    val etaMin = (distToDest / 15 * 60).toInt()
+                    val toDistStr = formatDistanceWithUnit(distToDest)
+
+                    updateDestinationMarker(etaMin, toDistStr)
+                }
+
+                mainHandler.postDelayed(this, UI_REFRESH_MS)
+            }
+        }
+        mainHandler.post(uiRunnable!!)
+    }
+
+    private fun updatePickupMarker(timeStr: String, distanceStr: String) {
+        //if (pickupMarker == null || pickupLocation == null) return
+        if (pickupMarker == null || pickupLocation == null || !isAdded) return
+        val displayDistance = when {
+            distanceStr.contains("mi") -> {
+                val miles = distanceStr.replace(" mi", "").toDoubleOrNull() ?: 0.0
+                if (miles < 0.1) {
+                    "${(miles * 1609.34).toInt()} M"
+                } else {
+                    "${String.format("%.2f", miles)} Mi"
+                }
+            }
+            else -> distanceStr
+        }
+
+        val newIcon = createCustomMarker("Pickup Spot", timeStr, displayDistance)
+        if (newIcon != null) {
+            pickupMarker?.setIcon(newIcon)
+            pickupMarker?.tag = "PICKUP|$timeStr|$displayDistance"
+        }
+    }
+
+    private fun formatDistanceWithUnit(distanceMiles: Double): String {
+        return when {
+            distanceMiles < 0.1 -> {
+                val meters = (distanceMiles * 1609.34).toInt()
+                "${meters} M"
+            }
+            distanceMiles < 1.0 -> {
+                String.format("%.2f Mi", distanceMiles)
+            }
+            else -> {
+                String.format("%.1f Mi", distanceMiles)
+            }
+        }
+    }
+
+    private fun onArrived() {
+        isDelivering = false
+        stopLoops()
+
+        if (!riderOnCorrectRoute && currentWrongSegmentPoints.size > 1) {
+            val finalWrongPoly = googleMap.addPolyline(
+                PolylineOptions()
+                    .addAll(currentWrongSegmentPoints)
+                    .color(Color.RED).width(12f)
+                    .pattern(listOf(Dash(20f), Gap(8f))).zIndex(3f).geodesic(false)
+            )
+            trailSegments.add(finalWrongPoly)
+            wrongPathGrowingPolyline?.remove()
+            wrongPathGrowingPolyline = null
+        }
+
+        destinationLocation?.let { riderMarker?.position = it }
+
+        drawActualPath()
+
+        val totalMin = (System.currentTimeMillis() - deliveryStartTime) / 60000
+        val totalDist = formatMiles(totalDistanceMiles)
+
+        val message = if (wrongDistanceMiles > 0) {
+            val wrongDist = formatMiles(wrongDistanceMiles)
+            "⚠️ Delivery completed!\nWrong path: $wrongDist\nTotal distance: $totalDist in ${totalMin}min"
+        } else {
+            "✅ Perfect delivery!\nYou stayed on correct path!\nTotal distance: $totalDist in ${totalMin}min"
+        }
+
+        toast(message)
+    }
+
+    private fun stopLoops() {
+        uiRunnable?.let { mainHandler.removeCallbacks(it) }
+        uiRunnable = null
+    }
+
+    private fun checkLocationPermission() {
+        if (ContextCompat.checkSelfPermission(requireActivity(), Manifest.permission.ACCESS_FINE_LOCATION)
+            != PackageManager.PERMISSION_GRANTED) {
+            ActivityCompat.requestPermissions(requireActivity(),
+                arrayOf(Manifest.permission.ACCESS_FINE_LOCATION), LOC_PERM_REQUEST)
+        } else {
+            enableMyLocation()
+        }
+    }
+
+    private fun enableMyLocation() {
+        if (ActivityCompat.checkSelfPermission(requireActivity(), Manifest.permission.ACCESS_FINE_LOCATION)
+            == PackageManager.PERMISSION_GRANTED) {
+            // 🔴 Don't enable default my location - we use custom marker
+            // googleMap.isMyLocationEnabled = true
+        }
+    }
+
+    override fun onRequestPermissionsResult(
+        requestCode: Int, permissions: Array<out String>, grantResults: IntArray
+    ) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
+        if (requestCode == LOC_PERM_REQUEST
+            && grantResults.isNotEmpty()
+            && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+            enableMyLocation()
+            setCurrentLocationInPickup()
+        }
+    }
+
+    private fun distanceMiles(point1: LatLng, point2: LatLng): Double {
+        val R = 3959.0
+        val latDistance = Math.toRadians(point2.latitude - point1.latitude)
+        val lonDistance = Math.toRadians(point2.longitude - point1.longitude)
+        val a = Math.sin(latDistance / 2) * Math.sin(latDistance / 2) +
+                Math.cos(Math.toRadians(point1.latitude)) *
+                Math.cos(Math.toRadians(point2.latitude)) *
+                Math.sin(lonDistance / 2) * Math.sin(lonDistance / 2)
+        val c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a))
+        return R * c
+    }
+
+    private fun formatMiles(miles: Double): String = String.format("%.1f mi", miles)
+
+    private fun toast(msg: String) = Toast.makeText(requireContext(), msg, Toast.LENGTH_SHORT).show()
+
+    override fun onResume() {
+        super.onResume()
+        binding.map.onResume()
+    }
+
+    override fun onPause() {
+        super.onPause()
+        binding.map.onPause()
+        stopLocationUpdates()
+    }
+
+    override fun onDestroyView() {
+        super.onDestroyView()
+
+        stopLocationUpdates()
+        stopLoops()
+        simulationRunnable?.let { handler.removeCallbacks(it) }
+        riderMarker = null
+        pickupMarker = null
+        destinationMarker = null
+
+        // 🔴 CLEAR BINDING
+
+    }
+
+    companion object {
+        private const val LOCATION_PERMISSION_REQUEST_CODE = 101
+    }
+
+    private fun createCustomMarker(title: String, time: String = "", distance: String = ""): BitmapDescriptor? {
+        // 🔴 SAFETY CHECK: Agar fragment attached nahi hai to null return karo
+        if (!isAdded) {
+            Log.e("MarkerError", "Fragment not attached, cannot create marker")
+            return null
+        }
+        return try {
+            val markerView =
+                LayoutInflater.from(requireContext()).inflate(R.layout.layout_marker_info, null)
+
+            val tvTimeView = markerView.findViewById<TextView>(R.id.tvTime)
+            val tvDistanceView = markerView.findViewById<TextView>(R.id.tvDistance)
+            val tvTitleView = markerView.findViewById<TextView>(R.id.tvTitle)
+
+            Log.d("MarkerDebug", "tvTime found: ${tvTimeView != null}")
+            Log.d("MarkerDebug", "tvDistance found: ${tvDistanceView != null}")
+            Log.d("MarkerDebug", "tvTitle found: ${tvTitleView != null}")
+
+            tvTimeView?.text = time
+            tvDistanceView?.text = distance
+            tvTitleView?.text = title
+
+            tvTimeView?.setTextColor(Color.WHITE)
+            tvDistanceView?.setTextColor(Color.WHITE)
+            tvTitleView?.setTextColor(Color.BLACK)
+
+            markerView.measure(
+                View.MeasureSpec.makeMeasureSpec(0, View.MeasureSpec.UNSPECIFIED),
+                View.MeasureSpec.makeMeasureSpec(0, View.MeasureSpec.UNSPECIFIED)
+            )
+            markerView.layout(0, 0, markerView.measuredWidth, markerView.measuredHeight)
+
+            val bitmap = Bitmap.createBitmap(
+                markerView.measuredWidth,
+                markerView.measuredHeight,
+                Bitmap.Config.ARGB_8888
+            )
+            val canvas = Canvas(bitmap)
+            markerView.draw(canvas)
+
+            return BitmapDescriptorFactory.fromBitmap(bitmap)
+
+        } catch (e: Exception) {
+            Log.e("MarkerError", "Error creating marker: ${e.message}")
+            null
+        }
+    }
+
+    private fun startJourney(
+        currentLatitude : String,
+        currentLongitude : String,
+        destinationLatitude : String,
+        destinationLongitude : String) {
+        if (BaseApplication.isOnline(requireContext())) {
+            BaseApplication.openDialog()
+            lifecycleScope.launch {
+                viewModel.startJourney(currentLatitude,currentLongitude,destinationLatitude,destinationLongitude).collect {
+                    BaseApplication.dismissDialog()
+                   // handleApiResponse(it)
+                   // showAlert(it.message, false)
+                    val journeyId = it.data?.data?.journey_id.toString()
+                    try {
+                        //val apiModel = Gson().fromJson(data, CheckInHistoryAlertResponse::class.java)
+                        Log.d("@@@ addMea List ", "data :- $it")
+                        if (it.data!!.code == 200 && it.data!!.status) {
+                            currentJourneyId = journeyId ?: ""
+
+                            // Start periodic location updates
+                            if (currentJourneyId.isNotEmpty()) {
+                                startPeriodicLocationUpdates(currentJourneyId)
+                            }
+                            showAlert(it.data!!.message, false)
+                        } else {
+
+                            handleError(it.data!!.code, it.data!!.message)
+                        }
+                    } catch (e: Exception) {
+                        showAlert(e.message, false)
+                    }
+                }
+            }
+        } else {
+            AlertUtils.showAlert(requireContext(), MessageClass.networkError, false)
+        }
+    }
+
+
+
+
+    // This is common function for show the alert box
+    private fun showAlert(message: String?, status: Boolean) {
+        BaseApplication.alertError(context, message, status)
+    }
+
+
+    private fun handleError(code: Int?, message: String?) {
+        if (code == MessageClass.deactivatedUser || code == MessageClass.deletedUser) {
+            showAlert(message, true)
+        } else {
+            showAlert(message, false)
+        }
+    }
+    // Function to start periodic location updates
+    private fun startPeriodicLocationUpdates(journeyId: String) {
+        Log.d("RetrofitLog", "🚀 Starting periodic location updates for journey: $journeyId")
+        locationUpdateWorkManager = WorkManager.getInstance(requireContext())
+
+        // Cancel any existing work first
+        locationUpdateWorkManager?.cancelUniqueWork(LocationUpdateWorker.WORK_NAME)
+        Log.d("RetrofitLog", "🔄 Cancelled existing work if any")
+
+
+        // Create constraints
+        val constraints = Constraints.Builder()
+            .setRequiredNetworkType(NetworkType.CONNECTED)
+            .build()
+
+        // Create periodic work request (every 5 seconds)
+        val workRequest = PeriodicWorkRequestBuilder<LocationUpdateWorker>(
+            5, TimeUnit.SECONDS,  // Interval
+            5, TimeUnit.SECONDS   // Flex interval - allows system some flexibility
+        )
+            .setConstraints(constraints)
+            .setBackoffCriteria(
+                BackoffPolicy.EXPONENTIAL,
+                10, TimeUnit.SECONDS
+            )
+            .setInputData(
+                workDataOf(
+                    "journey_id" to journeyId,
+                    "token" to getAuthToken()  // You need to implement this
+                )
+            )
+            .build()
+
+        Log.d("RetrofitLog", "📋 WorkRequest created with ID: ${workRequest.id}")
+        Log.d("RetrofitLog", "📋 Interval: 5 seconds")
+        Log.d("RetrofitLog", "📋 Constraints: Network connected required")
+
+        // Enqueue unique work
+        locationUpdateWorkManager?.enqueueUniquePeriodicWork(
+            LocationUpdateWorker.WORK_NAME,
+            ExistingPeriodicWorkPolicy.UPDATE,  // Replace existing if any
+            workRequest
+        )
+        Log.d("RetrofitLog", "✅ Work enqueued successfully with name: ${LocationUpdateWorker.WORK_NAME}")
+        checkWorkStatus()
+    }
+
+    // Function to get auth token (implement based on your session management)
+    private fun getAuthToken(): String {
+        // Replace this with your actual token retrieval logic
+        return SessionManagement(requireActivity()).getUserToken().toString()  // or however you get the token
+    }
+    private fun checkWorkStatus() {
+        locationUpdateWorkManager?.getWorkInfosForUniqueWorkLiveData(LocationUpdateWorker.WORK_NAME)
+            ?.observe(viewLifecycleOwner) { workInfos ->
+                workInfos?.forEach { workInfo ->
+                    Log.d("RetrofitLog", "📊 Work State: ${workInfo.state}")
+                    Log.d("RetrofitLog", "📊 Work ID: ${workInfo.id}")
+                    Log.d("RetrofitLog", "📊 Tags: ${workInfo.tags}")
+                    Log.d("RetrofitLog", "📊 Output Data: ${workInfo.outputData}")
+
+                    // Additional useful info
+                    Log.d("RetrofitLog", "📊 Run Attempt Count: ${workInfo.runAttemptCount}")
+
+                    // Check if any constraints are preventing execution
+                    if (workInfo.state == WorkInfo.State.ENQUEUED) {
+                        Log.d("RetrofitLog", "📊 Work is ENQUEUED and waiting to run")
+
+                        // Check constraints
+                        workInfo.constraints?.let { constraints ->
+                            Log.d("RetrofitLog", "📊 Required Network Type: ${constraints.requiredNetworkType}")
+                            Log.d("RetrofitLog", "📊 Requires Battery Not Low: ${constraints.requiresBatteryNotLow()}")
+                            Log.d("RetrofitLog", "📊 Requires Device Idle: ${constraints.requiresDeviceIdle()}")
+                            Log.d("RetrofitLog", "📊 Requires Storage Not Low: ${constraints.requiresStorageNotLow()}")
+                        }
+                    } else if (workInfo.state == WorkInfo.State.RUNNING) {
+                        Log.d("RetrofitLog", "📊 Work is currently RUNNING")
+                    } else if (workInfo.state == WorkInfo.State.FAILED) {
+                        Log.d("RetrofitLog", "📊 Work has FAILED")
+                    } else if (workInfo.state == WorkInfo.State.CANCELLED) {
+                        Log.d("RetrofitLog", "📊 Work was CANCELLED")
+                    }
+                }
+            }
+    }
+
+    // Function to update location in WorkManager when location changes
+    private fun updateLocationInBackground(latitude: Double, longitude: Double) {
+        if (currentJourneyId.isNotEmpty()) {
+            // Update the input data for the next execution
+            // Note: WorkManager doesn't support updating input data for existing periodic work
+            // So we need to cancel and re-enqueue with new data
+            locationUpdateWorkManager?.cancelUniqueWork(LocationUpdateWorker.WORK_NAME)
+
+            val workRequest = PeriodicWorkRequestBuilder<LocationUpdateWorker>(
+                5, TimeUnit.SECONDS,
+                5, TimeUnit.SECONDS
+            )
+                .setInputData(
+                    workDataOf(
+                        "journey_id" to currentJourneyId,
+                        "token" to getAuthToken(),
+                        "latitude" to latitude,
+                        "longitude" to longitude
+                    )
+                )
+                .build()
+
+            locationUpdateWorkManager?.enqueueUniquePeriodicWork(
+                LocationUpdateWorker.WORK_NAME,
+                ExistingPeriodicWorkPolicy.UPDATE,
+                workRequest
+            )
+        }
+    }
+    // Add these properties
+*//*    private var continuousLocationUpdateJob: Job? = null
+    private var isUpdatingLocation = false*//*
+
+    // Replace startPeriodicLocationUpdates with this
+    private fun startContinuousLocationUpdates(journeyId: String) {
+        Log.d("RetrofitLog", "🚀 Starting CONTINUOUS location updates for journey: $journeyId")
+
+        currentJourneyId = journeyId
+        isUpdatingLocation = true
+
+        // Cancel any existing job
+        continuousLocationUpdateJob?.cancel()
+
+        // Start continuous updates using coroutine
+        continuousLocationUpdateJob = lifecycleScope.launch {
+            while (isUpdatingLocation) {
+                try {
+                    // Get current location from marker
+                    val currentLocation = riderMarker?.position
+
+                    if (currentLocation != null) {
+                        Log.d("RetrofitLog", "📍 Current location: (${currentLocation.latitude}, ${currentLocation.longitude})")
+
+                        // Call API directly using coroutine
+                        updateLiveLocationDirectly(
+                            journeyId = journeyId,
+                            token = getAuthToken(),
+                            latitude = currentLocation.latitude,
+                            longitude = currentLocation.longitude
+                        )
+                    } else {
+                        Log.w("RetrofitLog", "⚠️ Rider marker location is null")
+                    }
+
+                    // Wait for 5 seconds
+                    delay(5000)
+
+                } catch (e: Exception) {
+                    Log.e("RetrofitLog", "❌ Error in continuous update loop: ${e.message}")
+                    e.printStackTrace()
+                    // Still wait and continue
+                    delay(5000)
+                }
+            }
+        }
+
+        Log.d("RetrofitLog", "✅ Continuous updates coroutine started")
+    }
+
+    // Direct API call function
+    private suspend fun updateLiveLocationDirectly(
+        journeyId: String,
+        token: String,
+        latitude: Double,
+        longitude: Double
+    ) {
+        withContext(Dispatchers.IO) {
+            try {
+                Log.d("RetrofitLog", "📡 Making direct API call at ${System.currentTimeMillis()}")
+
+                val client = OkHttpClient.Builder()
+                    .connectTimeout(30, TimeUnit.SECONDS)
+                    .writeTimeout(30, TimeUnit.SECONDS)
+                    .readTimeout(30, TimeUnit.SECONDS)
+                    .build()
+
+                val json = JSONObject().apply {
+                    put("journey_id", journeyId)
+                    put("latitude", latitude.toString())
+                    put("longitude", longitude.toString())
+                }
+
+                val request = Request.Builder()
+                    .url("https://alertapp.tgastaging.com/api/update_live_location")
+                    .post(json.toString().toRequestBody("application/json".toMediaType()))
+                    .addHeader("Authorization", "Bearer $token")
+                    .addHeader("Content-Type", "application/json")
+                    .build()
+
+                val response = client.newCall(request).execute()
+
+                Log.d("RetrofitLog", "📥 Response Code: ${response.code}")
+
+                if (response.isSuccessful) {
+                    val responseBody = response.body?.string()
+                    Log.d("RetrofitLog", "✅ API Success: $responseBody")
+                } else {
+                    Log.e("RetrofitLog", "❌ API Failed: ${response.code}")
+                }
+
+            } catch (e: Exception) {
+                Log.e("RetrofitLog", "❌ Network Error: ${e.message}")
+                e.printStackTrace()
+            }
+        }
+    }
+
+    // Stop function
+    private fun stopContinuousLocationUpdates() {
+        Log.d("RetrofitLog", "🛑 Stopping continuous location updates")
+        isUpdatingLocation = false
+        continuousLocationUpdateJob?.cancel()
+        continuousLocationUpdateJob = null
+    }
+}*/
+
 /*package com.alert.app.fragment.main
 
 import android.Manifest
 import android.annotation.SuppressLint
 import android.content.pm.PackageManager
-import android.graphics.Color
+
+import android.location.Geocoder
 import android.os.Bundle
+import android.os.Handler
+import android.os.Looper
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.Toast
 import androidx.core.app.ActivityCompat
+import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
 import com.alert.app.R
 import com.alert.app.activity.MainActivity
@@ -783,44 +2419,105 @@ import com.google.android.gms.maps.OnMapReadyCallback
 import com.google.android.gms.maps.model.*
 import com.google.android.libraries.places.api.Places
 import com.google.android.libraries.places.api.net.PlacesClient
+import com.google.android.libraries.places.widget.AutocompleteSupportFragment
 import com.google.maps.android.PolyUtil
 import com.google.maps.android.SphericalUtil
 import org.json.JSONObject
 import java.net.URL
+import java.util.Locale
 import kotlin.concurrent.thread
+import android.graphics.Bitmap
+import android.graphics.BitmapFactory
+import android.graphics.Canvas
+import android.graphics.Color
+import android.graphics.Paint
+import android.graphics.Typeface
+import android.util.Log
+import android.widget.TextView
+import com.alert.app.adapter.CustomInfoWindowAdapter
+import com.google.android.gms.maps.SupportMapFragment
+import com.google.android.libraries.places.widget.listener.PlaceSelectionListener
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+import okhttp3.OkHttpClient
+import okhttp3.Request
+
+import com.google.android.libraries.places.api.model.Place
+import java.util.Arrays
 
 class WatchOverMeChooseStartingPointFragment : Fragment(), OnMapReadyCallback {
-
     private lateinit var binding: FragmentWatchovermechoosestartingpointBinding
-    private lateinit var mMap: GoogleMap
+    private lateinit var googleMap: GoogleMap
+    private var shouldFollowRider = true
     private lateinit var fusedLocationClient: FusedLocationProviderClient
     private lateinit var locationCallback: LocationCallback
     private lateinit var placesClient: PlacesClient
     private lateinit var currentLocationAdapter: PlaceAutoSuggestAdapter
     private lateinit var destinationAdapter: PlaceAutoSuggestAdapter
+    private val handler = Handler(Looper.getMainLooper())
+    private var simulationRunnable: Runnable? = null
 
-    private var destinationLatLng: LatLng? = null
-    private var currentLatLng: LatLng? = null
-    private var pickupSpotLatLng: LatLng? = null // Starting point
-    private var routePoints: List<LatLng> = listOf()
-    private var userPathPoints: MutableList<LatLng> = mutableListOf()
-    private var deviationPathPoints: MutableList<LatLng> = mutableListOf()
 
-    private var optimalRoutePolyline: Polyline? = null
-    private var userRoutePolyline: Polyline? = null
-    private var deviationRoutePolyline: Polyline? = null
-    private var userMarker: Marker? = null
+    private var riderMarker: Marker? = null
     private var pickupMarker: Marker? = null
     private var destinationMarker: Marker? = null
 
-    private var isDeviated = false
+    // Selected places
+    private var pickupLocation: LatLng? = null
+    private var destinationLocation: LatLng? = null
+
+    // Autocomplete fragments
+    private lateinit var destinationAutocompleteFragment: AutocompleteSupportFragment
+
+
+    private var correctRefPolyline: Polyline? = null
+
+    private val trailSegments = mutableListOf<Polyline>()
+
+
+    private var correctRoutePoints: List<LatLng> = listOf()
+
+
+    private val actualPathPoints = mutableListOf<LatLng>()
+
+
+    private enum class RouteChoice { NONE, CORRECT }
+
+    private var routeChoice = RouteChoice.NONE
+    private var isDelivering = false
+    private var currentStepIndex = 0
+
+    private var deliveryStartTime = 0L
+    private var wrongRouteStartTime = 0L
+    private var totalDistanceMiles = 0.0
+    private var wrongDistanceMiles = 0.0
+
+    private var currentSegmentIsCorrect = true
+    private val currentSegmentPoints = mutableListOf<LatLng>()
+    private var riderOnCorrectRoute = true
+
+
     private var deviationStartPoint: LatLng? = null
-    private var lastCorrectPoint: LatLng? = null
 
-    // Testing points - added for easier testing
-    private val testCorrectPathPoints = mutableListOf<Double>()
+    private var wrongPathGrowingPolyline: Polyline? = null
 
-    private val testWrongPathPoints = mutableListOf<Double>()
+    private val currentWrongSegmentPoints = mutableListOf<LatLng>()
+
+
+    private val DESTINATION_THRESHOLD_MILES = 5.0 / 1609.34  // ~0.003107 miles
+
+    // ─── Handlers ────────────────────────────────────────────────────
+    private val mainHandler = Handler(Looper.getMainLooper())
+    private var moveRunnable: Runnable? = null
+    private var uiRunnable: Runnable? = null
+
+    private val MOVE_INTERVAL_MS = 1200L
+    private val UI_REFRESH_MS = 500L
+
+    private  val LOC_PERM_REQUEST = 100
+
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View {
         binding = FragmentWatchovermechoosestartingpointBinding.inflate(layoutInflater, container, false)
@@ -834,362 +2531,887 @@ class WatchOverMeChooseStartingPointFragment : Fragment(), OnMapReadyCallback {
         destinationAdapter = PlaceAutoSuggestAdapter(requireContext(), placesClient)
 
         fusedLocationClient = LocationServices.getFusedLocationProviderClient(requireActivity())
+
+        setupPlaceAutocomplete()
+        setupButtons()
+        setCurrentLocationInPickup()
         binding.map.onCreate(savedInstanceState)
         binding.map.getMapAsync(this)
 
+
         return binding.root
+    }
+    private fun setCurrentLocationInPickup() {
+        if (ActivityCompat.checkSelfPermission(requireActivity(), Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
+            fusedLocationClient.lastLocation.addOnSuccessListener { location ->
+                if (location != null) {
+                    val geocoder = Geocoder(requireActivity(), Locale.getDefault())
+                    try {
+                        val addresses = geocoder.getFromLocation(location.latitude, location.longitude, 1)
+                        if (addresses != null && addresses.isNotEmpty()) {
+                            val addressText = addresses[0].getAddressLine(0)
+                            pickupLocation = LatLng(location.latitude, location.longitude)
+                            binding.etPickup.setText(addressText)
+                            if (::googleMap.isInitialized) updateMapForSelectedPlaces()
+                            Toast.makeText(requireActivity(), "Current location set as pickup", Toast.LENGTH_SHORT).show()
+                        }
+                    } catch (e: Exception) {
+                        e.printStackTrace()
+                        pickupLocation = LatLng(location.latitude, location.longitude)
+                        binding.etPickup.setText("${location.latitude}, ${location.longitude}")
+                        if (::googleMap.isInitialized) updateMapForSelectedPlaces()
+                    }
+                } else {
+                    Toast.makeText(requireActivity(), "Unable to get current location", Toast.LENGTH_SHORT).show()
+                }
+            }
+        } else {
+            ActivityCompat.requestPermissions(requireActivity(), arrayOf(Manifest.permission.ACCESS_FINE_LOCATION), LOC_PERM_REQUEST)
+        }
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        binding.edtCurrentAddress.setAdapter(currentLocationAdapter)
-        binding.edtDestinationAddress.setAdapter(destinationAdapter)
-
-        // Set test locations
-
-
-        currentLatLng = pickupSpotLatLng
-
-
-
-        // Draw initial route
-        drawRouteToDestination()
-
 
     }
 
-    // New method to simulate entire path
-    private fun simulatePath(points: List<LatLng>) {
-        // Reset all tracking variables
-        userPathPoints.clear()
-        deviationPathPoints.clear()
-        isDeviated = false
-        deviationStartPoint = null
-        lastCorrectPoint = null
+    private fun setupPlaceAutocomplete() {
+        destinationAutocompleteFragment = AutocompleteSupportFragment.newInstance()
+        childFragmentManager.beginTransaction()
+            .replace(R.id.destination_autocomplete_container, destinationAutocompleteFragment)
+            .commitNow() // Use commitNow() to ensure it's added immediately
 
-        // Clear previous polylines
-        userRoutePolyline?.remove()
-        deviationRoutePolyline?.remove()
-        userMarker?.remove()
+        destinationAutocompleteFragment.setPlaceFields(
+            Arrays.asList(
+            Place.Field.ID, Place.Field.NAME, Place.Field.LAT_LNG, Place.Field.ADDRESS
+        ))
+        destinationAutocompleteFragment.setHint("Search destination")
+        destinationAutocompleteFragment.setOnPlaceSelectedListener(object : PlaceSelectionListener {
+            override fun onPlaceSelected(place: Place) {
+                destinationLocation = place.latLng
+                updateMapForSelectedPlaces()
+            }
+            override fun onError(status: com.google.android.gms.common.api.Status) {
+                Toast.makeText(requireActivity(), "Error: ${status.statusMessage}", Toast.LENGTH_SHORT).show()
+            }
+        })
+    }
 
-        points.forEachIndexed { index, latLng ->
-            binding.root.postDelayed({
-                updateUserLocation(latLng, true)
-            }, index * 2000L) // 2 second delay between points
+    // ══════════════════════════════════════════════════════════════
+    //  Buttons
+    // ══════════════════════════════════════════════════════════════
+    private fun setupButtons() {
+        binding.btnExplore.setOnClickListener {
+            if (pickupLocation == null) {
+                Toast.makeText(requireActivity(), "Please select pickup location", Toast.LENGTH_SHORT).show()
+                return@setOnClickListener
+            }
+            if (destinationLocation == null) {
+                Toast.makeText(requireActivity(), "Please select destination", Toast.LENGTH_SHORT).show()
+                return@setOnClickListener
+            }
+            setupRoutesAndStart()
+            startDelivery()
+        }
+
+    }
+
+    // ══════════════════════════════════════════════════════════════
+    //  Setup Routes
+    // ══════════════════════════════════════════════════════════════
+    private fun setupRoutesAndStart() {
+        if (pickupLocation != null && destinationLocation != null) {
+            binding.progressBar?.visibility = View.VISIBLE
+            getStreetRoute(pickupLocation!!, destinationLocation!!)
+            binding.btnExplore.visibility = View.GONE
+
         }
     }
 
-    override fun onMapReady(googleMap: GoogleMap) {
-        mMap = googleMap
-        enableMyLocation()
+    private fun getStreetRoute(start: LatLng, end: LatLng) {
+        CoroutineScope(Dispatchers.IO).launch {
+            try {
+                val routePoints = getRouteFromDirectionsAPI(start, end)
+                withContext(Dispatchers.Main) {
+                    binding.progressBar?.visibility = View.GONE
+                    if (routePoints.isNotEmpty()) {
+                        correctRoutePoints = routePoints
+                        drawCorrectReferenceLine()
+                        placeMarkers()
+                        fitCamera()
+                        Toast.makeText(requireActivity(), "Street-accurate route loaded!", Toast.LENGTH_SHORT).show()
+                    } else {
+                        generateGridRoute(start, end)
+                        Toast.makeText(requireActivity(), "Using grid-based route", Toast.LENGTH_SHORT).show()
+                    }
+                }
+            } catch (e: Exception) {
+                withContext(Dispatchers.Main) {
+                    binding.progressBar?.visibility = View.GONE
+                    generateGridRoute(start, end)
+                    Toast.makeText(requireActivity(), "Using grid-based route: ${e.message}", Toast.LENGTH_SHORT).show()
+                }
+            }
+        }
     }
 
-    private fun enableMyLocation() {
+    private suspend fun getRouteFromDirectionsAPI(origin: LatLng, destination: LatLng): List<LatLng> {
+        return withContext(Dispatchers.IO) {
+            try {
+                val url = "https://maps.googleapis.com/maps/api/directions/json" +
+                        "?origin=${origin.latitude},${origin.longitude}" +
+                        "&destination=${destination.latitude},${destination.longitude}" +
+                        "&mode=driving" +
+                        "&key=${getString(R.string.api_key)}" +
+                        "&alternatives=false"
+
+                val client = OkHttpClient.Builder()
+                    .connectTimeout(10, java.util.concurrent.TimeUnit.SECONDS)
+                    .build()
+                val request = Request.Builder().url(url).build()
+                val response = client.newCall(request).execute()
+
+                if (response.isSuccessful) {
+                    val json = JSONObject(response.body?.string() ?: "")
+                    val routes = json.getJSONArray("routes")
+                    if (routes.length() > 0) {
+                        val route = routes.getJSONObject(0)
+                        val encodedPolyline = route.getJSONObject("overview_polyline").getString("points")
+                        return@withContext decodePolyline(encodedPolyline)
+                    }
+                }
+                emptyList()
+            } catch (e: Exception) {
+                e.printStackTrace()
+                emptyList()
+            }
+        }
+    }
+
+    private fun decodePolyline(encoded: String): List<LatLng> {
+        val poly = mutableListOf<LatLng>()
+        var index = 0
+        val len = encoded.length
+        var lat = 0
+        var lng = 0
+
+        while (index < len) {
+            var b: Int; var shift = 0; var result = 0
+            do {
+                b = encoded[index++].code - 63
+                result = result or (b and 0x1f shl shift)
+                shift += 5
+            } while (b >= 0x20)
+            val dlat = if (result and 1 != 0) (result shr 1).inv() else result shr 1
+            lat += dlat
+
+            shift = 0; result = 0
+            do {
+                b = encoded[index++].code - 63
+                result = result or (b and 0x1f shl shift)
+                shift += 5
+            } while (b >= 0x20)
+            val dlng = if (result and 1 != 0) (result shr 1).inv() else result shr 1
+            lng += dlng
+
+            poly.add(LatLng(lat.toDouble() / 1e5, lng.toDouble() / 1e5))
+        }
+        return poly
+    }
+
+    private fun generateGridRoute(start: LatLng, end: LatLng) {
+        val points = mutableListOf<LatLng>()
+        points.add(start)
+        val latDiff = end.latitude - start.latitude
+        val lngDiff = end.longitude - start.longitude
+        val steps = 20
+        for (i in 1 until steps) {
+            val fraction = i.toDouble() / steps
+            val offset = Math.sin(fraction * Math.PI * 4) * 0.002
+            val lat = start.latitude + (latDiff * fraction) + (if (i % 4 == 0) offset else 0.0)
+            val lng = start.longitude + (lngDiff * fraction) + (if (i % 4 == 2) offset else 0.0)
+            points.add(LatLng(lat, lng))
+        }
+        points.add(end)
+        correctRoutePoints = points
+        drawCorrectReferenceLine()
+        placeMarkers()
+        fitCamera()
+    }
+
+    private fun drawCorrectReferenceLine() {
+        correctRefPolyline?.remove()
+        if (correctRoutePoints.isNotEmpty()) {
+            correctRefPolyline = googleMap.addPolyline(
+                PolylineOptions()
+                    .addAll(correctRoutePoints)
+                    .color(Color.parseColor("#4CAF50"))
+                    .width(8f)
+                    .zIndex(1f)
+                    .geodesic(false)
+                    .clickable(true)
+            )
+        }
+    }
+
+    // ══════════════════════════════════════════════════════════════
+    //  Map Ready
+    // ══════════════════════════════════════════════════════════════
+    override fun onMapReady(map: GoogleMap) {
+        googleMap = map
+        googleMap.apply {
+            uiSettings.isZoomControlsEnabled = true
+            uiSettings.isCompassEnabled = true
+            uiSettings.isMapToolbarEnabled = false
+            mapType = GoogleMap.MAP_TYPE_NORMAL
+
+        }
+        checkLocationPermission()
+        if (pickupLocation != null) updateMapForSelectedPlaces()
+    }
+
+    private fun updateMapForSelectedPlaces() {
+        if (pickupLocation != null && destinationLocation != null) {
+            getStreetRoute(pickupLocation!!, destinationLocation!!)
+            placeMarkers()
+            fitCamera()
+        } else if (pickupLocation != null) {
+            pickupMarker?.remove()
+
+            pickupMarker = googleMap.addMarker(
+                MarkerOptions()
+                    .position(pickupLocation!!)
+                    .icon(createCustomMarker("Pickup Spot", "0 Min", "0 M"))
+                    .anchor(0.5f, 1.5f)
+                    .zIndex(3f)
+            )
+            pickupMarker?.tag = "PICKUP|Not started|0.0 mi"
+
+        } else if (destinationLocation != null) {
+            destinationMarker?.remove()
+
+            destinationMarker = googleMap.addMarker(
+                MarkerOptions()
+                    .position(destinationLocation!!)
+                    .icon(createCustomMarker("Destination", "3 Min", "900 M"))
+                    .anchor(0.5f, 1.5f) // Adjust anchor point as needed
+                    .zIndex(3f)
+            )
+            destinationMarker?.tag = "DEST|-- min|-- mi"
+
+        }
+    }
+
+private fun updateDestinationMarker(etaMin: Int, distanceStr: String) {
+   // destinationMarker?.remove()
+    if (destinationMarker == null || destinationLocation == null) return
+
+    // Convert miles to appropriate unit (M for meters, KM for kilometers)
+    val displayDistance = when {
+        distanceStr.contains("mi") -> {
+            val miles = distanceStr.replace(" mi", "").toDoubleOrNull() ?: 0.0
+            if (miles < 0.1) {
+                "${(miles * 1609.34).toInt()} M" // Convert to meters
+            } else {
+                "${String.format("%.1f", miles)} Mi" // Keep in miles
+            }
+        }
+        else -> distanceStr
+    }
+    // Create new bitmap with updated values
+    val newIcon = createCustomMarker("Destination", "$etaMin Min", displayDistance)
+
+    // Update existing marker's icon (NO REMOVE)
+    destinationMarker?.setIcon(newIcon)
+    destinationMarker?.tag = "DEST|$etaMin min|$displayDistance"
+
+}
+
+
+private fun placeMarkers() {
+    if (pickupLocation != null) {
+        pickupMarker?.remove()
+
+        // Calculate initial distance and time from pickup to destination
+        val (initialDistance, initialTime) = if (destinationLocation != null) {
+            val dist = distanceMiles(pickupLocation!!, destinationLocation!!)
+            val time = (dist / 15 * 60).toInt() // Assuming 15 mph speed
+            Pair(formatMiles(dist), "$time Min")
+        } else {
+            Pair("0 M", "0 Min")
+        }
+
+        pickupMarker = googleMap.addMarker(
+            MarkerOptions()
+                .position(pickupLocation!!)
+                .icon(createCustomMarker("Pickup Spot", initialTime, initialDistance))
+                .anchor(0.5f, 1.5f)
+                .zIndex(3f)
+        )
+        pickupMarker?.tag = "PICKUP|Not started|0.0 mi"
+    }
+
+    if (destinationLocation != null) {
+        destinationMarker?.remove()
+
+        // Destination marker shows "Destination" with placeholder values initially
+        destinationMarker = googleMap.addMarker(
+            MarkerOptions()
+                .position(destinationLocation!!)
+                .icon(createCustomMarker("Destination", "-- Min", "-- M"))
+                .anchor(0.5f, 1.5f)
+                .zIndex(3f)
+        )
+        destinationMarker?.tag = "DEST|-- min|-- mi"
+    }
+}
+    private fun fitCamera() {
+        if (pickupLocation != null && destinationLocation != null) {
+            val bounds = LatLngBounds.Builder()
+                .include(pickupLocation!!).include(destinationLocation!!).build()
+            googleMap.animateCamera(CameraUpdateFactory.newLatLngBounds(bounds, 200))
+        } else if (pickupLocation != null) {
+            googleMap.animateCamera(CameraUpdateFactory.newLatLngZoom(pickupLocation!!, 14f))
+        }
+    }
+
+
+    private fun startDelivery() {
+        routeChoice = RouteChoice.CORRECT
+        isDelivering = true
+        currentStepIndex = 0
+        deliveryStartTime = System.currentTimeMillis()
+        wrongRouteStartTime = 0L
+        totalDistanceMiles = 0.0
+        wrongDistanceMiles = 0.0
+        riderOnCorrectRoute = true
+
+        // Reset deviation tracking
+        deviationStartPoint = null
+        wrongPathGrowingPolyline?.remove()
+        wrongPathGrowingPolyline = null
+        currentWrongSegmentPoints.clear()
+
+        actualPathPoints.clear()
+        trailSegments.forEach { it.remove() }
+        trailSegments.clear()
+        currentSegmentPoints.clear()
+        currentSegmentIsCorrect = true
+
+        if (pickupLocation != null) {
+            currentSegmentPoints.add(pickupLocation!!)
+            actualPathPoints.add(pickupLocation!!)
+
+            riderMarker?.remove()
+
+            riderMarker = googleMap.addMarker(
+                MarkerOptions().position(pickupLocation!!).icon(
+                    BitmapDescriptorFactory.fromResource(R.drawable.ic_curretpathicon)
+                ).zIndex(5f).anchor(0.5f, 0.5f)
+            )
+        }
+
+
+        toast("✅ Delivery started! Stay on the green path")
+        startRealTimeTracking()
+
+        *//*   startMoveLoop()*//*
+        startUiLoop()
+    }
+
+
+    private fun startRealTimeTracking() {
+        if (correctRoutePoints.isEmpty()) return
+
+        // 1. FusedLocationProviderClient setup
+        fusedLocationClient = LocationServices.getFusedLocationProviderClient(requireActivity())
+
+        // 2. LocationRequest configuration
+        val locationRequest = LocationRequest.Builder(
+            Priority.PRIORITY_HIGH_ACCURACY,
+            5000L  // 5 seconds interval
+        ).apply {
+            setMinUpdateIntervalMillis(2000L)  // 2 seconds min interval
+            setMaxUpdateDelayMillis(10000L)    // 10 seconds max delay
+        }.build()
+
+        // 3. LocationCallback
+        val locationCallback = object : LocationCallback() {
+            override fun onLocationResult(locationResult: LocationResult) {
+                locationResult.lastLocation?.let { location ->
+                    val currentLoc = LatLng(location.latitude, location.longitude)
+
+                    // ── Real-time tracking logic ──────────────
+                    processLiveLocation(currentLoc)
+                }
+            }
+        }
+
+        // 4. Request location updates
         if (ActivityCompat.checkSelfPermission(
-                requireContext(),
+                requireActivity(),
                 Manifest.permission.ACCESS_FINE_LOCATION
             ) == PackageManager.PERMISSION_GRANTED
         ) {
-            mMap.isMyLocationEnabled = true
-            startLocationUpdates()
+            fusedLocationClient.requestLocationUpdates(
+                locationRequest,
+                locationCallback,
+                Looper.getMainLooper()
+            )
+        }
+    }
+    // Replace your processLiveLocation function with this:
+    private fun processLiveLocation(currentLoc: LatLng) {
+        // 1. Destination check
+        if (destinationLocation != null) {
+            val distToDest = distanceMiles(currentLoc, destinationLocation!!)
+            if (distToDest <= DESTINATION_THRESHOLD_MILES) {
+                riderMarker?.position = destinationLocation!!
+                onArrived()
+                stopLocationUpdates()
+                return
+            }
+        }
+
+        // 2. Route deviation check
+        val isDeviating = checkForDeviation(currentLoc)
+
+        if (isDeviating) {
+            handleWrongPath(currentLoc)
         } else {
-            ActivityCompat.requestPermissions(
-                requireActivity(),
-                arrayOf(Manifest.permission.ACCESS_FINE_LOCATION),
-                LOCATION_PERMISSION_REQUEST_CODE
+            handleCorrectPath(currentLoc)
+
+            // Find nearest point on route for progress tracking - FIXED
+            val nearestPointInfo = findNearestPointOnRoute(currentLoc)
+            currentStepIndex = nearestPointInfo.second  // Use the index from Pair
+        }
+
+        // 3. Update UI
+        updatePathStatusUI(isDeviating)
+        riderMarker?.position = currentLoc
+        actualPathPoints.add(currentLoc)
+        drawActualPath()
+
+        // 4. Camera follow - ADD this variable at class level
+        if (shouldFollowRider) {  // Make sure this variable exists
+            googleMap.animateCamera(
+                CameraUpdateFactory.newLatLngZoom(currentLoc, 17f),
+                500,
+                null
             )
         }
     }
 
-    @SuppressLint("MissingPermission")
-    private fun startLocationUpdates() {
-        val locationRequest = LocationRequest.create().apply {
-            interval = 10000
-            fastestInterval = 5000
-            priority = LocationRequest.PRIORITY_HIGH_ACCURACY
-        }
 
-        locationCallback = object : LocationCallback() {
-            override fun onLocationResult(locationResult: LocationResult) {
-                locationResult ?: return
-                for (location in locationResult.locations) {
-                    val newLatLng = LatLng(location.latitude, location.longitude)
+    private fun findNearestPointOnRoute(currentLoc: LatLng): Pair<LatLng, Int> {
+        var minDistance = Double.MAX_VALUE
+        var nearestPoint = correctRoutePoints.first()
+        var nearestIndex = 0
 
-                    // Set pickup spot if it's not set yet
-                    if (pickupSpotLatLng == null) {
-                        pickupSpotLatLng = newLatLng
-                        lastCorrectPoint = newLatLng
-                        userPathPoints.add(newLatLng)
-
-                        // Draw the route now that we have pickup spot
-                        if (destinationLatLng != null) {
-                            drawRouteToDestination()
-                        }
-                    }
-                    updateUserLocation(LatLng(location.latitude, location.longitude), false)
-                }
+        correctRoutePoints.forEachIndexed { index, point ->
+            val distance = distanceMiles(currentLoc, point)
+            if (distance < minDistance) {
+                minDistance = distance
+                nearestPoint = point
+                nearestIndex = index
             }
         }
 
-        fusedLocationClient.requestLocationUpdates(locationRequest, locationCallback, null)
+        return Pair(nearestPoint, nearestIndex)  // Returns both point and index
     }
 
-    private fun updateUserLocation(newLatLng: LatLng, isSimulated: Boolean) {
-        this.currentLatLng = newLatLng
 
-        // Check if user is on correct route
-        val isOnRoute = PolyUtil.isLocationOnPath(newLatLng, routePoints, true, 100.0)
+    private fun stopLocationUpdates() {
+        if (::fusedLocationClient.isInitialized && ::locationCallback.isInitialized) {
+            fusedLocationClient.removeLocationUpdates(locationCallback)
+        }
+    }
 
-        if (isOnRoute) {
-            // User is on correct route
-            if (isDeviated) {
-                // User was deviated but now back on route
-                handleBackOnRoute()
+
+    // ══════════════════════════════════════════════════════════════
+    //  Deviation Check
+    // ══════════════════════════════════════════════════════════════
+    private fun checkForDeviation(currentLocation: LatLng): Boolean {
+        val threshold = 0.003  // ~16 feet
+
+        var minDistance = Double.MAX_VALUE
+        for (point in correctRoutePoints) {
+            val distance = distanceMiles(currentLocation, point)
+            if (distance < minDistance) minDistance = distance
+        }
+        return minDistance > threshold
+    }
+
+    private fun handleWrongPath(location: LatLng) {
+        if (riderOnCorrectRoute) {
+            // User abhi abhi galat route par aaya hai
+            riderOnCorrectRoute = false
+            currentSegmentIsCorrect = false
+            wrongRouteStartTime = System.currentTimeMillis()
+
+            // CHANGE ICON TO WRONG PATH ICON
+            updateRiderIcon(false)
+
+            // 1. Deviation point pakadne ke liye: Actual path ka aakhri sahi point
+            deviationStartPoint = if (actualPathPoints.isNotEmpty()) {
+                actualPathPoints.last()
             } else {
-                // User continues on correct route
-                userPathPoints.add(newLatLng)
-                lastCorrectPoint = newLatLng
+                location
+            }
+
+            // 2. Naya wrong segment start karein
+            currentWrongSegmentPoints.clear()
+            deviationStartPoint?.let { currentWrongSegmentPoints.add(it) }
+            currentWrongSegmentPoints.add(location)
+
+            // Purane sahi raste ko permanent trail mein daal dein
+            if (currentSegmentPoints.size > 1) {
+                commitCurrentSegment(true)
             }
         } else {
-            // User is off route
-            if (!isDeviated) {
-                // Start of deviation
-                handleStartDeviation(newLatLng)
-            } else {
-                // Continue deviation
-                deviationPathPoints.add(newLatLng)
-            }
+
+            currentWrongSegmentPoints.add(location)
         }
 
-        drawUserPosition(newLatLng, isOnRoute)
-        updateUiStatus(isOnRoute)
+        // Har movement par red line ko redraw karein (Growing effect)
+        drawGrowingWrongPath()
 
-        if (!isSimulated) {
-            mMap.animateCamera(CameraUpdateFactory.newLatLngZoom(newLatLng, 15f))
+        // Wrong distance calculate karein
+        if (currentWrongSegmentPoints.size > 1) {
+            val prevLoc = currentWrongSegmentPoints[currentWrongSegmentPoints.size - 2]
+            wrongDistanceMiles += distanceMiles(prevLoc, location)
         }
     }
 
-    private fun handleStartDeviation(deviationPoint: LatLng) {
-        isDeviated = true
-        deviationStartPoint = lastCorrectPoint ?: pickupSpotLatLng
-        deviationPathPoints.clear()
-        deviationPathPoints.add(deviationStartPoint!!)
-        deviationPathPoints.add(deviationPoint)
+    // ─── Draw Red Polyline (Update this function) ──────────────────────
+    private fun drawGrowingWrongPath() {
+        if (currentWrongSegmentPoints.size < 2) return
 
-        Toast.makeText(requireContext(), "Route deviation detected!", Toast.LENGTH_LONG).show()
+        // Purani temporary red line ko remove karein
+        wrongPathGrowingPolyline?.remove()
 
-        // In real app, notify emergency contacts here
-        // sendEmergencyAlert()
-    }
-
-    private fun handleBackOnRoute() {
-        isDeviated = false
-        deviationPathPoints.clear()
-        deviationRoutePolyline?.remove()
-        deviationRoutePolyline = null
-
-        Toast.makeText(requireContext(), "Back on correct route", Toast.LENGTH_SHORT).show()
-
-        // Update last correct point
-        lastCorrectPoint = currentLatLng
-        userPathPoints.add(currentLatLng!!)
-    }
-
-    private fun drawUserPosition(position: LatLng, isOnRoute: Boolean) {
-        // Update user marker
-        userMarker?.remove()
-        userMarker = mMap.addMarker(
-            MarkerOptions()
-                .position(position)
-                .icon(BitmapDescriptorFactory.fromResource(R.drawable.track_image)) // Custom user icon
-                .title(if (isOnRoute) "On Route" else "Off Route")
-                .snippet("Current Location")
-        )
-
-        // Draw user path (blue line when on route)
-        if (userPathPoints.size > 1) {
-            userRoutePolyline?.remove()
-            userRoutePolyline = mMap.addPolyline(
-                PolylineOptions()
-                    .addAll(userPathPoints)
-                    .color(Color.BLUE)
-                    .width(8f)
-                    .zIndex(3f)
-            )
-        }
-
-        // Draw deviation path (red line when off route)
-        if (isDeviated && deviationPathPoints.size > 1) {
-            deviationRoutePolyline?.remove()
-            deviationRoutePolyline = mMap.addPolyline(
-                PolylineOptions()
-                    .addAll(deviationPathPoints)
-                    .color(Color.RED)
-                    .width(8f)
-                    .zIndex(4f)
-            )
-        }
-    }
-
-    private fun updateUiStatus(isOnRoute: Boolean) {
-        val mainActivity = requireActivity() as MainActivity
-        if (isOnRoute) {
-            mainActivity.setImgseetimer().visibility = View.GONE
-            mainActivity.setHeading().text = calculateETAAndDistance()
-            mainActivity.setTitle().text = "On Correct Path"
-            mainActivity.setSubTitle().text = "Continue following this route"
-        } else {
-            mainActivity.setImgseetimer().visibility = View.VISIBLE
-            mainActivity.setHeading().text = "Off Route - ${calculateDistanceFromRoute()} away"
-            mainActivity.setTitle().text = "Warning!"
-            mainActivity.setSubTitle().text = "You have deviated from the planned route"
-        }
-    }
-
-    private fun calculateETAAndDistance(): String {
-        if (routePoints.isEmpty() || currentLatLng == null) return "Calculating route..."
-
-        val nearestPoint = routePoints.minByOrNull {
-            SphericalUtil.computeDistanceBetween(currentLatLng!!, it)
-        } ?: return "Route not available"
-
-        val nearestPointIndex = routePoints.indexOf(nearestPoint)
-        val remainingRoute = routePoints.drop(nearestPointIndex)
-
-        val remainingDistance = if (remainingRoute.size > 1) {
-            SphericalUtil.computeLength(remainingRoute)
-        } else {
-            SphericalUtil.computeDistanceBetween(currentLatLng!!, destinationLatLng!!)
-        }
-
-        val etaMinutes = (remainingDistance / 83.33).toInt() // Assuming 5km/h walking speed
-        return "${etaMinutes} min (${"%.1f".format(remainingDistance / 1000)} km) to destination"
-    }
-
-    private fun calculateDistanceFromRoute(): String {
-        if (routePoints.isEmpty() || currentLatLng == null) return "Unknown"
-
-        val nearestPoint = routePoints.minByOrNull {
-            SphericalUtil.computeDistanceBetween(currentLatLng!!, it)
-        } ?: return "Unknown"
-
-        val distance = SphericalUtil.computeDistanceBetween(currentLatLng!!, nearestPoint)
-        return if (distance < 1000) "${distance.toInt()} meters" else "%.1f km".format(distance / 1000)
-    }
-
-    private fun drawRouteToDestination() {
-        if (pickupSpotLatLng == null || destinationLatLng == null) return
-
-        val apiKey = getString(R.string.api_key)
-        val url = "https://maps.googleapis.com/maps/api/directions/json?" +
-                "origin=${pickupSpotLatLng!!.latitude},${pickupSpotLatLng!!.longitude}" +
-                "&destination=${destinationLatLng!!.latitude},${destinationLatLng!!.longitude}" +
-                "&mode=walking&key=$apiKey"
-
-        thread {
-            try {
-                val result = URL(url).readText()
-                val jsonObject = JSONObject(result)
-                processDirectionsResponse(jsonObject)
-            } catch (e: Exception) {
-                requireActivity().runOnUiThread {
-                    Toast.makeText(requireContext(), "Error: ${e.message}", Toast.LENGTH_LONG).show()
-                    // Fallback to straight line for testing
-//                    routePoints = listOf(pickupSpotLatLng!!, destinationLatLng!!)
-//                    drawMapRoute()
-                }
-            }
-        }
-    }
-
-    private fun processDirectionsResponse(jsonObject: JSONObject) {
-        val routes = jsonObject.getJSONArray("routes")
-        if (routes.length() > 0) {
-            val points = routes.getJSONObject(0)
-                .getJSONObject("overview_polyline")
-                .getString("points")
-
-            routePoints = PolyUtil.decode(points)
-
-            requireActivity().runOnUiThread {
-                drawMapRoute()
-            }
-        }
-    }
-
-    private fun drawMapRoute() {
-        mMap.clear()
-        userPathPoints.clear()
-        deviationPathPoints.clear()
-
-        // Draw optimal route (gray/light blue color)
-        optimalRoutePolyline = mMap.addPolyline(
+        // Nayi red line banayein: Deviation point se current marker tak
+        wrongPathGrowingPolyline = googleMap.addPolyline(
             PolylineOptions()
-                .addAll(routePoints)
-                .color(Color.parseColor("#87CEEB")) // Light blue color
-                .width(12f)
-                .zIndex(1f)
+                .addAll(currentWrongSegmentPoints)
+                .color(Color.RED)
+                .width(14f)
+                .pattern(listOf(Dash(30f), Gap(10f))) // Dashed pattern for alert
+                .zIndex(10f) // Sabse upar dikhane ke liye
+                .geodesic(true)
         )
+    }
 
-        // Add pickup spot marker
-  /*      pickupMarker = mMap.addMarker(
-            MarkerOptions()
-                .position(pickupSpotLatLng!!)
-                .title("Pickup Spot")
-                .icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_GREEN))
-        )*/
-        if (pickupSpotLatLng != null) {
-            pickupMarker = mMap.addMarker(
-                MarkerOptions()
-                    .position(pickupSpotLatLng!!)
-                    .title("Pickup Spot")
-                    .icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_GREEN))
-            )
 
-            // Initialize user path with pickup spot
-            userPathPoints.add(pickupSpotLatLng!!)
-            lastCorrectPoint = pickupSpotLatLng
+
+    private fun handleCorrectPath(location: LatLng) {
+        if (!riderOnCorrectRoute) {
+            // Wrong path se wapas sahi path par aaya
+            riderOnCorrectRoute = true
+            currentSegmentIsCorrect = true
+
+            // CHANGE ICON TO CORRECT PATH ICON
+            updateRiderIcon(true)
+
+            // Growing red polyline ko permanent trail mein convert karo
+            if (currentWrongSegmentPoints.size > 1) {
+                val permanentWrongPoly = googleMap.addPolyline(
+                    PolylineOptions()
+                        .addAll(currentWrongSegmentPoints)
+                        .color(Color.RED)
+                        .width(12f)
+                        .pattern(listOf(Dash(20f), Gap(8f)))
+                        .zIndex(3f)
+                        .geodesic(false)
+                )
+                trailSegments.add(permanentWrongPoly)
+            }
+
+            // Growing polyline hatao (permanent trail le lega uski jagah)
+            wrongPathGrowingPolyline?.remove()
+            wrongPathGrowingPolyline = null
+
+            // Reset deviation tracking
+            deviationStartPoint = null
+            currentWrongSegmentPoints.clear()
+
+            // Wrong segment commit karo
+            if (currentSegmentPoints.size > 1) {
+                commitCurrentSegment(false)
+            }
+            currentSegmentPoints.clear()
+            currentSegmentPoints.add(location)
+        } else {
+            // Pehle se sahi path par hai
+            currentSegmentPoints.add(location)
         }
 
-        // Add destination marker
-   /*     destinationMarker = mMap.addMarker(
-            MarkerOptions()
-                .position(destinationLatLng!!)
-                .title("Destination")
-                .icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_RED))
-        )*/
-        // Add destination marker
-        if (destinationLatLng != null) {
-            destinationMarker = mMap.addMarker(
-                MarkerOptions()
-                    .position(destinationLatLng!!)
-                    .title("Destination")
-                    .icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_RED))
-            )
-        }
-
-        // Initialize user path with pickup spot
-/*
-        userPathPoints.add(pickupSpotLatLng!!)
-        lastCorrectPoint = pickupSpotLatLng
-*/
-
-        // Move camera to show entire route
-/*        val bounds = routePoints.fold(LatLngBounds.Builder()) { builder, latLng ->
-            builder.include(latLng)
-            builder
-        }.build()
-
-        mMap.animateCamera(CameraUpdateFactory.newLatLngBounds(bounds, 100))*/
-        // Move camera to show entire route
-        if (routePoints.isNotEmpty()) {
-            val bounds = routePoints.fold(LatLngBounds.Builder()) { builder, latLng ->
-                builder.include(latLng)
-            }.build()
-            mMap.animateCamera(CameraUpdateFactory.newLatLngBounds(bounds, 100))
+        // Total distance track karo
+        if (currentSegmentPoints.size > 1) {
+            val prevLoc = currentSegmentPoints[currentSegmentPoints.size - 2]
+            totalDistanceMiles += distanceMiles(prevLoc, location)
         }
     }
+
+    // ══════════════════════════════════════════════════════════════
+    //  Draw Actual Path (live teal line for correct path)
+    // ══════════════════════════════════════════════════════════════
+    private fun drawActualPath() {
+        liveSegmentPolyline?.remove()
+        if (actualPathPoints.size < 2) return
+
+        // Agar wrong path par hai to live path mat dikhao (growing red already dikha raha hai)
+        // Sirf correct path par hote time teal line dikhao
+        if (!riderOnCorrectRoute) return
+
+        liveSegmentPolyline = googleMap.addPolyline(
+            PolylineOptions()
+                .addAll(actualPathPoints)
+                .color(Color.parseColor("#1ABC9C"))
+                .width(12f)
+                .zIndex(4f)
+                .geodesic(false)
+        )
+    }
+
+    private var liveSegmentPolyline: Polyline? = null
+
+    // ══════════════════════════════════════════════════════════════
+    //  UI Status Update
+    // ══════════════════════════════════════════════════════════════
+    private fun updatePathStatusUI(isDeviating: Boolean) {
+        if (isDeviating) {
+          *//*  binding.tvDeliveryStatus.text = "WRONG PATH! ⚠️ Go back to green route"
+            binding.tvDeliveryStatus.backgroundTintList =
+                ContextCompat.getColorStateList(requireActivity(), android.R.color.holo_red_dark)*//*
+        } else {
+      *//*      binding.tvDeliveryStatus.text = "ON CORRECT PATH ✓"
+            binding.tvDeliveryStatus.backgroundTintList =
+                ContextCompat.getColorStateList(requireActivity(), android.R.color.holo_green_dark)*//*
+        }
+    }
+
+
+    private fun updateRiderIcon(isOnCorrectPath: Boolean) {
+
+        val iconResource = if (isOnCorrectPath) {
+            R.drawable.ic_curretpathicon  // Green/blue icon for correct path
+        } else {
+            R.drawable.ic_wrongpathicon   // Red icon for wrong path
+        }
+
+        val bitmap = BitmapFactory.decodeResource(resources, iconResource)
+        val scaledBitmap = Bitmap.createScaledBitmap(bitmap, 90, 90, false)
+        riderMarker?.setIcon(BitmapDescriptorFactory.fromBitmap(scaledBitmap))
+    }
+
+    private fun commitCurrentSegment(wasCorrect: Boolean) {
+        if (currentSegmentPoints.size < 2) { currentSegmentPoints.clear(); return }
+        val poly = googleMap.addPolyline(buildSegmentOptions(wasCorrect, currentSegmentPoints))
+        trailSegments.add(poly)
+        currentSegmentPoints.clear()
+    }
+
+    private fun buildSegmentOptions(isCorrect: Boolean, points: List<LatLng>): PolylineOptions {
+        return if (isCorrect) {
+            PolylineOptions().addAll(points).color(Color.parseColor("#1ABC9C")).width(9f).zIndex(3f).geodesic(false)
+        } else {
+            PolylineOptions().addAll(points).color(Color.RED).width(9f)
+                .pattern(listOf(Dash(20f), Gap(10f))).zIndex(3f).geodesic(false)
+        }
+    }
+
+
+    private fun startUiLoop() {
+        uiRunnable = object : Runnable {
+            override fun run() {
+                if (!isDelivering) return
+                val now = System.currentTimeMillis()
+
+                // Pickup marker - time elapsed and distance traveled
+                val elapsedSec = (now - deliveryStartTime) / 1000L
+                val fromTimeStr = when {
+                    elapsedSec < 60 -> "${elapsedSec}s"
+                    else -> "${elapsedSec / 60}min ${elapsedSec % 60}s"
+                }
+                val fromDistStr = formatMiles(totalDistanceMiles)
+
+                // Update pickup marker with actual traveled distance
+                updatePickupMarker(fromTimeStr, fromDistStr)
+
+                // Destination marker - ETA and remaining distance
+                if (correctRoutePoints.isNotEmpty() && destinationLocation != null) {
+                    val currLoc = riderMarker?.position ?: correctRoutePoints[currentStepIndex.coerceAtMost(correctRoutePoints.size - 1)]
+
+                    val distToDest = distanceMiles(currLoc, destinationLocation!!)
+                    val etaMin = (distToDest / 15 * 60).toInt() // 15 mph average speed
+                    val toDistStr = formatDistanceWithUnit(distToDest)
+
+                    updateDestinationMarker(etaMin, toDistStr)
+                }
+
+                // Wrong route info if deviated
+                if (wrongRouteStartTime > 0L) {
+                    val wrongSec = (now - wrongRouteStartTime) / 1000L
+                    // Update wrong route UI if needed
+                }
+
+                mainHandler.postDelayed(this, UI_REFRESH_MS)
+            }
+        }
+        mainHandler.post(uiRunnable!!)
+    }
+    private fun updatePickupMarker(timeStr: String, distanceStr: String) {
+       // pickupMarker?.remove()
+        if (pickupMarker == null || pickupLocation == null) return
+        val displayDistance = when {
+            distanceStr.contains("mi") -> {
+                val miles = distanceStr.replace(" mi", "").toDoubleOrNull() ?: 0.0
+                if (miles < 0.1) {
+                    "${(miles * 1609.34).toInt()} M"
+                } else {
+                    "${String.format("%.2f", miles)} Mi"
+                }
+            }
+            else -> distanceStr
+        }
+
+*//*        pickupMarker = googleMap.addMarker(
+            MarkerOptions()
+                .position(pickupLocation!!)
+                .icon(createCustomMarker("Pickup Spot", timeStr, displayDistance))
+                .anchor(0.5f, 1.5f)
+                .zIndex(3f)
+        )*//*
+
+        // Create new bitmap with updated values
+        val newIcon = createCustomMarker("Pickup Spot", timeStr, displayDistance)
+
+        // Update existing marker's icon (NO REMOVE)
+        pickupMarker?.setIcon(newIcon)
+        pickupMarker?.tag = "PICKUP|$timeStr|$displayDistance"
+    }
+
+    // Helper function to format distance with appropriate unit
+    private fun formatDistanceWithUnit(distanceMiles: Double): String {
+        return when {
+            distanceMiles < 0.1 -> {
+                // Less than 0.1 miles - show in meters
+                val meters = (distanceMiles * 1609.34).toInt()
+                "${meters} M"
+            }
+            distanceMiles < 1.0 -> {
+                // Between 0.1 and 1 mile - show with 2 decimal places
+                String.format("%.2f Mi", distanceMiles)
+            }
+            else -> {
+                // More than 1 mile - show with 1 decimal place
+                String.format("%.1f Mi", distanceMiles)
+            }
+        }
+    }
+
+
+    // ══════════════════════════════════════════════════════════════
+    //  Arrived
+    // ══════════════════════════════════════════════════════════════
+    private fun onArrived() {
+        isDelivering = false
+        stopLoops()
+
+        // Koi bhi bachi hui wrong path polyline ko bhi commit karo
+        if (!riderOnCorrectRoute && currentWrongSegmentPoints.size > 1) {
+            val finalWrongPoly = googleMap.addPolyline(
+                PolylineOptions()
+                    .addAll(currentWrongSegmentPoints)
+                    .color(Color.RED).width(12f)
+                    .pattern(listOf(Dash(20f), Gap(8f))).zIndex(3f).geodesic(false)
+            )
+            trailSegments.add(finalWrongPoly)
+            wrongPathGrowingPolyline?.remove()
+            wrongPathGrowingPolyline = null
+        }
+
+        // Rider ko destination par place karo
+        destinationLocation?.let { riderMarker?.position = it }
+
+        drawActualPath()
+
+        val totalMin = (System.currentTimeMillis() - deliveryStartTime) / 60000
+        val totalDist = formatMiles(totalDistanceMiles)
+
+        val message = if (wrongDistanceMiles > 0) {
+            val wrongDist = formatMiles(wrongDistanceMiles)
+            "⚠️ Delivery completed!\nWrong path: $wrongDist\nTotal distance: $totalDist in ${totalMin}min"
+        } else {
+            "✅ Perfect delivery!\nYou stayed on correct path!\nTotal distance: $totalDist in ${totalMin}min"
+        }
+
+        toast(message)
+
+        *//*binding.tvDeliveryStatus.text = "DELIVERED ✅ DESTINATION REACHED!"
+        binding.tvDeliveryStatus.backgroundTintList =
+            ContextCompat.getColorStateList(requireActivity(), android.R.color.holo_blue_dark)*//*
+    }
+
+
+
+    private fun stopLoops() {
+        moveRunnable?.let { mainHandler.removeCallbacks(it) }
+        uiRunnable?.let { mainHandler.removeCallbacks(it) }
+        moveRunnable = null
+        uiRunnable = null
+    }
+
+
+    // ══════════════════════════════════════════════════════════════
+    //  Location Permission
+    // ══════════════════════════════════════════════════════════════
+    private fun checkLocationPermission() {
+        if (ContextCompat.checkSelfPermission(requireActivity(), Manifest.permission.ACCESS_FINE_LOCATION)
+            != PackageManager.PERMISSION_GRANTED) {
+            ActivityCompat.requestPermissions(requireActivity(),
+                arrayOf(Manifest.permission.ACCESS_FINE_LOCATION), LOC_PERM_REQUEST)
+        } else {
+            enableMyLocation()
+        }
+    }
+
+    private fun enableMyLocation() {
+        if (ActivityCompat.checkSelfPermission(requireActivity(), Manifest.permission.ACCESS_FINE_LOCATION)
+            == PackageManager.PERMISSION_GRANTED) {
+            googleMap.isMyLocationEnabled = true
+        }
+    }
+
+    override fun onRequestPermissionsResult(
+        requestCode: Int, permissions: Array<out String>, grantResults: IntArray
+    ) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
+        if (requestCode == LOC_PERM_REQUEST
+            && grantResults.isNotEmpty()
+            && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+            enableMyLocation()
+            setCurrentLocationInPickup()
+        }
+    }
+    private fun distanceMiles(point1: LatLng, point2: LatLng): Double {
+        val R = 3959.0
+        val latDistance = Math.toRadians(point2.latitude - point1.latitude)
+        val lonDistance = Math.toRadians(point2.longitude - point1.longitude)
+        val a = Math.sin(latDistance / 2) * Math.sin(latDistance / 2) +
+                Math.cos(Math.toRadians(point1.latitude)) *
+                Math.cos(Math.toRadians(point2.latitude)) *
+                Math.sin(lonDistance / 2) * Math.sin(lonDistance / 2)
+        val c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a))
+        return R * c
+    }
+
+    private fun formatMiles(miles: Double): String = String.format("%.1f mi", miles)
+
+    private fun toast(msg: String) = Toast.makeText(requireContext(), msg, Toast.LENGTH_SHORT).show()
+
 
     override fun onResume() {
         super.onResume()
@@ -1203,658 +3425,53 @@ class WatchOverMeChooseStartingPointFragment : Fragment(), OnMapReadyCallback {
 
     override fun onDestroyView() {
         super.onDestroyView()
-        binding.map.onDestroy()
+     //   binding.map.onDestroy()
         fusedLocationClient.removeLocationUpdates(locationCallback)
+        simulationRunnable?.let { handler.removeCallbacks(it) }
     }
 
     companion object {
         private const val LOCATION_PERMISSION_REQUEST_CODE = 101
     }
+    private fun createCustomMarker(title: String, time: String = "", distance: String = ""): BitmapDescriptor {
+        // Inflate the custom layout
+        val markerView = LayoutInflater.from(requireContext()).inflate(R.layout.layout_marker_info, null)
+
+        // Debug: Check if views exist
+        val tvTimeView = markerView.findViewById<TextView>(R.id.tvTime)
+        val tvDistanceView = markerView.findViewById<TextView>(R.id.tvDistance)
+        val tvTitleView = markerView.findViewById<TextView>(R.id.tvTitle)
+
+        Log.d("MarkerDebug", "tvTime found: ${tvTimeView != null}")
+        Log.d("MarkerDebug", "tvDistance found: ${tvDistanceView != null}")
+        Log.d("MarkerDebug", "tvTitle found: ${tvTitleView != null}")
+
+        // Set the values
+        tvTimeView?.text = time
+        tvDistanceView?.text = distance
+        tvTitleView?.text = title
+
+        // Force text colors
+        tvTimeView?.setTextColor(Color.WHITE)
+        tvDistanceView?.setTextColor(Color.WHITE)
+        tvTitleView?.setTextColor(Color.BLACK)
+
+        // Measure and layout
+        markerView.measure(
+            View.MeasureSpec.makeMeasureSpec(0, View.MeasureSpec.UNSPECIFIED),
+            View.MeasureSpec.makeMeasureSpec(0, View.MeasureSpec.UNSPECIFIED)
+        )
+        markerView.layout(0, 0, markerView.measuredWidth, markerView.measuredHeight)
+
+        // Create bitmap
+        val bitmap = Bitmap.createBitmap(
+            markerView.measuredWidth,
+            markerView.measuredHeight,
+            Bitmap.Config.ARGB_8888
+        )
+        val canvas = Canvas(bitmap)
+        markerView.draw(canvas)
+
+        return BitmapDescriptorFactory.fromBitmap(bitmap)
+    }
 }*/
-//package com.alert.app.fragment.main
-//
-//import android.Manifest
-//import android.annotation.SuppressLint
-//import android.app.Dialog
-//import android.content.pm.PackageManager
-//import android.graphics.Color
-//import android.graphics.drawable.ColorDrawable
-//import android.location.Geocoder
-//import android.os.Bundle
-//import androidx.fragment.app.Fragment
-//import android.view.LayoutInflater
-//import android.view.View
-//import android.view.ViewGroup
-//import android.view.WindowManager
-//import android.widget.ImageView
-//import android.widget.Toast
-//import androidx.activity.OnBackPressedCallback
-//import androidx.core.app.ActivityCompat
-//import androidx.navigation.fragment.findNavController
-//import com.alert.app.R
-//import com.alert.app.activity.MainActivity
-//import com.alert.app.adapter.PlaceAutoSuggestAdapter
-//import com.alert.app.databinding.FragmentWatchovermechoosestartingpointBinding
-//import com.google.android.gms.location.FusedLocationProviderClient
-//import com.google.android.gms.location.LocationCallback
-//import com.google.android.gms.location.LocationServices
-//import com.google.android.gms.maps.CameraUpdateFactory
-//import com.google.android.gms.maps.GoogleMap
-//import com.google.android.gms.maps.OnMapReadyCallback
-//import com.google.android.gms.maps.model.LatLng
-//import com.google.android.gms.maps.model.MarkerOptions
-//import com.google.android.gms.maps.model.Polyline
-//import com.google.android.gms.maps.model.PolylineOptions
-//import com.google.android.libraries.places.api.Places
-//import com.google.android.libraries.places.api.model.AutocompletePrediction
-//import com.google.android.libraries.places.api.model.Place
-//import com.google.android.libraries.places.api.net.FetchPlaceRequest
-//import com.google.android.libraries.places.api.net.PlacesClient
-//import com.google.android.libraries.places.widget.Autocomplete
-//import com.google.android.libraries.places.widget.model.AutocompleteActivityMode
-//import com.google.maps.android.PolyUtil
-//import org.json.JSONObject
-//import java.net.URL
-//import kotlin.concurrent.thread
-//
-//
-//class WatchOverMeChooseStartingPointFragment : Fragment(), OnMapReadyCallback {
-//
-//    private lateinit var binding: FragmentWatchovermechoosestartingpointBinding
-//    private var chooseType = "Top"
-//
-//    private lateinit var mMap: GoogleMap
-//    private lateinit var fusedLocationClient: FusedLocationProviderClient
-//    private lateinit var locationCallback: LocationCallback
-//    private var routePoints: List<LatLng> = listOf()
-//    private var destinationLatLng: LatLng? = null
-//    private var polyline: Polyline? = null
-//    private lateinit var placesClient: PlacesClient
-//    private lateinit var currentLocationAdapter: PlaceAutoSuggestAdapter
-//    private lateinit var destinationAdapter: PlaceAutoSuggestAdapter
-//    override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View {
-//        binding = FragmentWatchovermechoosestartingpointBinding.inflate(layoutInflater, container, false)
-//        // Initialize Places API
-//        val apiKey = getString(R.string.api_key)
-//        if (!Places.isInitialized()) {
-//            Places.initialize(requireContext(), apiKey)
-//        }
-//        placesClient = Places.createClient(requireContext())
-//
-//        // Set up adapters
-//        currentLocationAdapter = PlaceAutoSuggestAdapter(requireContext(), placesClient)
-//        destinationAdapter = PlaceAutoSuggestAdapter(requireContext(), placesClient)
-//
-//        fusedLocationClient = LocationServices.getFusedLocationProviderClient(requireActivity())
-//
-//
-//        binding.map.onCreate(savedInstanceState)
-////        binding.map.getMapAsync { map ->
-//////            googleMap = map
-////
-////        }
-//        binding.map.getMapAsync { googleMap ->
-//            mMap = googleMap
-//            onMapReady(googleMap) // Optional, to call your onMapReady logic
-//        }
-//
-//
-//        /*     val mapFragment = requireActivity().supportFragmentManager.findFragmentById(R.id.map) as SupportMapFragment
-//             mapFragment.getMapAsync(this)*/
-//
-//      //  setupPlacesAutoComplete()
-//
-//  /*      binding.map = binding.map
-//        binding.map.onCreate(savedInstanceState)
-//        binding.map.getMapAsync(this)*/
-//        return binding.root
-//    }
-//
-//
-//    @SuppressLint("SetTextI18n")
-//    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
-//        super.onViewCreated(view, savedInstanceState)
-//        binding.edtCurrentAddress.setAdapter(currentLocationAdapter)
-//        binding.edtDestinationAddress.setAdapter(destinationAdapter)
-//// Set Noida Special Economic Zone as Start
-//        binding.edtCurrentAddress.setText("Noida Special Economic Zone")
-//        val startLatLng = LatLng(28.5687, 77.3507) // SEZ
-//
-//// Set Noida City Center as Destination
-//        binding.edtDestinationAddress.setText("Noida City Center")
-//        destinationLatLng = LatLng(28.5708, 77.3211) // City Center
-//
-//// Draw route directly
-//        drawRouteToDestination()
-//
-//        // Handle item clicks
-//        binding.edtCurrentAddress.setOnItemClickListener { _, _, position, _ ->
-//            val item = currentLocationAdapter.getItem(position)
-//            item?.let { selectPlace(it) }
-//        }
-//
-//        binding.edtDestinationAddress.setOnItemClickListener { _, _, position, _ ->
-//            val item = destinationAdapter.getItem(position)
-//            item?.let { selectPlace(it) }
-//        }
-//        (requireActivity() as MainActivity).setBottomLayout()?.visibility=View.GONE
-//        (requireActivity() as MainActivity).setImageShowTv()?.visibility=View.GONE
-//        (requireActivity() as MainActivity).setImgChatBoot().visibility =View.GONE
-//
-//        // This line use for system back button
-//        requireActivity().onBackPressedDispatcher.addCallback(
-//            viewLifecycleOwner,
-//            object : OnBackPressedCallback(true) {
-//                override fun handleOnBackPressed() {
-//                    findNavController().navigateUp()
-//                }
-//            })
-//
-//        binding.btnExplore.setOnClickListener {
-//            if (destinationLatLng != null) {
-//                drawRouteToDestination()
-//            } else {
-//                Toast.makeText(requireActivity(), "Please select a destination", Toast.LENGTH_SHORT).show()
-//            }
-//        }
-//
-//        (requireActivity() as MainActivity).setImgLocation().setOnClickListener {
-//            (requireActivity() as MainActivity).setImgseetimer().visibility=View.VISIBLE
-//            (requireActivity() as MainActivity).setHeading().text="5 min (4 miles) away"
-//            (requireActivity() as MainActivity).setTitle().text="Oooopss!!!!"
-//            (requireActivity() as MainActivity).setSubTitle().text="Seems like you have distracted from the actual\npath. Your emergency contact has been notified."
-//        }
-//
-//        (requireActivity() as MainActivity).setImgseetimer().setOnClickListener {
-//             alertBoxTimerShow()
-//        }
-//
-//        binding.imageBack.setOnClickListener {
-//            findNavController().navigateUp()
-//        }
-//        binding.btnCorrectPath.setOnClickListener {
-//            simulateCorrectPathLocation()
-//        }
-//
-//        binding.btnWrongPath.setOnClickListener {
-//            simulateWrongPathLocation()
-//        }
-//
-//
-//     /*   binding.layCurrent.setOnClickListener {
-//            binding.tvCurrent.text = "123,any street, US"
-//            binding.edSearch.hint = "Choose starting point"
-//            binding.imgBottom.setImageResource(R.drawable.circle_inactive_image)
-//            binding.imgTop.setImageResource(R.drawable.color_circle_active)
-//        }*/
-//
-//     /*   binding.layDestination.setOnClickListener {
-//            binding.tvDestination.text = "67, Ar road, US"
-//            binding.edSearch.hint = "Choose destination point"
-//            binding.imgTop.setImageResource(R.drawable.circle_inactive_image)
-//            binding.imgBottom.setImageResource(R.drawable.color_circle_active)
-//        }*/
-//
-//       val apiKey = getString(R.string.api_key)
-//        // Initialize Places API if not already initialized
-//        if (!Places.isInitialized()) {
-//            Places.initialize(requireActivity(), apiKey)
-//        }
-//        binding.imgBottom.setOnClickListener {
-//            changeIcon("Bottom")
-//        }
-//        binding.imgTop.setOnClickListener {
-//            changeIcon("Top")
-//        }
-//        binding.laySearch.setOnClickListener {
-//            startLocationPicker()
-//        }
-//
-//    }
-//    private fun simulateCorrectPathLocation() {
-//        // 🚦 A location near Noida Special Economic Zone on correct path
-//        val simulatedLocation = LatLng(28.5735, 77.3542) // Sector 82 area
-//        checkIfOnPath(simulatedLocation)
-//    }
-//
-//    private fun simulateWrongPathLocation() {
-//        // 🚫 A location far from the route - wrong path
-//        val simulatedLocation = LatLng(28.5900, 77.4000) // Far off in Sector 62
-//        checkIfOnPath(simulatedLocation)
-//    }
-//    private fun checkIfOnPath(simulatedLocation: LatLng) {
-//        val isOnRoute = PolyUtil.isLocationOnPath(simulatedLocation, routePoints, true, 50.0)
-//
-//        polyline?.color = if (isOnRoute) Color.BLUE else Color.RED
-//
-//        val mainActivity = requireActivity() as MainActivity
-//
-//        if (isOnRoute) {
-//            mainActivity.setImgseetimer().visibility = View.GONE
-//            mainActivity.setHeading().text = "3 min (3 miles) to reach"
-//            mainActivity.setTitle().text = "Kudoos!!!"
-//            mainActivity.setSubTitle().text = "You are on Right path. Go on with same path."
-//        } else {
-//            mainActivity.setImgseetimer().visibility = View.VISIBLE
-//            mainActivity.setHeading().text = "5 min (4 miles) away"
-//            mainActivity.setTitle().text = "Oooopss!!!"
-//            mainActivity.setSubTitle().text = "Seems like you have distracted from the actual path. Your emergency contact has been notified."
-//        }
-//
-//        // Move camera to that simulated location
-//        mMap.animateCamera(CameraUpdateFactory.newLatLngZoom(simulatedLocation, 14f))
-//
-//        // Marker (optional)
-//        mMap.addMarker(
-//            MarkerOptions().position(simulatedLocation).title(if (isOnRoute) "Correct Location" else "Wrong Location")
-//        )
-//    }
-//
-//    private fun selectPlace(prediction: AutocompletePrediction) {
-//        val placeFields = listOf(Place.Field.ID, Place.Field.NAME, Place.Field.LAT_LNG, Place.Field.ADDRESS)
-//        val request = FetchPlaceRequest.builder(prediction.placeId, placeFields).build()
-//
-//        placesClient.fetchPlace(request).addOnSuccessListener { response ->
-//            val place = response.place
-//            // Update UI with selected place
-//            if (binding.edtCurrentAddress.hasFocus()) {
-//                binding.edtCurrentAddress.setText(place.address ?: place.name)
-//                // Store latLng for current location
-//            } else if (binding.edtDestinationAddress.hasFocus()) {
-//                binding.edtDestinationAddress.setText(place.address ?: place.name)
-//                // Store latLng for destination
-//                destinationLatLng = place.latLng
-//            }
-//        }.addOnFailureListener { exception ->
-//            Toast.makeText(context, "Place not found: ${exception.message}", Toast.LENGTH_SHORT).show()
-//        }
-//    }
-//
-////    private fun setupPlacesAutoComplete() {
-////        val adapter = PlaceAutoSuggestAdapter(requireContext(), android.R.layout.simple_list_item_1)
-////        destinationInput.setAdapter(adapter)
-////
-////        binding.edtCurrentAddress.setOnItemClickListener { _, _, _, _ ->
-////            val geocoder = Geocoder(requireContext())
-////            val addressList = geocoder.getFromLocationName(destinationInput.text.toString(), 1)
-////            if (!addressList.isNullOrEmpty()) {
-////                val address = addressList[0]
-////                destinationLatLng = LatLng(address.latitude, address.longitude)
-////            }
-////        }
-////    }
-//
-//    override fun onMapReady(googleMap: GoogleMap) {
-//        mMap = googleMap
-//        if (ActivityCompat.checkSelfPermission(requireContext(), Manifest.permission.ACCESS_FINE_LOCATION)
-//            != PackageManager.PERMISSION_GRANTED) {
-//            ActivityCompat.requestPermissions(requireActivity(), arrayOf(Manifest.permission.ACCESS_FINE_LOCATION), 101)
-//            return
-//        }
-//        mMap.isMyLocationEnabled = true
-//    }
-///*
-//    private fun drawRouteToDestination() {
-//        if (ActivityCompat.checkSelfPermission(
-//                requireContext(),
-//                Manifest.permission.ACCESS_FINE_LOCATION
-//            ) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(
-//                requireContext(),
-//                Manifest.permission.ACCESS_COARSE_LOCATION
-//            ) != PackageManager.PERMISSION_GRANTED
-//        ) {
-//            // TODO: Consider calling
-//            //    ActivityCompat#requestPermissions
-//            // here to request the missing permissions, and then overriding
-//            //   public void onRequestPermissionsResult(int requestCode, String[] permissions,
-//            //                                          int[] grantResults)
-//            // to handle the case where the user grants the permission. See the documentation
-//            // for ActivityCompat#requestPermissions for more details.
-//            return
-//        }
-//        fusedLocationClient.lastLocation.addOnSuccessListener { location ->
-//            location?.let {
-//                val origin = LatLng(it.latitude, it.longitude)
-//                val dest = destinationLatLng ?: return@addOnSuccessListener
-//
-//                val url = "https://maps.googleapis.com/maps/api/directions/json?origin=${origin.latitude},${origin.longitude}&destination=${dest.latitude},${dest.longitude}&key=YOUR_API_KEY"
-//
-//                thread {
-//                    val json = URL(url).readText()
-//                    val jsonObject = JSONObject(json)
-//                    val points = jsonObject.getJSONArray("routes")
-//                        .getJSONObject(0).getJSONObject("overview_polyline").getString("points")
-//
-//                    routePoints = PolyUtil.decode(points)
-//
-//                    requireActivity().runOnUiThread {
-//                        polyline?.remove()
-//                        polyline = mMap.addPolyline(
-//                            PolylineOptions().addAll(routePoints).color(Color.BLUE).width(10f)
-//                        )
-//                        startTrackingUser(routePoints)
-//                    }
-//                }
-//            }
-//        }
-//    }
-//
-// */
-//private fun drawRouteToDestination() {
-//    if (ActivityCompat.checkSelfPermission(requireContext(), Manifest.permission.ACCESS_FINE_LOCATION)
-//        != PackageManager.PERMISSION_GRANTED) {
-//        ActivityCompat.requestPermissions(requireActivity(), arrayOf(Manifest.permission.ACCESS_FINE_LOCATION), 101)
-//        return
-//    }
-//
-//    fusedLocationClient.lastLocation.addOnSuccessListener { location ->
-//        location?.let {
-//            val origin = LatLng(it.latitude, it.longitude)
-//            val dest = destinationLatLng ?: return@addOnSuccessListener
-//
-//            val apiKey = getString(R.string.api_key) // make sure Directions API is enabled
-//            val url = "https://maps.googleapis.com/maps/api/directions/json?" +
-//                    "origin=${origin.latitude},${origin.longitude}" +
-//                    "&destination=${dest.latitude},${dest.longitude}" +
-//                    "&mode=driving" +
-//                    "&key=$apiKey"
-//
-//            thread {
-//                val result = URL(url).readText()
-//                val jsonObject = JSONObject(result)
-//                val routes = jsonObject.getJSONArray("routes")
-//
-//                if (routes.length() > 0) {
-//                    val route = routes.getJSONObject(0)
-//                    val legs = route.getJSONArray("legs").getJSONObject(0)
-//
-//                    val distanceText = legs.getJSONObject("distance").getString("text")
-//                    val durationText = legs.getJSONObject("duration").getString("text")
-//
-//                    val points = route.getJSONObject("overview_polyline").getString("points")
-//                    routePoints = PolyUtil.decode(points)
-//                    startTrackingUser(routePoints)
-//
-//                    requireActivity().runOnUiThread {
-//                        mMap.clear()
-//
-//                        // Draw polyline
-//                        polyline = mMap.addPolyline(
-//                            PolylineOptions().addAll(routePoints).color(Color.BLUE).width(10f)
-//                        )
-//
-//                        // Add pickup and destination markers
-//                        mMap.addMarker(com.google.android.gms.maps.model.MarkerOptions().position(origin).title("Pickup Spot"))
-//                        mMap.addMarker(com.google.android.gms.maps.model.MarkerOptions().position(dest).title("Destination"))
-//
-//                        // Animate camera to show the route
-//                        mMap.animateCamera(
-//                            com.google.android.gms.maps.CameraUpdateFactory.newLatLngZoom(origin, 13f)
-//                        )
-//
-//                        // Update UI
-//                        (requireActivity() as MainActivity).setHeading().text = "$durationText ($distanceText) to reach"
-//                        (requireActivity() as MainActivity).setTitle().text = "Kudoos!!!"
-//                        (requireActivity() as MainActivity).setSubTitle().text = "You are on Right path. Go on with same path."
-//                    }
-//                }
-//            }
-//        }
-//    }
-//}
-//
-///*
-//    private fun startTrackingUser(path: List<LatLng>) {
-//     /*   val locationRequest = LocationRequest.create().apply {
-//            interval = 3000
-//            fastestInterval = 2000
-//            priority = LocationRequest.PRIORITY_HIGH_ACCURACY
-//        }
-//
-//        locationCallback = object : LocationCallback() {
-//            override fun onLocationResult(result: LocationResult) {
-//                val loc = result.lastLocation ?: return
-//                val currentLatLng = LatLng(loc.latitude, loc.longitude)
-//
-//                val isOnRoute = PolyUtil.isLocationOnPath(currentLatLng, path, false, 50.0)
-//                polyline?.color = if (isOnRoute) Color.BLUE else Color.RED
-//                tvStatus.text = if (isOnRoute) {
-//                    "✅ You are on the right path."
-//                } else {
-//                    "🚨 You’ve deviated. Your emergency contact has been notified!"
-//                }
-//            }
-//        }
-//
-//        fusedLocationClient.requestLocationUpdates(locationRequest, locationCallback, Looper.getMainLooper())*/
-//    }
-//
-// */
-//@SuppressLint("MissingPermission")
-//private fun startTrackingUser(path: List<LatLng>) {
-//    val locationRequest = com.google.android.gms.location.LocationRequest.create().apply {
-//        interval = 5000 // 5 seconds
-//        fastestInterval = 3000
-//        priority = com.google.android.gms.location.LocationRequest.PRIORITY_HIGH_ACCURACY
-//    }
-//
-//    locationCallback = object : LocationCallback() {
-//        override fun onLocationResult(result: com.google.android.gms.location.LocationResult) {
-//            val loc = result.lastLocation ?: return
-//            val currentLatLng = LatLng(loc.latitude, loc.longitude)
-//
-//            // 🔍 Check if user is still on path
-//            val isOnRoute = PolyUtil.isLocationOnPath(currentLatLng, path, true, 50.0)
-//
-//            polyline?.color = if (isOnRoute) Color.BLUE else Color.RED
-//
-//            // 🚨 Show alert if off-path
-//            val mainActivity = requireActivity() as MainActivity
-//            if (isOnRoute) {
-//                mainActivity.setImgseetimer().visibility = View.GONE
-//                mainActivity.setHeading().text = "3 min (3 miles) to reach"
-//                mainActivity.setTitle().text = "Kudoos!!!"
-//                mainActivity.setSubTitle().text = "You are on Right path. Go on with same path."
-//            } else {
-//                mainActivity.setImgseetimer().visibility = View.VISIBLE
-//                mainActivity.setHeading().text = "5 min (4 miles) away"
-//                mainActivity.setTitle().text = "Oooopss!!!"
-//                mainActivity.setSubTitle().text = "Seems like you have distracted from the actual path. Your emergency contact has been notified."
-//                // 🚨 TODO: Notify emergency contact via Firebase or SMS here
-//            }
-//        }
-//    }
-//
-//    fusedLocationClient.requestLocationUpdates(
-//        locationRequest,
-//        locationCallback,
-//        requireActivity().mainLooper
-//    )
-//}
-//
-//
-//    private fun changeIcon(type:String){
-//        chooseType = type
-//        if (type=="Top"){
-//            binding.imgTop.setImageResource(R.drawable.color_circle_active)
-//            binding.imgBottom.setImageResource(R.drawable.circle_inactive_image)
-//            binding.edSearch.hint = getString(R.string.choose_starting_point)
-//        }else{
-//            binding.imgTop.setImageResource(R.drawable.circle_inactive_image)
-//            binding.imgBottom.setImageResource(R.drawable.color_circle_active)
-//            binding.edSearch.hint = getString(R.string.choose_end_point)
-//        }
-//    }
-//
-//    // Function to start the location picker using Autocomplete
-//    private fun startLocationPicker() {
-//        val fields = listOf(
-//            Place.Field.ID,
-//            Place.Field.NAME,
-//            Place.Field.LAT_LNG,   // Needed to get coordinates
-//            Place.Field.ADDRESS    // Optional, for full address
-//        )
-//        val intent = Autocomplete.IntentBuilder(AutocompleteActivityMode.OVERLAY, fields)
-//            .build(requireContext())
-////        startAutocomplete.launch(intent)
-//    }
-///*
-//    // For handling the result of the Autocomplete Activity
-//    private val startAutocomplete = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result: ActivityResult ->
-//            if (result.resultCode == Activity.RESULT_OK) {
-//                result.data?.let { intent ->
-//                    val place = Autocomplete.getPlaceFromIntent(intent)
-//                    val name = place.name
-//                    val latLng = place.latLng
-//                    if (chooseType=="Top"){
-//                        binding.tvCurrent.text = name
-//                        startLat = latLng
-//                    }else{
-//                        binding.tvDestination.text = name
-//                        endLat = latLng
-//                    }
-//
-//                }
-//            } else if (result.resultCode == Activity.RESULT_CANCELED) {
-//                Log.i("******", "User canceled autocomplete")
-//            }
-//        }*/
-//
-//    @SuppressLint("SetTextI18n")
-//    private fun alertBoxTimerShow() {
-//        val dialog = Dialog(requireContext())
-//        dialog.setContentView(R.layout.dialog_timer)
-//        dialog.setCancelable(false)
-//        dialog.window!!.setBackgroundDrawable(ColorDrawable(Color.TRANSPARENT))
-//        val layoutParams = WindowManager.LayoutParams()
-//        layoutParams.copyFrom(dialog.window!!.attributes)
-//        dialog.window!!.attributes = layoutParams
-//        val imgClose = dialog.findViewById<ImageView>(R.id.img_close)
-//        dialog.show()
-//        dialog.window!!.setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_STATE_ALWAYS_VISIBLE)
-//
-//
-//        imgClose.setOnClickListener {
-//            dialog.dismiss()
-//            (requireActivity() as MainActivity).setImgseetimer().visibility=View.GONE
-//            (requireActivity() as MainActivity).setHeading().text="3 min (3 miles) to reach"
-//            (requireActivity() as MainActivity).setTitle().text="Well Done!!!"
-//            (requireActivity() as MainActivity).setSubTitle().text="You are on Right path. Go on with same path."
-//        }
-//
-//
-//
-//
-//
-//    }
-//
-///*    override fun onMapReady(p0: GoogleMap) {
-//        googleMap = p0
-//        if (::googleMap.isInitialized) {
-//            val user1 = User("28.5429026","77.3972842")
-//            val user2 = User("28.5425751","77.3976865")
-//            val users = listOf(user1, user2) // each has lat, lng, profileImage
-//            users.forEach { user ->
-//                createMarkerFromView(requireContext(), "") { icon ->
-//                    googleMap.addMarker(
-//                        MarkerOptions()
-//                            .position(LatLng(user.lat.toDouble(), user.lng.toDouble()))
-//                            .icon(icon)
-//                            .anchor(0.5f, 1f))
-//                    // Move camera to current location
-//                    googleMap.animateCamera(CameraUpdateFactory.newLatLngZoom(LatLng(user.lat.toDouble(), user.lng.toDouble())
-//                        , 16f))
-//                }
-//            }
-//        }
-//    }*/
-///*
-//    private fun createMarkerFromView(context: Context, imageUrl: String, callback: (BitmapDescriptor) -> Unit) {
-//        val markerView = LayoutInflater.from(context).inflate(R.layout.custom_marker, null)
-//
-//        val profileImage = markerView.findViewById<CircleImageView>(R.id.imgProfile)
-//
-//        Glide.with(context)
-//            .asBitmap()
-//            .load(R.drawable.marker_demmy_pic)
-//            .placeholder(R.drawable.marker_demmy_pic)
-//            .into(object : CustomTarget<Bitmap>() {
-//                override fun onResourceReady(resource: Bitmap, transition: Transition<in Bitmap>?) {
-//                    profileImage.setImageBitmap(resource)
-//
-//                    // Convert the view to bitmap
-//                    val measureSpec = View.MeasureSpec.makeMeasureSpec(0, View.MeasureSpec.UNSPECIFIED)
-//                    markerView.measure(measureSpec, measureSpec)
-//                    markerView.layout(0, 0, markerView.measuredWidth, markerView.measuredHeight)
-//                    val bitmap = Bitmap.createBitmap(
-//                        markerView.measuredWidth, markerView.measuredHeight,
-//                        Bitmap.Config.ARGB_8888
-//                    )
-//                    val canvas = Canvas(bitmap)
-//                    markerView.draw(canvas)
-//
-//                    callback(BitmapDescriptorFactory.fromBitmap(bitmap))
-//                }
-//
-//                override fun onLoadCleared(placeholder: Drawable?) {}
-//            })
-//    }
-//
-//    private fun getDirectionsUrl(origin: LatLng, dest: LatLng): String {
-//        val originStr = "origin=${origin.latitude},${origin.longitude}"
-//        val destStr = "destination=${dest.latitude},${dest.longitude}"
-//        val mode = "mode=driving"
-//        val key = getString(R.string.mapapi_key) // 🔑 Make sure it's enabled for Directions API
-//        return "https://maps.googleapis.com/maps/api/directions/json?$originStr&$destStr&$mode&key=$key"
-//    }
-//
-//    private fun fetchRoute(origin: LatLng, dest: LatLng, callback: (List<LatLng>) -> Unit) {
-//        val url = getDirectionsUrl(origin, dest)
-//
-//        Log.d("******",url)
-//
-//        val client = OkHttpClient()
-//        val request = Request.Builder().url(url).build()
-//
-//        client.newCall(request).enqueue(object : Callback {
-//            override fun onFailure(call: Call, e: IOException) {}
-//
-//            override fun onResponse(call: Call, response: Response) {
-//                val json = response.body?.string()
-//                val jsonObject = JSONObject(json)
-//                val routes = jsonObject.getJSONArray("routes")
-//                if (routes.length() > 0) {
-//                    val overviewPolyline = routes.getJSONObject(0)
-//                        .getJSONObject("overview_polyline")
-//                        .getString("points")
-//
-//                    val points = PolyUtil.decode(overviewPolyline) // Provided by Maps Utils
-//                    callback(points)
-//                }
-//            }
-//        })
-//    }
-//*/
-//
-//
-//    override fun onPause() {
-//        super.onPause()
-//        binding.map.onPause()
-//    }
-//
-//
-//
-//    override fun onDestroyView() {
-//        super.onDestroyView()
-//        binding.map.onDestroy()
-//    }
-//    override fun onResume() {
-//        super.onResume()
-//        binding.map.onResume()
-//    }
-//    override fun onLowMemory() {
-//        super.onLowMemory()
-//        binding.map.onLowMemory()
-//    }
-//
-//}

@@ -64,4 +64,9 @@ object ApiEndPoint {
 
     const val USER_ADDRESS = "api/user-address"
 
+
+    const val START_JOURNEY = "api/start_journey"
+    const val LIVE_LOCATION = "api/live_location"
+    const val GET_ALL_LIVE_LOCATION = "api/get_all_live_journey"
+
 }

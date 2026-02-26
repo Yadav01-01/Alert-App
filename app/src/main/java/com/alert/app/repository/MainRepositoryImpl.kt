@@ -15,6 +15,9 @@ import com.alert.app.model.helpingneighbormodel.UserAddress
 import com.alert.app.model.map.UserLocationResponse
 import com.alert.app.model.notification.AlertModel
 import com.alert.app.model.selfAlert.CreateSelfAlertRequest
+import com.alert.app.model.watchoverme.AllLiveJourneyResponse
+import com.alert.app.model.watchoverme.JourneyStarted
+import com.alert.app.model.watchoverme.LiveLocationResponse
 import com.google.android.exoplayer2.util.Log
 import com.google.gson.Gson
 import com.google.gson.JsonArray
@@ -2196,6 +2199,127 @@ class MainRepositoryImpl @Inject constructor(private val apiInterface: ApiInterf
         }
     }
 
+    override suspend fun startJourney(
+        currentLatitude: String,
+        currentLongitude: String,
+        destinationLatitude: String,
+        destinationLongitude: String
+    ): Flow<NetworkResult<JourneyStarted>> = flow  {
+        try {
+            apiInterface.startJourney(currentLatitude,currentLongitude,destinationLatitude,destinationLongitude).apply {
+                if (isSuccessful) {
+                    body()?.let { resp ->
+                        if (resp.has("status") && resp.get("status").asBoolean) {
+                            val data = resp.get("data").asJsonObject
+                            val message = resp.get("message").asString
+                           // val call = data.get("call").asJsonObject
+                           val gson = Gson()
+                           val Journey =  gson.fromJson(resp, JourneyStarted::class.java)
+
+                            emit(NetworkResult.Success(Journey))
+                        }
+                        else {
+                            emit(NetworkResult.Error(resp.get("message").asString))
+                        }
+                    } ?: emit(NetworkResult.Error(AppConstant.unKnownError))
+                }
+                else {
+                    try {
+                        val jsonObj = this.errorBody()?.string()?.let { JSONObject(it) }
+                        emit(
+                            NetworkResult.Error(
+                                jsonObj?.getString("message")
+                                    ?: AppConstant.unKnownError
+                            )
+                        )
+                    } catch (e: JSONException) {
+                        e.printStackTrace()
+                        emit(NetworkResult.Error(AppConstant.unKnownError))
+                    }
+                }
+            }
+        } catch (e: Exception) {
+            emit(NetworkResult.Error(e.message ?: ""))
+        }
+    }
+
+    override suspend fun liveLocation(): Flow<NetworkResult<LiveLocationResponse>> = flow {
+        try {
+            apiInterface.liveLocation().apply {
+                if (isSuccessful) {
+                    body()?.let { resp ->
+                        if (resp.has("status") && resp.get("status").asBoolean) {
+                            val data = resp.get("data").asJsonObject
+                            val message = resp.get("message").asString
+                            // val call = data.get("call").asJsonObject
+                            val gson = Gson()
+                          val Journey =  gson.fromJson(resp, LiveLocationResponse::class.java)
+
+                            emit(NetworkResult.Success(Journey))
+                        }
+                        else {
+                            emit(NetworkResult.Error(resp.get("message").asString))
+                        }
+                    } ?: emit(NetworkResult.Error(AppConstant.unKnownError))
+                }
+                else {
+                    try {
+                        val jsonObj = this.errorBody()?.string()?.let { JSONObject(it) }
+                        emit(
+                            NetworkResult.Error(
+                                jsonObj?.getString("message")
+                                    ?: AppConstant.unKnownError
+                            )
+                        )
+                    } catch (e: JSONException) {
+                        e.printStackTrace()
+                        emit(NetworkResult.Error(AppConstant.unKnownError))
+                    }
+                }
+            }
+        } catch (e: Exception) {
+            emit(NetworkResult.Error(e.message ?: ""))
+        }
+    }
+
+    override suspend fun getAllLiveLocation(): Flow<NetworkResult<AllLiveJourneyResponse>> = flow{
+        try {
+            apiInterface.getAllLiveLocation().apply {
+                if (isSuccessful) {
+                    body()?.let { resp ->
+                        if (resp.has("status") && resp.get("status").asBoolean) {
+                            val data = resp.get("data").asJsonObject
+                            val message = resp.get("message").asString
+                            // val call = data.get("call").asJsonObject
+                            val gson = Gson()
+                            val Journey =  gson.fromJson(resp, AllLiveJourneyResponse::class.java)
+
+                            emit(NetworkResult.Success(Journey))
+                        }
+                        else {
+                            emit(NetworkResult.Error(resp.get("message").asString))
+                        }
+                    } ?: emit(NetworkResult.Error(AppConstant.unKnownError))
+                }
+                else {
+                    try {
+                        val jsonObj = this.errorBody()?.string()?.let { JSONObject(it) }
+                        emit(
+                            NetworkResult.Error(
+                                jsonObj?.getString("message")
+                                    ?: AppConstant.unKnownError
+                            )
+                        )
+                    } catch (e: JSONException) {
+                        e.printStackTrace()
+                        emit(NetworkResult.Error(AppConstant.unKnownError))
+                    }
+                }
+            }
+        } catch (e: Exception) {
+            emit(NetworkResult.Error(e.message ?: ""))
+        }
+    }
 
 
 }
