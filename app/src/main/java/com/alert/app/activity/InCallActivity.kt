@@ -53,8 +53,9 @@ import kotlinx.coroutines.withContext
 @AndroidEntryPoint
 class InCallActivity : AppCompatActivity() {
 
-    private var isSpeakerMuted = false
     private var isMuted = false
+    private var isSpeakerMuted = false
+    private var isVolumeHigh = true
     private lateinit var binding: ActivityInCallBinding
     private var rtcEngine: RtcEngine? = null
     private lateinit var viewModel: InCallViewModel
@@ -66,6 +67,7 @@ class InCallActivity : AppCompatActivity() {
     private var appId = "3d45540a74844ab68670e75d586cc630"
     private var token ="007eJxTYHjQ+UDtCXOB0HTWf3IWd5XP8P0w85rhrsHGbtxXuqXmyBoFBuMUE1NTE4NEcxMLE5PEJDMLM3ODVHPTFFMLs+RkM2ODt3enZf59PS3zvspKFkYGRgYWIAYBJjDJDCZZwKQmQ3JiTk58WoplqnGaiYWuUWKSha5JirGpbqKBmaFukkGKoUWquYmJcWoSI4MBAJ5nKbc="
     private val uId =0
+
     @Volatile
     private var isAgoraInitialized = false
 
@@ -76,7 +78,7 @@ class InCallActivity : AppCompatActivity() {
         private const val PERMISSION_REQ_ID = 22
     }
 
-    // ================= LIFECYCLE =================
+
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -84,7 +86,7 @@ class InCallActivity : AppCompatActivity() {
         setContentView(binding.root)
 
         binding.imgHangOut.setOnClickListener {
-            Toast.makeText(this, "Call End Clicked", Toast.LENGTH_SHORT).show()
+         //   Toast.makeText(this, "Call End Clicked", Toast.LENGTH_SHORT).show()
             endCall()
         }
 
@@ -97,7 +99,7 @@ class InCallActivity : AppCompatActivity() {
             channelName = it.getStringExtra(AppConstant.CHANNEL).orEmpty()
             token = it.getStringExtra(AppConstant.TOKEN).orEmpty()
             appId = it.getStringExtra(AppConstant.APPiD).orEmpty()
-           val callerName = it.getStringExtra(AppConstant.NAME).orEmpty()
+            val callerName = it.getStringExtra(AppConstant.NAME).orEmpty()
             val image = it.getStringExtra(AppConstant.IMAGE).orEmpty()
             val actionType = it.getStringExtra("ACTION_TYPE").orEmpty()
             binding.userName.text = callerName
@@ -125,6 +127,10 @@ class InCallActivity : AppCompatActivity() {
         binding.imgMike.setOnClickListener {
             toggleMute()
         }
+        binding.imgSpeaker.setOnClickListener {
+            toggleSpeakerVolume()
+        }
+
 
     }
 
@@ -154,6 +160,58 @@ class InCallActivity : AppCompatActivity() {
         )
     }
 
+    private fun toggleSpeakerVolume() {
+
+        val audioManager = getSystemService(AUDIO_SERVICE) as android.media.AudioManager
+
+        val maxVolume = audioManager.getStreamMaxVolume(android.media.AudioManager.STREAM_VOICE_CALL)
+        val lowVolume = maxVolume / 3   // 30–40% volume
+
+        isVolumeHigh = !isVolumeHigh
+
+        if (isVolumeHigh) {
+            audioManager.setStreamVolume(
+                android.media.AudioManager.STREAM_VOICE_CALL,
+                maxVolume,
+                0
+            )
+          //  Toast.makeText(this, "Volume High", Toast.LENGTH_SHORT).show()
+            Log.d(TAG, "CALL VOLUME HIGH")
+             binding.imgSpeaker.setImageResource(R.drawable.volume_image)
+        } else {
+            audioManager.setStreamVolume(
+                android.media.AudioManager.STREAM_VOICE_CALL,
+                lowVolume,
+                0
+            )
+         //   Toast.makeText(this, "Volume Low", Toast.LENGTH_SHORT).show()
+            Log.d(TAG, "CALL VOLUME LOW")
+             binding.imgSpeaker.setImageResource(R.drawable.volume_less)
+        }
+    }
+
+    private fun toggleMute() {
+        isMuted = !isMuted
+
+        rtcEngine?.muteLocalAudioStream(isMuted)
+
+        if (isMuted) {
+            Log.d(TAG, "MIC MUTED")
+          //  Toast.makeText(this, "Mic Muted", Toast.LENGTH_SHORT).show()
+
+            binding.imgMike.setImageResource(R.drawable.mute_icon)
+
+            // binding.imgMike.setImageResource(R.drawable.ic_mic_off)
+        } else {
+            Log.d(TAG, "MIC UNMUTED")
+         //   Toast.makeText(this, "Mic Unmuted", Toast.LENGTH_SHORT).show()
+        //     binding.imgMike.setImageResource(R.drawable.mi)
+            // binding.imgMike.setImageResource(R.drawable.ic_mic_on)
+            binding.imgMike.setImageResource(R.drawable.ic_unmute)
+
+        }
+    }
+
     private fun requiredPermissions(): Array<String> {
         return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
             arrayOf(
@@ -168,21 +226,7 @@ class InCallActivity : AppCompatActivity() {
 
     // MUte and Unmute task
 
-    private fun toggleMute() {
-        isMuted = !isMuted
 
-        rtcEngine?.muteLocalAudioStream(isMuted)
-
-        if (isMuted) {
-            Log.d(TAG, "MIC MUTED")
-           // binding.imgMike.setImageResource(R.drawable.ic_mic_off)
-            Toast.makeText(this, "Muted", Toast.LENGTH_SHORT).show()
-        } else {
-            Log.d(TAG, "MIC UNMUTED")
-            //binding.imgMute.setImageResource(R.drawable.ic_mic_on)
-            Toast.makeText(this, "Unmuted", Toast.LENGTH_SHORT).show()
-        }
-    }
 
     // ================= AGORA INIT =================
 
@@ -198,15 +242,15 @@ class InCallActivity : AppCompatActivity() {
 
         try {
             initializeAgora()
-            Toast.makeText(this, "Agora Engine Created", Toast.LENGTH_SHORT).show()
+          //  Toast.makeText(this, "Agora Engine Created", Toast.LENGTH_SHORT).show()
             Log.e(TAG, "Agora Engine Created")
 
             setupAudio()
-            Toast.makeText(this, "Audio Setup Done", Toast.LENGTH_SHORT).show()
+            //Toast.makeText(this, "Audio Setup Done", Toast.LENGTH_SHORT).show()
             Log.e(TAG, "Audio Setup Done")
 
             joinChannel()
-            Toast.makeText(this, "Join Channel Called", Toast.LENGTH_SHORT).show()
+            //Toast.makeText(this, "Join Channel Called", Toast.LENGTH_SHORT).show()
             Log.e(TAG, "Join Channel Called")
 
         } catch (e: Exception) {
@@ -279,22 +323,15 @@ class InCallActivity : AppCompatActivity() {
 
         override fun onJoinChannelSuccess(channel: String?, uid: Int, elapsed: Int) {
             runOnUiThread {
-
-
                 startRinging()
-
                 Log.e(TAG, "JOINED CHANNEL uid=$uid")
             }
         }
 
         override fun onUserJoined(uid: Int, elapsed: Int) {
             runOnUiThread {
-
-
-                stopRinging()     // 🔕 STOP RINGING
-
+                stopRinging()
                 viewModel.startTimer()
-
                 Log.e(TAG, "REMOTE USER JOINED uid=$uid")
             }
         }
@@ -309,7 +346,6 @@ class InCallActivity : AppCompatActivity() {
 
         override fun onConnectionLost() {
             runOnUiThread {
-
                 Log.e(TAG, "CONNECTION LOST")
                 endCall()
             }
@@ -317,7 +353,6 @@ class InCallActivity : AppCompatActivity() {
 
         override fun onError(err: Int) {
             runOnUiThread {
-
                 Log.e(TAG, "AGORA ERROR code=$err")
             }
         }

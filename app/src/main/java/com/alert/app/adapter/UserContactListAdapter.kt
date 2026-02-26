@@ -42,7 +42,11 @@ class UserContactListAdapter(var context:Context, var OnClickContact: OnClickCon
         val data=list[position]
 
 
-        holder.binding.tvName.text = "${data.first_name.orEmpty()} ${data.last_name}".trim()
+        holder.binding.tvName.text = if (data.last_name.isNullOrBlank()) {
+            data.first_name
+        } else {
+            "${data.first_name} ${data.last_name}".trim()
+        }
 
         holder.binding.tvRelation.text = data.relation
 

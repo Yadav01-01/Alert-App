@@ -117,6 +117,13 @@ dependencies {
 
     implementation ("joda-time:joda-time:2.11.1")
 
+
+    testImplementation("junit:junit:4.13.2")
+    testImplementation("org.mockito.kotlin:mockito-kotlin:5.1.0")
+    testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.7.3")
+    testImplementation("androidx.arch.core:core-testing:2.2.0")
+
+
     //firebase
     /* implementation ("com.google.firebase:firebase-analytics:21.2.2")
      implementation ("com.google.firebase:firebase-messaging:23.1.2")

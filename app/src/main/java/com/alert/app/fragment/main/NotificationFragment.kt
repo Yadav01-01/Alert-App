@@ -33,20 +33,37 @@ import com.alert.app.model.notification.AlertModel
 import com.alert.app.viewmodel.notifications.NotificationViewModel
 import dagger.hilt.android.AndroidEntryPoint
 import androidx.core.graphics.drawable.toDrawable
+import androidx.fragment.app.viewModels
+import androidx.recyclerview.widget.DividerItemDecoration
+import androidx.recyclerview.widget.LinearLayoutManager
+import com.alert.app.adapter.SwipeAdapter
+import com.alert.app.base.SessionManagement
+import com.alert.app.viewmodel.ChatScreenViewModel
 import com.bumptech.glide.Glide
+import kotlinx.coroutines.launch
+import kotlin.getValue
 
 @AndroidEntryPoint
 class NotificationFragment : Fragment(), OnNotificationClickListener {
 
     private lateinit var binding: FragmentNotificationBinding
     private lateinit var notificationViewModel: NotificationViewModel
+    private lateinit var swipeAdapter: SwipeAdapter
+    private val chattingViewModel: ChatScreenViewModel by viewModels()
+    private lateinit var notificationAdapter : NotificationAdapter
+
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
         savedInstanceState: Bundle?
-    ): View {
+    ) : View {
         binding = FragmentNotificationBinding.inflate(inflater, container, false)
         notificationViewModel = ViewModelProvider(this)[NotificationViewModel::class.java]
+        chattingViewModel.currentUserId = SessionManagement(requireContext()).getUserId().toString()
+        setupRecyclerView()
+        observeChatList()
+        callingChatList()
+        getNotificationData()
         return binding.root
     }
 
@@ -65,21 +82,54 @@ class NotificationFragment : Fragment(), OnNotificationClickListener {
 
         setupTabs()
 
-        // Initially show alerts tab and fetch alerts
         toggleTabs(true)
+
         observeNotifications("alert")
+
+    }
+
+    private fun getNotificationData(){
+
+        lifecycleScope.launch {
+            BaseApplication.openDialog()
+
+            notificationViewModel.getInAppNotification().collect {
+                when(it){
+                    is NetworkResult.Success ->{
+                      BaseApplication.dismissDialog()
+                        it.data?.let {
+                            notificationAdapter.update(it)
+                        }
+                    }
+                    is NetworkResult.Error ->{
+                      BaseApplication.dismissDialog()
+                    }
+                    else ->{
+                      BaseApplication.dismissDialog()
+                    }
+
+                }
+            }
+        }
+
     }
 
 
     private fun setupTabs() {
         binding.layAlerts.setOnClickListener {
             toggleTabs(true)
-            observeNotifications("alert")
+          //  observeNotifications("alert")
+            binding.rcyData.visibility =View.GONE
+            binding.rcyDataAlert.visibility =View.VISIBLE
         }
 
         binding.layMessages.setOnClickListener {
             toggleTabs(false)
+
+            binding.rcyData.visibility =View.VISIBLE
+            binding.rcyDataAlert.visibility =View.GONE
             observeNotifications("message")
+
         }
     }
 
@@ -157,10 +207,9 @@ class NotificationFragment : Fragment(), OnNotificationClickListener {
             lifecycleScope.launchWhenStarted {
                 notificationViewModel.loadNotifications(type).collect { result ->
                     when (result) {
-
                         is NetworkResult.Success -> {
-                            BaseApplication.dismissDialog()
                             val list = result.data
+                            BaseApplication.dismissDialog()
 
                             if (list.isNullOrEmpty()) {
                                 binding.rcyData.visibility = View.GONE
@@ -168,16 +217,15 @@ class NotificationFragment : Fragment(), OnNotificationClickListener {
                                 binding.rcyData.visibility = View.VISIBLE
 
                                 if (type == "alert") {
-                                    binding.rcyData.adapter = NotificationAdapter(
-                                        list,
-                                        this@NotificationFragment
-                                    )
+//                                    binding.rcyData.adapter = NotificationAdapter(
+//                                        list,
+//                                        this@NotificationFragment
+//                                    )
                                 } else if (type == "message") {
                                     binding.rcyData.adapter = MessageNotificationAdapter(list)
                                 }
                             }
                         }
-
                         is NetworkResult.Error -> {
                             BaseApplication.dismissDialog()
                             binding.rcyData.visibility = View.GONE
@@ -193,6 +241,59 @@ class NotificationFragment : Fragment(), OnNotificationClickListener {
     }
 
 
+    private fun setupRecyclerView() {
+
+        swipeAdapter = SwipeAdapter(requireContext())
+
+        binding.rcyData.apply {
+            layoutManager = LinearLayoutManager(requireContext())
+            adapter = swipeAdapter
+        }
+
+        binding.rcyDataAlert.apply {
+            layoutManager = LinearLayoutManager(requireContext())
+            notificationAdapter =  NotificationAdapter(mutableListOf(),
+                this@NotificationFragment)
+
+        }
+
+
+
+//        val divider = DividerItemDecoration(context, DividerItemDecoration.VERTICAL)
+
+  //      binding.rcyData.addItemDecoration(divider)
+    }
+
+    private fun observeChatList() {
+        chattingViewModel.chatList.observe(viewLifecycleOwner) { list ->
+            swipeAdapter.submitList(list)
+            swipeAdapter.setData(list)
+        }
+    }
+
+    private fun callingChatList() {
+        viewLifecycleOwner.lifecycleScope.launch {
+            BaseApplication.openDialog()
+            chattingViewModel.getChatList().collect {
+                result -> when (result) {
+                    is NetworkResult.Success -> {
+                        BaseApplication.dismissDialog()
+                        val apiList = result.data ?: emptyList()
+                        if (apiList.isNotEmpty()) {
+                            chattingViewModel.loadChatReadList(
+                                usersFromApi = apiList,
+                                myUserId = SessionManagement(requireContext()).getUserId().toString()
+                            )
+                        }
+                    }
+                    is NetworkResult.Error -> {
+                        BaseApplication.dismissDialog()
+                    }
+                    else -> { /* Handle Loading if needed */ }
+                }
+            }
+        }
+    }
 
     private fun createDialog(layoutRes: Int): Dialog {
         return Dialog(requireContext()).apply {

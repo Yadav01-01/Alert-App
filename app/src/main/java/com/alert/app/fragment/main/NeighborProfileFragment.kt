@@ -244,9 +244,7 @@ class NeighborProfileFragment : Fragment() {
                     is NetworkResult.Success ->{
                         it.data?.token?.let {
                             val safeToken = BaseApplication.safeDocIdFromToken(it)
-
-
-                            val firestore = FirebaseFirestore.getInstance()
+                   val firestore = FirebaseFirestore.getInstance()
                             val callData = hashMapOf(
                                 "chatToken" to it,
                                 "status" to "ringing",

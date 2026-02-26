@@ -63,5 +63,6 @@ object ApiEndPoint {
     const val MAP_LOCATIONS="api/map-locations"
 
     const val USER_ADDRESS = "api/user-address"
+    const val GET_IN_APP_NOTIFICATION = "api/get_in_app_notification"
 
 }

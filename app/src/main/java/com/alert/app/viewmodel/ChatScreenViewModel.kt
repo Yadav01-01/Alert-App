@@ -49,6 +49,21 @@ class ChatScreenViewModel  @Inject constructor(
         }
     }
 
+    fun loadChatReadList(usersFromApi: List<ChatUserModel>, myUserId: String) {
+        chatJob?.cancel() // Purana collection band karo
+        chatJob = viewModelScope.launch {
+            repository.observeChatList(usersFromApi, myUserId).collect { updatedList ->
+
+               val list = updatedList.filter {
+                   it.unreadCount >0
+               }
+
+                _chatList.value = list
+
+            }
+        }
+    }
+
     fun deleteChatForMe(chatId: String,currentUserId:String) {
         repository.deleteChatForMe(chatId = chatId,
             currentUserId){ success ->

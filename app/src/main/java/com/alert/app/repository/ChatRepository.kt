@@ -39,13 +39,10 @@ class ChatRepository @Inject constructor(private val firestore: FirebaseFirestor
 //        awaitClose { listener.remove() }
 //    }
 
-
-
-
     fun observeMessages(
         chatId: String,
         currentUserId: String
-    ): Flow<List<Message>> = callbackFlow {
+    ) : Flow<List<Message>> = callbackFlow {
 
         if (chatId.isBlank()) {
             trySend(emptyList())
@@ -314,8 +311,6 @@ class ChatRepository @Inject constructor(private val firestore: FirebaseFirestor
 
         return messageRef.id
     }
-
-
 
  }
 
