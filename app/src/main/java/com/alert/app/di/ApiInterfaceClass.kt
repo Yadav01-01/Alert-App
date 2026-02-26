@@ -361,6 +361,25 @@ interface ApiInterfaceClass {
     suspend fun getInAppNotification() : Response<JsonObject>
 
 
+    @POST(ApiEndPoint.START_JOURNEY)
+    @FormUrlEncoded
+    suspend fun startJourney(
+        @Field("current_latitude") currentLatitude : String,
+        @Field("current_longitude") currentLongitude : String,
+        @Field("destination_latitude") destinationLatitude : String,
+        @Field("destination_longitude") destinationLongitude : String,
+    ) : Response<JsonObject>
+
+    @POST(ApiEndPoint.LIVE_LOCATION)
+    suspend fun liveLocation(
+    ) : Response<JsonObject>
+
+    @POST(ApiEndPoint.GET_ALL_LIVE_LOCATION)
+    suspend fun getAllLiveLocation(
+    ) : Response<JsonObject>
+
+
+
 
 //    @GET(ApiEndPoint.USER_ADDRESS)
 //    suspend fun getUserAddress() : Response<JsonObject>

@@ -20,6 +20,7 @@ import com.google.firebase.messaging.FirebaseMessagingService
 import com.google.firebase.messaging.RemoteMessage
 import androidx.core.content.edit
 import com.alert.app.activity.IncomingAudioCallActivity
+import com.alert.app.activity.MapActivity
 import com.alert.app.base.AppConstant
 import com.alert.app.calling.CallActionReceiverTwo
 import com.alert.app.calling.IncomingAudioCallService
@@ -68,6 +69,21 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
 
             ContextCompat.startForegroundService(this, svcIntent)
         }
+
+        else if (remoteMessage.data.get("type") == "start_journey") {
+
+            val journeyId = remoteMessage.data.get("journey_id").toString()
+
+            val intent = Intent(this, MapActivity::class.java).apply {
+                putExtra("journey_id", journeyId)
+                putExtra("from_notification", true)
+                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP)
+            }
+
+            startActivity(intent)
+        }
+
+
     }
 
 

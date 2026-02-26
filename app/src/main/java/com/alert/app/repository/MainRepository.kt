@@ -11,6 +11,9 @@ import com.alert.app.model.helpingneighbormodel.CreateHelpingNeighbor
 import com.alert.app.model.map.UserLocationResponse
 import com.alert.app.model.notification.AlertModel
 import com.alert.app.model.selfAlert.CreateSelfAlertRequest
+import com.alert.app.model.watchoverme.AllLiveJourneyResponse
+import com.alert.app.model.watchoverme.JourneyStarted
+import com.alert.app.model.watchoverme.LiveLocationResponse
 import com.google.gson.JsonObject
 import kotlinx.coroutines.flow.Flow
 import okhttp3.MultipartBody
@@ -227,5 +230,13 @@ interface MainRepository {
     suspend fun getCallInitiate(receiver_id:Int) : Flow<NetworkResult<CallChannel>>
     suspend fun getInAppNotification() : Flow<NetworkResult<MutableList<Alert>>>
 
+    suspend  fun startJourney(
+        @Field("current_latitude") currentLatitude : String,
+        @Field("current_longitude") currentLongitude : String,
+        @Field("destination_latitude") destinationLatitude : String,
+        @Field("destination_longitude") destinationLongitude : String,
+    ) : Flow<NetworkResult<JourneyStarted>>
 
+    suspend fun liveLocation() : Flow<NetworkResult<LiveLocationResponse>>
+    suspend fun getAllLiveLocation() : Flow<NetworkResult<AllLiveJourneyResponse>>
 }

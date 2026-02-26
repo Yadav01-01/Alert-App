@@ -69,6 +69,9 @@ class ChatScreenViewModel  @Inject constructor(
             currentUserId){ success ->
             if (success) {
                 Log.d("TESTING_MESSAGE","I AM HERE IN DELETE SUCCESS")
+                _chatList.value = _chatList.value?.filter {
+                    it.chatId != chatId
+                }
 
             } else {
                 Log.d("TESTING_MESSAGE","I AM HERE IN DELETE fAILURE")

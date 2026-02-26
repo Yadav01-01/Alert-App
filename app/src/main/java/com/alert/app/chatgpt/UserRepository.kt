@@ -33,7 +33,8 @@ class UserRepository {
             .addSnapshotListener { snapshot, _ ->
 
                 if (snapshot == null || !snapshot.exists()) return@addSnapshotListener
-
+                Log.d("USER_STATUS_REPO", "Snapshot exists: ${snapshot?.exists()}")
+                Log.d("USER_STATUS_REPO", "Snapshot data: ${snapshot?.data}")
                 val isOnline = snapshot.getBoolean("isOnline") ?: false
                 val lastSeen = snapshot.getTimestamp("lastSeen")
 
@@ -41,5 +42,23 @@ class UserRepository {
             }
 
         awaitClose { listener.remove() }
+    }
+    fun setUserOnlineStatus(userId: String, isOnline: Boolean) {
+        if (userId.isBlank()) return
+
+        val userRef = firestore.collection("users").document(userId)
+
+        val updates = hashMapOf<String, Any>(
+            "isOnline" to isOnline,
+            "lastSeen" to Timestamp.now()
+        )
+
+        userRef.update(updates)
+            .addOnSuccessListener {
+                Log.d("USER_STATUS_REPO", "User status updated: $isOnline")
+            }
+            .addOnFailureListener {
+                Log.e("USER_STATUS_REPO", "Failed to update status", it)
+            }
     }
 }
