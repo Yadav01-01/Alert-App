@@ -22,7 +22,7 @@ import com.alert.app.listener.SelfAlertClick
 import com.alert.app.model.selfAlert.SelfAlert
 
 
-class SelfAlertAdapter(var context:Context, var selfAlert: List<SelfAlert>,
+class SelfAlertAdapter(var context:Context, var selfAlert: MutableList<SelfAlert>,
                        private val selfAlertClick: SelfAlertClick) :
     RecyclerView.Adapter<SelfAlertAdapter.ViewHolder>() {
 
@@ -70,9 +70,11 @@ class SelfAlertAdapter(var context:Context, var selfAlert: List<SelfAlert>,
         // Access views inside the inflated layout using findViewById
         val tvBlock = popupView?.findViewById<TextView>(R.id.tv_block)
         val tvRemove = popupView?.findViewById<TextView>(R.id.tv_remove)
-
+        val alert = selfAlert.get(position)
+        alert.is_blocked = if(alert.is_blocked ==1)0 else 1
+        selfAlert.set(position,alert)
         tvBlock?.text = "Delete"
-        tvRemove?.text = "Block"
+        tvRemove?.text = if(selfAlert.get(position).is_blocked ==0)"Block" else "Unblock"
 
         val popupWindow = PopupWindow(popupView, RelativeLayout.LayoutParams.WRAP_CONTENT, RelativeLayout.LayoutParams.WRAP_CONTENT, true)
         popupWindow.showAsDropDown(imgThree,  0, 0, Gravity.END)
@@ -94,7 +96,7 @@ class SelfAlertAdapter(var context:Context, var selfAlert: List<SelfAlert>,
 
     @SuppressLint("NotifyDataSetChanged")
     fun update(selfAlert: List<SelfAlert>){
-        this.selfAlert = selfAlert
+        this.selfAlert = selfAlert.toMutableList()
         notifyDataSetChanged()
     }
 

@@ -5,10 +5,13 @@ import kotlinx.serialization.Serializable
 
 @Serializable
 data class Alert(
+
     val id: Int,
+
     val type: String,
 
     val title: String,
+
     val description: String,
 
     @SerialName("alert_id")
@@ -17,7 +20,7 @@ data class Alert(
     val relation: String,
 
     @SerialName("is_read")
-    val isRead: Boolean,
+    val isRead : Boolean,
 
     @SerialName("created_at")
     val createdAt: String,
@@ -26,16 +29,18 @@ data class Alert(
     val sender: UserDetail? = null,
 
     @SerialName("contact_details")
-    val contactDetails: UserDetail? = null,
+    val contact_details: UserDetail? = null,
 
     @SerialName("alert_type")
     val alertType: String
 )
 
 data class UserDetail(
+
     val id: Int,
+
     val name: String,
 
     @SerialName("profile_image")
-    val profileImage: String? = null
+    val profile_image: String? = null
 )

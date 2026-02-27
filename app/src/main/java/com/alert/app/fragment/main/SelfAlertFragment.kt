@@ -180,7 +180,7 @@ class SelfAlertFragment : Fragment(), SelfAlertClick {
             if (type.equals("Delete",true)){
                 deleteUserAlert(type,selfAlert,dialog)
             }else{
-                dialog.dismiss()
+               blockUserAlert(type,selfAlert,dialog)
             }
         }
 
@@ -191,11 +191,11 @@ class SelfAlertFragment : Fragment(), SelfAlertClick {
         imgClose.setOnClickListener {
             dialog.dismiss()
         }
-
-
     }
 
-    private fun deleteUserAlert(type: String, self: SelfAlert, dialog: Dialog) {
+
+    private fun deleteUserAlert(type: String, self: SelfAlert, dialog: Dialog){
+
         if (BaseApplication.isOnline(requireContext())) {
             BaseApplication.openDialog()
             lifecycleScope.launch {
@@ -223,6 +223,41 @@ class SelfAlertFragment : Fragment(), SelfAlertClick {
                                 it.message.toString(),
                                 Toast.LENGTH_LONG
                             ).show()
+                        }
+                    }
+                }
+            }
+        }
+        else{
+            showAlert(requireContext(), MessageClass.networkError,false)
+        }
+
+
+    }
+
+
+    private fun blockUserAlert(type: String, self: SelfAlert, dialog: Dialog) {
+        if (BaseApplication.isOnline(requireContext())) {
+            BaseApplication.openDialog()
+            lifecycleScope.launch {
+                viewModel.blockToggleSelfAlert(self.id?:-1,if(self.is_blocked==0) 1 else 0).collect {
+                    BaseApplication.dismissDialog()
+                    when (it) {
+                        is NetworkResult.Success -> {
+                            BaseApplication.dismissDialog()
+                            it.data?.let {
+                                Toast.makeText(requireContext(),it,Toast.LENGTH_LONG).show()
+                            }
+                            dialog.dismiss()
+                        }
+                        is NetworkResult.Error -> {
+                            BaseApplication.dismissDialog()
+                            Toast.makeText(
+                                requireContext(),
+                                it.message.toString(),
+                                Toast.LENGTH_LONG
+                            ).show()
+                            dialog.dismiss()
                         }
                     }
                 }

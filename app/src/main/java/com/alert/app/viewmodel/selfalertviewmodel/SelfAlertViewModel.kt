@@ -32,6 +32,13 @@ class SelfAlertViewModel @Inject constructor(private val repository: MainReposit
         return repository.deleteUserAlert(alertId,type).onEach {
         }
     }
+    suspend fun blockToggleSelfAlert(
+        alertId: Int,
+        isBlocked: Int
+    ): Flow<NetworkResult<String>> {
+        return repository.blockToggleSelfAlert(alertId,isBlocked).onEach {
 
+        }
+    }
 
 }

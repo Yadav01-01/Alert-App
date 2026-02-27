@@ -27,5 +27,6 @@ data class SelfAlert(
     val deleted_at: String?,
     val alert_user_name: String?,    // NEW
     val relation_name: String?,      // NEW
-    val alert_time: String?
+    val alert_time: String?,
+    var is_blocked:Int =0
 )

@@ -1,5 +1,6 @@
 package com.alert.app.adapter
 
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.ViewGroup
 import androidx.recyclerview.widget.RecyclerView
@@ -37,24 +38,33 @@ class NotificationAdapter(
     override fun onBindViewHolder(holder: NotificationViewHolder, position: Int) {
         val alert = alertList[position]
         with(holder.binding) {
-            val myName =   sessionManager.getUserName()
-            title.text = if(alert.sender != null) alert.sender.name else alert.contactDetails?.name
+            Log.d("Testing_size","Here Size is"+alert.title)
+
+            Log.e("ALERT_DEBUG", """
+             id=${alert.id}
+title=${alert.title}
+sender=${alert.sender}
+contact=${alert.contact_details}
+""".trimIndent())
+
+            val displayUser = alert.sender ?: alert.contact_details
+            title.text = displayUser?.name
             alertText.text = alert.title
             relation.text = alert.relation
             tvTime.text = alert.createdAt
             tvDescription.text = alert.description
 
-            if(alert.sender != null){
+//            if(alert.sender != null){
+//                Glide.with(userImg.context)
+//                    .load(alert.sender.profileImage)
+//                    .placeholder(R.drawable.dummy_image)
+//                    .into(userImg)
+//            }else{
                 Glide.with(userImg.context)
-                    .load(alert.sender.profileImage)
-                    .placeholder(R.drawable.dummy_image)
+                    .load(displayUser?.profile_image)
+                    .placeholder(R.drawable.user_img_icon)
                     .into(userImg)
-            }else{
-                Glide.with(userImg.context)
-                    .load(alert.contactDetails?.profileImage)
-                    .placeholder(R.drawable.dummy_image)
-                    .into(userImg)
-            }
+           // }
 
             root.setOnClickListener {
               //  listener.onClick(alert) // or pass whole model if needed
@@ -64,10 +74,18 @@ class NotificationAdapter(
         }
     }
 
-    fun update(alertList: MutableList<Alert>){
-        this.alertList = alertList
+    fun update(alertList1: MutableList<Alert>){
+        this.alertList = alertList1
+        Log.d("TESTING_SIZE","Size is alertSize "+alertList.size)
+
         notifyDataSetChanged()
     }
 
-    override fun getItemCount(): Int = alertList.size
-}
+    override fun getItemCount(): Int {
+         Log.d("TESTING_SIZE","Size is alertSize "+alertList.size)
+         return alertList.size
+      }
+
+
+   }
+
