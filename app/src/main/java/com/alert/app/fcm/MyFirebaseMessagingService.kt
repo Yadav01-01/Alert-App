@@ -70,9 +70,13 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
             ContextCompat.startForegroundService(this, svcIntent)
         }
 
-        else if (remoteMessage.data.get("type") == "start_journey") {
+        /*else if (remoteMessage.data.get("type") == "start_journey") {
 
-            val journeyId = remoteMessage.data.get("journey_id").toString()
+
+
+
+
+          val journeyId = remoteMessage.data.get("journey_id").toString()
 
             val intent = Intent(this, MapActivity::class.java).apply {
                 putExtra("journey_id", journeyId)
@@ -81,6 +85,20 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
             }
 
             startActivity(intent)
+        }*/
+        else if (remoteMessage.data.get("type") == "start_journey") {
+
+            val journeyId = remoteMessage.data.get("journey_id").toString()
+            // Default FCM notification title & body
+            val title = remoteMessage.notification?.title
+                ?: remoteMessage.data.get("title")
+                ?: "Journey Update"
+
+            val body = remoteMessage.notification?.body
+                ?: remoteMessage.data.get("body")
+                ?: "Tap to view journ"
+            openMapNotification(journeyId,title,body)
+
         }
 
 
@@ -209,5 +227,46 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
             .build()
 
         notificationManager.notify(1, notification)
+    }
+    @RequiresPermission(Manifest.permission.POST_NOTIFICATIONS)
+    private fun openMapNotification(journeyId: String, title : String,body: String) {
+
+        val channelId = "journey_channel"
+
+        // Create channel (Android 8+ ke liye)
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            val channel = NotificationChannel(
+                channelId,
+                "Journey Notifications",
+                NotificationManager.IMPORTANCE_HIGH
+            )
+            val manager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+            manager.createNotificationChannel(channel)
+        }
+
+        val intent = Intent(this, MapActivity::class.java).apply {
+            putExtra("journey_id", journeyId)
+            putExtra("from_notification", true)
+            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP)
+        }
+
+        val pendingIntent = PendingIntent.getActivity(
+            this,
+            200,
+            intent,
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+        )
+
+        val notification = NotificationCompat.Builder(this, channelId)
+            .setSmallIcon(R.drawable.app_icon)
+            .setContentTitle(title)
+            .setContentText(body)
+            .setPriority(NotificationCompat.PRIORITY_HIGH)
+            .setContentIntent(pendingIntent)
+            .setAutoCancel(true)
+            .build()
+
+        val manager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+        manager.notify(2002, notification)
     }
 }

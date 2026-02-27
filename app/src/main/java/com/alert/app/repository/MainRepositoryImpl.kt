@@ -2296,7 +2296,7 @@ class MainRepositoryImpl @Inject constructor(private val apiInterface: ApiInterf
                             val message = resp.get("message").asString
                             // val call = data.get("call").asJsonObject
                             val gson = Gson()
-                          val Journey =  gson.fromJson(resp, LiveLocationResponse::class.java)
+                           val Journey =  gson.fromJson(resp, LiveLocationResponse::class.java)
 
                             emit(NetworkResult.Success(Journey))
                         }
@@ -2398,6 +2398,7 @@ class MainRepositoryImpl @Inject constructor(private val apiInterface: ApiInterf
             emit(NetworkResult.Error(e.message ?: ""))
         }
     }
+
 
 
 }

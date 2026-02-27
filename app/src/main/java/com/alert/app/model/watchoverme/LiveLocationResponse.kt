@@ -1,7 +1,5 @@
 package com.alert.app.model.watchoverme
 
-
-
 import com.google.gson.annotations.SerializedName
 
 data class LiveLocationResponse(
@@ -15,18 +13,20 @@ data class LiveLocationResponse(
     val code: Int,
 
     @SerializedName("data")
-    val data: LiveLocationData
+    val data: List<LiveLocationData>? = null
 )
-
-
-
 data class LiveLocationData(
-
     @SerializedName("user_id")
     val userId: Int,
 
     @SerializedName("journey_id")
     val journeyId: Int,
+
+    @SerializedName("user_pickup_latitude")
+    val currentPickupLatitude: String,
+
+    @SerializedName("user_pickup_longitude")
+    val currentPickupLongitude: String,
 
     @SerializedName("current_latitude")
     val currentLatitude: String,
