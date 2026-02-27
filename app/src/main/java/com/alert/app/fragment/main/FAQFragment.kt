@@ -30,7 +30,6 @@ class FAQFragment : Fragment() {
 
     private var _binding: FragmentFAQBinding? = null
     private val binding get() = _binding!!
-
     private val viewModel: TutorialsViewModel by viewModels()
 
     override fun onCreateView(
@@ -110,5 +109,3 @@ class FAQFragment : Fragment() {
         _binding = null
     }
 }
-
-

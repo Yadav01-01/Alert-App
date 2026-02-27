@@ -39,10 +39,6 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
         val title = remoteMessage.notification?.title ?: "Notification"
         val body = remoteMessage.notification?.body ?: "No content"
 
-
-
-
-
         callphoneWithRing(remoteMessage)
 
     }
@@ -50,7 +46,7 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
     @RequiresPermission(Manifest.permission.POST_NOTIFICATIONS)
     private fun callphoneWithRing(remoteMessage: RemoteMessage) {
 
-        if(remoteMessage.data.get("type").equals("self_alert") || remoteMessage.data.get("type").equals("health_alert")) {
+        if(remoteMessage.data.get("type").equals("self_alert") || remoteMessage.data.get("type").equals("health")) {
             val title = remoteMessage.data.get("title").toString()
             val body = remoteMessage.data.get("body").toString()
             startIncomingCallService(title, body)
@@ -73,9 +69,14 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
 
             ContextCompat.startForegroundService(this, svcIntent)
         }
+
         /*else if (remoteMessage.data.get("type") == "start_journey") {
 
-            val journeyId = remoteMessage.data.get("journey_id").toString()
+
+
+
+
+          val journeyId = remoteMessage.data.get("journey_id").toString()
 
             val intent = Intent(this, MapActivity::class.java).apply {
                 putExtra("journey_id", journeyId)
@@ -99,6 +100,7 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
             openMapNotification(journeyId,title,body)
 
         }
+
 
     }
 

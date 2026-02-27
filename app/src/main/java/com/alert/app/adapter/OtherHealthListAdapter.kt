@@ -38,7 +38,7 @@ class OtherHealthListAdapter(
             description.text = alertData.description
         }
 
-        holder.binding.tvAlert.text = "Alert Duration: "+ alertData.duration
+        holder.binding.tvAlert.text = "Alert Duration : "+ alertData.alert_duration_minutes +" minutes"
 
         holder.binding.tvAlert.setOnClickListener {
           //  showTimePopup(holder.binding.tvAlert)

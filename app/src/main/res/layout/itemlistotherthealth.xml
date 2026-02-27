@@ -85,7 +85,6 @@
             android:layout_marginTop="@dimen/_5sdp"
             android:text="Alert Duration"
             android:textColor="#1E232C"
-            android:drawableEnd="@drawable/icon_image"
             android:drawableStart="@drawable/duration_downscale_svgrepo_com"
             android:textSize="@dimen/_10sdp"/>
 

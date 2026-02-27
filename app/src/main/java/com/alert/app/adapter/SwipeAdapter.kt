@@ -36,6 +36,7 @@ class SwipeAdapter(private val context: Context, private val onDeleteClick: (Cha
     ListAdapter<ChatListItem, SwipeAdapter.SwipeViewHolder>(DiffCallback()) {
 
 
+
     private val viewBinderHelper = ViewBinderHelper().apply { setOpenOnlyOne(true) }
 
     // Master list (used for filtering)
@@ -50,11 +51,13 @@ class SwipeAdapter(private val context: Context, private val onDeleteClick: (Cha
     override fun onBindViewHolder(holder: SwipeViewHolder, position: Int) {
         val item = getItem(position)
 
+
         // Swipe handling
         viewBinderHelper.bind(holder.swipeLayout, item.chatId)
         holder.imgDelete.setOnClickListener {
             onDeleteClick(item)
         }
+
         holder.tvName.text = item.fullName
 
         holder.tvLastMessage.text = if (item.isLiveLocation) {
@@ -62,14 +65,17 @@ class SwipeAdapter(private val context: Context, private val onDeleteClick: (Cha
         } else {
             item.lastMessage ?: "Say hi 👋"
         }
+        // Swipe handling
 
-        // Unread count
-        if (item.unreadCount > 0) {
-            holder.tvCount.visibility = View.VISIBLE
-            holder.tvCount.text = item.unreadCount.toString()
-        } else {
-            holder.tvCount.visibility = View.GONE
-        }
+        Log.d("TESTING_ADAPTER","Inside Chat Screen")
+
+            viewBinderHelper.bind(holder.swipeLayout, item.chatId)
+            if (item.unreadCount > 0) {
+                holder.tvCount.visibility = View.VISIBLE
+                holder.tvCount.text = item.unreadCount.toString()
+            } else {
+                holder.tvCount.visibility = View.GONE
+            }
 
         Glide.with(context)
             .load(item.profile)
@@ -88,6 +94,7 @@ class SwipeAdapter(private val context: Context, private val onDeleteClick: (Cha
         }
 
         holder.timeAgo.text = getTimeAgo(item.lastMessageTime)
+
     }
 
     // ---------------------------
@@ -140,9 +147,6 @@ class SwipeAdapter(private val context: Context, private val onDeleteClick: (Cha
         }
     }
 
-    // ---------------------------
-    // ViewHolder
-    // ---------------------------
 
     inner class SwipeViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
         val tvName: TextView = itemView.findViewById(R.id.tv_name)
@@ -152,12 +156,15 @@ class SwipeAdapter(private val context: Context, private val onDeleteClick: (Cha
         val imgAppbar: LinearLayout = itemView.findViewById(R.id.img_appbar)
         val userImage: CircleImageView = itemView.findViewById(R.id.user_img_message)
         val timeAgo: TextView = itemView.findViewById(R.id.tv_time_ago)
+
+        val delete_layout : LinearLayout = itemView.findViewById<LinearLayout>(R.id.delete_layout)
+
+
         val imgDelete: ImageView = itemView.findViewById(R.id.img_delete)
+
     }
 
-    // ---------------------------
-    // DiffUtil
-    // ---------------------------
+
 
     class DiffCallback : DiffUtil.ItemCallback<ChatListItem>() {
         override fun areItemsTheSame(oldItem: ChatListItem, newItem: ChatListItem) =

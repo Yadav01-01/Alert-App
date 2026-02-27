@@ -6,7 +6,7 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical"
-    android:background="@drawable/profile_bg"
+    android:background="@color/sky_blue"
     tools:context=".activity.CallActivity">
 
     <LinearLayout
@@ -107,7 +107,9 @@
                 android:layout_width="@dimen/_50sdp"
                 android:layout_height="@dimen/_50sdp"
                 android:layout_marginStart="@dimen/_10sdp"
-                android:src="@drawable/message_image"/>
+                android:src="@drawable/message_image"
+                android:visibility="gone"
+                />
 
             <ImageView
                 android:id="@+id/imgSpeaker"

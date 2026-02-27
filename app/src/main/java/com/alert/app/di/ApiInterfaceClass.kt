@@ -1,6 +1,7 @@
 package com.alert.app.di
 
 import com.alert.app.errormessage.ApiEndPoint
+import com.alert.app.model.Alert
 import com.alert.app.model.contact.UserContactRequest
 import com.alert.app.model.contact.UserEditContactRequest
 import com.alert.app.model.helpingneighbormodel.CreateHelpingNeighbor
@@ -356,6 +357,8 @@ interface ApiInterfaceClass {
         @Field("receiver_id") receiverId :Int
      ) : Response<JsonObject>
 
+    @POST(ApiEndPoint.GET_IN_APP_NOTIFICATION)
+    suspend fun getInAppNotification() : Response<JsonObject>
 
 
     @POST(ApiEndPoint.START_JOURNEY)

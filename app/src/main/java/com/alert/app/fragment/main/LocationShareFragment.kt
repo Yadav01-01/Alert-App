@@ -34,6 +34,7 @@ class LocationShareFragment : Fragment() {
         binding.btnAlertNow.setOnClickListener {
            findNavController().navigate(R.id.contactListFragment)
         }
+
         binding.backBtn.setOnClickListener {
             findNavController().navigateUp()
         }
