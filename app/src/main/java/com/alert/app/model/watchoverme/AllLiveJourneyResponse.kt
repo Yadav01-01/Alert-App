@@ -32,6 +32,12 @@ data class LiveJourneyDetail(
     @SerializedName("user_id")
     val userId: Int,
 
+    @SerializedName("user_pickup_latitude")
+    val currentPickupLatitude: String,
+
+    @SerializedName("user_pickup_longitude")
+    val currentPickupLongitude: String,
+
     @SerializedName("user_current_latitude")
     val userCurrentLatitude: String,
 
