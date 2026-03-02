@@ -371,7 +371,9 @@ interface ApiInterfaceClass {
     ) : Response<JsonObject>
 
     @POST(ApiEndPoint.LIVE_LOCATION)
+
     suspend fun liveLocation(
+
     ) : Response<JsonObject>
 
     @POST(ApiEndPoint.GET_ALL_LIVE_LOCATION)

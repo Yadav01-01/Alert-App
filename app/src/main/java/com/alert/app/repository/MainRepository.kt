@@ -237,6 +237,6 @@ interface MainRepository {
         @Field("destination_longitude") destinationLongitude : String,
     ) : Flow<NetworkResult<JourneyStarted>>
 
-    suspend fun liveLocation() : Flow<NetworkResult<LiveLocationResponse>>
+    suspend fun liveLocation(userId : String) : Flow<NetworkResult<LiveLocationResponse>>
     suspend fun getAllLiveLocation() : Flow<NetworkResult<AllLiveJourneyResponse>>
 }

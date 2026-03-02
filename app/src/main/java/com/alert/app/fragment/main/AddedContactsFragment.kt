@@ -426,15 +426,16 @@ class AddedContactsFragment : Fragment() , ContactClick, OnClickEventDropDownTyp
                     when (it) {
                         is NetworkResult.Success -> {
                             it.data?.let {
-                                if (it.has(getString(R.string.apiCode)) && it.get(getString(R.string.apiCode)).asInt==200) {
-                                    openAlertBox(it.getAsJsonObject("data").asJsonObject)
+                                //nikunj
+                         /*       if (it.has(getString(R.string.apiCode)) && it.get(getString(R.string.apiCode)).asInt==200) {
+                                  //  openAlertBox(it.getAsJsonObject("data").asJsonObject)
                                 }else{
                                     Toast.makeText(
                                         requireContext(),
                                         it.get(getString(R.string.apiMessahe)).asString,
                                         Toast.LENGTH_LONG
                                     ).show()
-                                }
+                                }*/
                             }
                         }
                         is NetworkResult.Error -> {
@@ -523,10 +524,15 @@ class AddedContactsFragment : Fragment() , ContactClick, OnClickEventDropDownTyp
 
 
         // Add Alert
+      /*  dataAlert.add(TimeModel("Lorem ipsum dolor sit, sit sectetur adipiscing elit.",false))
         dataAlert.add(TimeModel("Lorem ipsum dolor sit, sit sectetur adipiscing elit.",false))
         dataAlert.add(TimeModel("Lorem ipsum dolor sit, sit sectetur adipiscing elit.",false))
-        dataAlert.add(TimeModel("Lorem ipsum dolor sit, sit sectetur adipiscing elit.",false))
-        dataAlert.add(TimeModel("Lorem ipsum dolor sit, sit sectetur adipiscing elit.",false))
+        dataAlert.add(TimeModel("Lorem ipsum dolor sit, sit sectetur adipiscing elit.",false))*/
+        dataAlert.add(TimeModel("Medical Appointment",false))
+        dataAlert.add(TimeModel("X-Ray Appointment",false))
+        dataAlert.add(TimeModel("Ultra-Sound Appointment",false))
+        dataAlert.add(TimeModel("Appointment with Joe Goldburg",false))
+        dataAlert.add(TimeModel("Other",false))
 
 
         tvTime.setOnClickListener {

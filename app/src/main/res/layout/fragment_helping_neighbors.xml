@@ -63,12 +63,24 @@
             />
         <TextView
             android:id="@+id/tvUserAddress"
-            android:layout_width="match_parent"
+            android:layout_width="0dp"
+            android:layout_weight="1"
             android:layout_height="wrap_content"
             android:textSize="@dimen/_13sdp"
             android:layout_marginStart="@dimen/_5sdp"
             android:gravity="center|top|start"
             android:text="138 My Street, Kingston,  New York"/>
+
+        <TextView
+            android:id="@+id/tvRequest"
+            android:layout_width="0dp"
+            android:layout_weight="0.4"
+            android:textColor="@color/light_blue"
+            android:layout_height="wrap_content"
+            android:textSize="@dimen/_13sdp"
+            android:layout_marginStart="@dimen/_2sdp"
+            android:gravity="center|top|start"
+            android:text="Requests"/>
     </LinearLayout>
 
 
@@ -139,6 +151,15 @@
 
             <androidx.recyclerview.widget.RecyclerView
                 android:id="@+id/rcy_data"
+                app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager"
+                android:orientation="vertical"
+                android:layout_width="match_parent"
+                android:visibility="gone"
+                android:layout_marginTop="@dimen/_5sdp"
+                android:layout_height="wrap_content"/>
+
+            <androidx.recyclerview.widget.RecyclerView
+                android:id="@+id/rcy_data1"
                 app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager"
                 android:orientation="vertical"
                 android:layout_width="match_parent"

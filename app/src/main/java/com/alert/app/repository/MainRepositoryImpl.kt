@@ -2286,7 +2286,7 @@ class MainRepositoryImpl @Inject constructor(private val apiInterface: ApiInterf
         }
     }
 
-    override suspend fun liveLocation(): Flow<NetworkResult<LiveLocationResponse>> = flow {
+    override suspend fun liveLocation(userId : String): Flow<NetworkResult<LiveLocationResponse>> = flow {
         try {
             apiInterface.liveLocation().apply {
                 if (isSuccessful) {

@@ -243,7 +243,9 @@ class NotificationFragment : Fragment(), OnNotificationClickListener {
 
     private fun setupRecyclerView() {
 
-        swipeAdapter = SwipeAdapter(requireContext())
+        swipeAdapter = SwipeAdapter(requireContext()){
+
+        }
 
         binding.rcyData.apply {
             layoutManager = LinearLayoutManager(requireContext())

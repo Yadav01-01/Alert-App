@@ -25,7 +25,7 @@ class ContactListAdapter(
     private val onClickContact: ContactClick,
     private var list: MutableList<Contact>,
     private val type: String) : RecyclerView.Adapter<ContactListAdapter.ViewHolder>()
-{
+{ var currentPosition: Int = 0
     private var originalList: MutableList<Contact> = ArrayList(list)
     class ViewHolder(val binding: ItemcontactBinding) : RecyclerView.ViewHolder(binding.root)
 
@@ -78,6 +78,7 @@ class ContactListAdapter(
         }
 
         holder.binding.imgEdit.setOnClickListener {
+            currentPosition = position
             onClickContact.onClick("edit", list[position],position)
         }
 

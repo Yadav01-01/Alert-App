@@ -88,7 +88,7 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
         }*/
         else if (remoteMessage.data.get("type") == "start_journey") {
 
-            val journeyId = remoteMessage.data.get("journey_id").toString()
+            val journeyId = remoteMessage.data.get("id").toString()
             // Default FCM notification title & body
             val title = remoteMessage.notification?.title
                 ?: remoteMessage.data.get("title")
@@ -96,7 +96,9 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
 
             val body = remoteMessage.notification?.body
                 ?: remoteMessage.data.get("body")
-                ?: "Tap to view journ"
+                ?: "Tap to view journey"
+            Log.d("JourneyId","${remoteMessage.data}")
+            Log.d("JourneyId",journeyId)
             openMapNotification(journeyId,title,body)
 
         }
