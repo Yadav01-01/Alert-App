@@ -23,6 +23,7 @@ import androidx.lifecycle.lifecycleScope
 import androidx.navigation.findNavController
 import com.alert.app.BuildConfig
 import com.alert.app.R
+import com.alert.app.base.AppConstant
 import com.alert.app.base.BaseApplication
 import com.alert.app.databinding.ActivityContactDetailScreenBinding
 import com.alert.app.di.NetworkResult
@@ -48,7 +49,7 @@ class ContactDetailScreenActivity : AppCompatActivity() {
     private lateinit var binding: ActivityContactDetailScreenBinding
     private lateinit var viewModel: ContactDetailsScreenViewModel
     private var contactId :String =""
-
+    private var dataCurrent: ContactDetailsScreenModelData? = null
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         binding = ActivityContactDetailScreenBinding.inflate(LayoutInflater.from(this))
@@ -62,7 +63,21 @@ class ContactDetailScreenActivity : AppCompatActivity() {
         binding.imgBack.setOnClickListener { finish() }
         binding.tvOK.setOnClickListener { showDialog(DialogType.DEFAULT) }
         binding.tvNo.setOnClickListener { showDialog(DialogType.DEFAULT) }
-        binding.imgChat.setOnClickListener { startActivity(Intent(this, ChatActivity::class.java)) }
+        binding.imgChat.setOnClickListener {
+
+
+        //    startActivity(Intent(this, ChatActivity::class.java))
+         val fullName =   binding.textNeighborName.text.toString()
+
+            val intent = Intent(this, ChatActivity::class.java)
+            intent.putExtra(AppConstant.NAME,fullName )
+            intent.putExtra(AppConstant.PROFILE, dataCurrent?.profile_pic?:"")
+
+           // intent.putExtra("contactUserId", viewModel.userId)
+            startActivity(intent)
+
+
+        }
         binding.imgCall.setOnClickListener {
          /*   startActivity(Intent(this, CallActivity::class.java))*/
 
@@ -113,6 +128,9 @@ class ContactDetailScreenActivity : AppCompatActivity() {
             Log.d("@@@ addMea List ", "message :- $data")
             if (apiModel.code == 200 && apiModel.status == true) {
                 if (apiModel.data != null) {
+                    dataCurrent = apiModel.data
+
+
                     showDataInUI(apiModel.data)
                 }
             } else {
@@ -127,21 +145,20 @@ class ContactDetailScreenActivity : AppCompatActivity() {
         try {
             data.let { user ->
                 val fullName = listOfNotNull(user.first_name, user.last_name).joinToString(" ")
+
                 if (fullName.isNotBlank()) {
                     binding.textNeighborName.text = fullName
                 }
-
                 user.address.let {
                     binding.textAddressDetails.text = it.toString()
                 }
-
                 user.phone?.let {
                     binding.textPhoneNumber.text = it
                 }
 
                 user.profile_pic.let { profilePic ->
                     Glide.with(this)
-                        .load("${BuildConfig.BASE_URL}$profilePic")
+                        .load("$profilePic")
                         .error(R.drawable.no_image)
                         .placeholder(R.drawable.no_image)
                         .listener(object : RequestListener<Drawable> {

@@ -239,4 +239,10 @@ interface MainRepository {
 
     suspend fun liveLocation(userId : String) : Flow<NetworkResult<LiveLocationResponse>>
     suspend fun getAllLiveLocation() : Flow<NetworkResult<AllLiveJourneyResponse>>
+
+    suspend fun blockToggleSelfAlert(
+        @Field("alert_id") alertId :Int,
+        @Field("is_blocked") isBlocked :Int
+    ) :Flow<NetworkResult<String>>
+
 }

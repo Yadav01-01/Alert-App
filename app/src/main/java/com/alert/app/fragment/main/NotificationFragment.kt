@@ -5,6 +5,7 @@ import android.app.Dialog
 import android.graphics.Color
 import android.graphics.drawable.ColorDrawable
 import android.os.Bundle
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -63,7 +64,9 @@ class NotificationFragment : Fragment(), OnNotificationClickListener {
         setupRecyclerView()
         observeChatList()
         callingChatList()
+        binding.rcyDataAlert.visibility =View.VISIBLE
         getNotificationData()
+
         return binding.root
     }
 
@@ -84,7 +87,7 @@ class NotificationFragment : Fragment(), OnNotificationClickListener {
 
         toggleTabs(true)
 
-        observeNotifications("alert")
+      //  observeNotifications("alert")
 
     }
 
@@ -98,6 +101,7 @@ class NotificationFragment : Fragment(), OnNotificationClickListener {
                     is NetworkResult.Success ->{
                       BaseApplication.dismissDialog()
                         it.data?.let {
+                            Log.d("Testing_size","size is "+it.size)
                             notificationAdapter.update(it)
                         }
                     }
@@ -128,7 +132,7 @@ class NotificationFragment : Fragment(), OnNotificationClickListener {
 
             binding.rcyData.visibility =View.VISIBLE
             binding.rcyDataAlert.visibility =View.GONE
-            observeNotifications("message")
+          //  observeNotifications("message")
 
         }
     }
@@ -200,45 +204,7 @@ class NotificationFragment : Fragment(), OnNotificationClickListener {
         dialog.show()
     }
 
-    private fun observeNotifications(type: String) {
-        if (BaseApplication.isOnline(requireContext())) {
-            BaseApplication.openDialog()
 
-            lifecycleScope.launchWhenStarted {
-                notificationViewModel.loadNotifications(type).collect { result ->
-                    when (result) {
-                        is NetworkResult.Success -> {
-                            val list = result.data
-                            BaseApplication.dismissDialog()
-
-                            if (list.isNullOrEmpty()) {
-                                binding.rcyData.visibility = View.GONE
-                            } else {
-                                binding.rcyData.visibility = View.VISIBLE
-
-                                if (type == "alert") {
-//                                    binding.rcyData.adapter = NotificationAdapter(
-//                                        list,
-//                                        this@NotificationFragment
-//                                    )
-                                } else if (type == "message") {
-                                    binding.rcyData.adapter = MessageNotificationAdapter(list)
-                                }
-                            }
-                        }
-                        is NetworkResult.Error -> {
-                            BaseApplication.dismissDialog()
-                            binding.rcyData.visibility = View.GONE
-                            Toast.makeText(requireContext(), result.message, Toast.LENGTH_SHORT).show()
-                        }
-                    }
-                }
-            }
-
-        } else {
-            AlertUtils.showAlert(requireContext(), MessageClass.networkError, false)
-        }
-    }
 
 
     private fun setupRecyclerView() {
@@ -253,9 +219,12 @@ class NotificationFragment : Fragment(), OnNotificationClickListener {
         }
 
         binding.rcyDataAlert.apply {
+
             layoutManager = LinearLayoutManager(requireContext())
-            notificationAdapter =  NotificationAdapter(mutableListOf(),
+
+            notificationAdapter = NotificationAdapter(mutableListOf(),
                 this@NotificationFragment)
+            adapter =  notificationAdapter
 
         }
 

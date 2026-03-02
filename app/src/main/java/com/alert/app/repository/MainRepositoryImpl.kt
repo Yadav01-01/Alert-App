@@ -2365,4 +2365,40 @@ class MainRepositoryImpl @Inject constructor(private val apiInterface: ApiInterf
         }
     }
 
+    override suspend fun blockToggleSelfAlert(alertId: Int,
+                                              isBlocked: Int): Flow<NetworkResult<String>> = flow {
+        try {
+            apiInterface.blockToggleSelfAlert(alertId,isBlocked).apply {
+                if (isSuccessful) {
+                    body()?.let { resp ->
+                        if (resp.has("status") && resp.get("status").asBoolean) {
+                            emit(NetworkResult.Success(resp.get("message").asString))
+                        }
+                        else {
+                            emit(NetworkResult.Error(resp.get("message").asString))
+                        }
+                    } ?: emit(NetworkResult.Error(AppConstant.unKnownError))
+                }
+                else {
+                    try {
+                        val jsonObj = this.errorBody()?.string()?.let { JSONObject(it) }
+                        emit(
+                            NetworkResult.Error(
+                                jsonObj?.getString("message")
+                                    ?: AppConstant.unKnownError
+                            )
+                        )
+                    } catch (e: JSONException) {
+                        e.printStackTrace()
+                        emit(NetworkResult.Error(AppConstant.unKnownError))
+                    }
+                }
+            }
+        } catch (e: Exception) {
+            emit(NetworkResult.Error(e.message ?: ""))
+        }
+    }
+
+
+
 }

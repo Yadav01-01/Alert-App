@@ -12,7 +12,6 @@
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
     <uses-permission android:name="android.permission.RECORD_AUDIO" />
-
     <uses-permission android:name="android.permission.BLUETOOTH" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MICROPHONE" />
     <uses-permission android:name="android.permission.ACCESS_BACKGROUND_LOCATION" /> <!-- Required for background location (Android 10+) -->
@@ -36,8 +35,8 @@
     <uses-permission
         android:name="android.permission.FOREGROUND_SERVICE_MEDIA_PROJECTION"
         tools:node="remove" />
-
     <uses-permission android:name="android.permission.BLUETOOTH_CONNECT" />
+
     <uses-feature
         android:name="android.hardware.microphone"
         android:required="true" />
@@ -55,6 +54,9 @@
         android:theme="@style/Theme.AlertApp"
         android:usesCleartextTraffic="true"
         tools:targetApi="31">
+        <activity
+            android:name=".activity.AiScreenActivity"
+            android:exported="false" />
         <activity
             android:name=".activity.IncomingAudioCallActivity"
             android:exported="false" />
@@ -143,7 +145,6 @@
             android:name=".calling.IncomingCallService"
             android:exported="false"
             android:foregroundServiceType="phoneCall" />
-
         <service
             android:name=".calling.IncomingAudioCallService"
             android:exported="false"

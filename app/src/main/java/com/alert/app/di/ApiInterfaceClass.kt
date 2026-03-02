@@ -347,6 +347,14 @@ interface ApiInterfaceClass {
     ) : Response<JsonObject>
 
 
+    @POST("api/block_toggle_self_alert")
+    @FormUrlEncoded
+    suspend fun blockToggleSelfAlert(
+      @Field("alert_id") alertId :Int,
+      @Field("is_blocked") isBlocked :Int
+    ) : Response<JsonObject>
+
+
     @POST("api/get_channel_list")
     suspend fun getChannelList() : Response<JsonObject>
 

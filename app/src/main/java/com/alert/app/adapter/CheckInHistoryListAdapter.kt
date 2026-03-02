@@ -14,16 +14,15 @@ import com.alert.app.model.selfAlert.SelfAlert
 
 
 class CheckInHistoryListAdapter(
-    var context: Context,
-    var type: String,
+    var context: Context, var type: String,
     var dataSelfAlert: MutableList<CheckInHistoryAlertResponseData>,
     var OnClickEvent: OnClickContact
-) :
-    RecyclerView.Adapter<CheckInHistoryListAdapter.ViewHolder>() {
+) : RecyclerView.Adapter<CheckInHistoryListAdapter.ViewHolder>() {
 
+    class ViewHolder(var binding: ItemlistcheckinsBinding) : RecyclerView.ViewHolder(binding.root) {
 
-    class ViewHolder(var binding: ItemlistcheckinsBinding) :
-        RecyclerView.ViewHolder(binding.root) {}
+    }
+
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
         val layoutInflater = LayoutInflater.from(parent.context)
@@ -34,40 +33,37 @@ class CheckInHistoryListAdapter(
 
     @SuppressLint("SetTextI18n", "NotifyDataSetChanged")
     override fun onBindViewHolder(holder: ViewHolder, @SuppressLint("RecyclerView") position: Int) {
-
         val data = dataSelfAlert[position]
-
-        data.user_name?.let { userName ->
-            if (data.alert_type.equals("self", ignoreCase = true)) {
-                holder.binding.tvRelation.visibility=View.GONE
-                holder.binding.tvAlertOrSelfName.text = "Self Alert: $userName"
-            } else {
+        data.sender_name?.let {
+            userName -> if (data.alert_type.equals("self", ignoreCase = true)) {
+                holder.binding.tvRelation.visibility =   View.GONE
+                holder.binding.tvAlertOrSelfName.text =  "Self Alert: $userName"
+            }
+        else {
                 holder.binding.tvRelation.visibility=View.VISIBLE
                 holder.binding.tvAlertOrSelfName.text = "Alert By: $userName"
             }
         }
 
-
         data.start_date?.let {
-            holder.binding.tvDate.text = BaseApplication.formatDate(it)
+            holder.binding.tvDate.text = data.start_date+if(data.end_date != null )" - "+data.end_date else ""
         }
 
         data.start_time?.let {
-            holder.binding.tvTime.text = it
+            holder.binding.tvTime.text = data.start_time + if(data.end_time != null )" - "+data.end_time else ""
         }
 
         data.relation?.let {
             holder.binding.tvRelation.text = it
         }
 
-        data.address?.let {
+        data.sender_address?.let {
             holder.binding.tvAddress.text = it
         }
 
         holder.binding.tvViewAlert.setOnClickListener {
             OnClickEvent.onClick(type,position.toString())
         }
-
     }
 
     override fun getItemCount(): Int {
