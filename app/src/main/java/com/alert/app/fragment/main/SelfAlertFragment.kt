@@ -43,7 +43,6 @@ class SelfAlertFragment : Fragment(), SelfAlertClick {
     private var selfAlert: MutableList<SelfAlert> = mutableListOf()
     private lateinit var adapter: SelfAlertAdapter
 
-
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View {
         binding = FragmentSelfAlertBinding.inflate(layoutInflater, container, false)
         initView()

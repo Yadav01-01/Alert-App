@@ -21,45 +21,23 @@ class HealthAlertViewModel @Inject constructor(private val repository: MainRepos
 
 
     suspend fun addHealthAlert(
-        alertFor: String,
-        alertDuration: String,
-        healthAlert: String,
-        startDate: String,
-        endDate: String,
-        time: String,
-        note: String,
-        contact: List<String>?
+        alertFor: String, alertDuration: String, healthAlert: String, startDate: String, endDate: String,
+        time: String, note: String, contact: List<String>?
     ): Flow<NetworkResult<JsonObject>> {
-        return repository.addHealthAlerts(
-            alertFor,
-            alertDuration,
-            healthAlert,
-            startDate,
-            endDate,
-            time,
-            note,
-            contact
-        )
+        return repository.addHealthAlerts(alertFor, alertDuration,
+            healthAlert, startDate, endDate, time, note, contact)
     }
+
     fun convertTimeTo24Hour(time: String?): String {
         if (time.isNullOrBlank()) return "00:00"
-
         return try {
             val inputFormat = java.text.SimpleDateFormat("hh:mm a", java.util.Locale.US)
             val outputFormat = java.text.SimpleDateFormat("HH:mm", java.util.Locale.US)
-
             val date = inputFormat.parse(time) ?: return "00:00"
             outputFormat.format(date)
         } catch (e: Exception) {
             "00:00"
         }
     }
-
-
-
-
-
-
-
 
 }

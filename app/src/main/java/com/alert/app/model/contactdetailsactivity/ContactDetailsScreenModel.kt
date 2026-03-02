@@ -22,7 +22,7 @@ data class ContactDetailsScreenModelData(
     val latitude: String?,
     val longitude: String?,
     val phone: String?,
-    val profile_pic: Any,
+    val profile_pic: String?,
     val relation: String?,
     val relation_id: Int?
 )

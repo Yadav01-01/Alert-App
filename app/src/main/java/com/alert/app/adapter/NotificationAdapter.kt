@@ -47,24 +47,17 @@ sender=${alert.sender}
 contact=${alert.contact_details}
 """.trimIndent())
 
-            val displayUser = alert.sender ?: alert.contact_details
+            val displayUser = alert.contact_details ?: alert.sender
             title.text = displayUser?.name
             alertText.text = alert.title
             relation.text = alert.relation
             tvTime.text = alert.createdAt
-            tvDescription.text = alert.description
-
-//            if(alert.sender != null){
-//                Glide.with(userImg.context)
-//                    .load(alert.sender.profileImage)
-//                    .placeholder(R.drawable.dummy_image)
-//                    .into(userImg)
-//            }else{
-                Glide.with(userImg.context)
+            tvDescription.text = alert?.description
+            Glide.with(userImg.context)
                     .load(displayUser?.profile_image)
                     .placeholder(R.drawable.user_img_icon)
                     .into(userImg)
-           // }
+
 
             root.setOnClickListener {
               //  listener.onClick(alert) // or pass whole model if needed

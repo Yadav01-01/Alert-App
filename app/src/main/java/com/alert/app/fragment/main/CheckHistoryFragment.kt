@@ -307,10 +307,10 @@ class CheckHistoryFragment : Fragment(), OnClickContact {
 
         if (position != null && position in dataSelfAlert.indices) {
             val alert = dataSelfAlert[position]
-            val alertId = alert.id?.toString().orEmpty()
+            val alertId = alert.alert_id?.toString().orEmpty()
             val description = alert.description?.toString().orEmpty()
             val alertType = alert.alert_type?.toString().orEmpty()
-            val userName = alert.user_name?.toString().orEmpty()
+            val userName = alert.sender_name?.toString().orEmpty()
             val responseDate = BaseApplication.logFormattedTime(alert.updated_at?.toString().orEmpty())
 
             showAlertDialog(data, alertId, description, responseDate,alertType,userName)
