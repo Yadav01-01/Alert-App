@@ -1233,6 +1233,7 @@ class WatchOverMeChooseStartingPointFragment : Fragment(), OnMapReadyCallback {
 
     // 🔴 IMPORTANT: 30 meters threshold (0.01864 miles = ~30 meters)
     private val DEVIATION_THRESHOLD_MILES = 30.0 / 1609.34  // ~0.01864 miles (30 meters)
+    private var wrongPathAlertSent = false
     private val DESTINATION_THRESHOLD_MILES = 5.0 / 1609.34  // ~0.003107 miles
 
     // ─── Handlers ────────────────────────────────────────────────────
@@ -1709,9 +1710,15 @@ class WatchOverMeChooseStartingPointFragment : Fragment(), OnMapReadyCallback {
 
         if (isDeviating) {
             handleWrongPath(currentLoc)
+            // 🔴 Call API only once when deviation starts
+            if (!wrongPathAlertSent && currentJourneyId.isNotEmpty()) {
+                wrongPathAlertSent = true
+                callWrongPathApi()
+            }
         } else {
             handleCorrectPath(currentLoc)
-
+            // 🔴 Reset flag when rider comes back to correct path
+            wrongPathAlertSent = false
             // Find nearest point on route for progress tracking
             val nearestPointInfo = findNearestPointOnRoute(currentLoc)
             currentStepIndex = nearestPointInfo.second
@@ -2361,5 +2368,24 @@ class WatchOverMeChooseStartingPointFragment : Fragment(), OnMapReadyCallback {
     // Function to get auth token
     private fun getAuthToken(): String {
         return SessionManagement(requireActivity()).getUserToken().toString()
+    }
+
+    private fun callWrongPathApi() {
+        lifecycleScope.launch {
+            viewModel.setAlertWrongPath(currentJourneyId).collect { result ->
+
+                when (result) {
+                    is NetworkResult.Success -> {
+                        Log.d("WrongPathAPI", "✅ Wrong path alert sent")
+                    }
+
+                    is NetworkResult.Error -> {
+                        Log.e("WrongPathAPI", "❌ Error: ${result.message}")
+                    }
+
+
+                }
+            }
+        }
     }
 }

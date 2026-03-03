@@ -245,4 +245,8 @@ interface MainRepository {
         @Field("is_blocked") isBlocked :Int
     ) :Flow<NetworkResult<String>>
 
+    suspend fun setAlertWrongPath(
+        @Field("journey_id") journeyId : String,
+    ) :Flow<NetworkResult<String>>
+
 }

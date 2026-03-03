@@ -49,4 +49,9 @@ class MainActivityViewModel@Inject constructor(private val repository: MainRepos
     enum class CheckInResponse {
         YES, NO
     }
+
+    suspend fun userLogout(): Flow<NetworkResult<JsonObject>> {
+        return repository.userLogout().onEach {
+        }
+    }
 }

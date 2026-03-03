@@ -392,8 +392,10 @@ class MapActivity : AppCompatActivity(), OnMapReadyCallback {
             Log.d("MarkerDebug", "tvTime found: ${tvTimeView != null}")
             Log.d("MarkerDebug", "tvDistance found: ${tvDistanceView != null}")
             Log.d("MarkerDebug", "tvTitle found: ${tvTitleView != null}")
+            llBlue.visibility = View.VISIBLE
+            tvTimeView.visibility = View.GONE
             llBlue.visibility = View.GONE
-            tvTimeView?.text = time
+            tvDistanceView?.text = time
             tvDistanceView?.text = distance
             tvTitleView?.text = title
 

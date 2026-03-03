@@ -53,4 +53,14 @@ userId : String
         }
     }
 
+
+    suspend fun setAlertWrongPath(
+        journeyId : String,
+    ): Flow<NetworkResult<String>> {
+        return repository.setAlertWrongPath(journeyId).onEach {   result ->
+         //   _allLiveJourneys.value = result
+
+        }
+    }
+
 }
