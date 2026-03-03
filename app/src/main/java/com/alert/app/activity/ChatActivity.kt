@@ -60,17 +60,13 @@ class ChatActivity : AppCompatActivity() {
     private lateinit var  chatViewModel : ChatScreenViewModel
     var contactUserId :String =""
     var userProfileImage :String =""
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-
         binding = ActivityChatBinding.inflate(LayoutInflater.from(this))
-
         setContentView(binding.root)
-
         viewModel =     ViewModelProvider(this)[ChatViewModel::class.java]
-
         chatViewModel = ViewModelProvider(this)[ChatScreenViewModel::class.java]
-
         if(intent.hasExtra("contactUserId")){
            contactUserId = intent.getIntExtra("contactUserId",-1).toString()
         }
@@ -151,11 +147,6 @@ class ChatActivity : AppCompatActivity() {
 
     }
 
-
-
-
-
-
     private fun settingProfileData(){
 
         if (intent?.hasExtra(AppConstant.NAME) == true) {
@@ -166,12 +157,9 @@ class ChatActivity : AppCompatActivity() {
         if(intent?.hasExtra(AppConstant.PROFILE) == true){
 
              userProfileImage = intent.getStringExtra(AppConstant.PROFILE).toString()
-
-            Log.d("TESTING_USER_PROFILE","Profile is "+userProfileImage.toString())
-
-            adapter.receiverProfile(userProfileImage.toString())
-
-            Glide.with(this)
+             Log.d("TESTING_USER_PROFILE","Profile is "+userProfileImage.toString())
+             adapter.receiverProfile(userProfileImage.toString())
+             Glide.with(this)
                 .load(userProfileImage)
                 .placeholder(R.drawable.user_img_icon) // shown while loading
                 .error(R.drawable.user_img_icon)       // shown if load fails
@@ -206,7 +194,6 @@ class ChatActivity : AppCompatActivity() {
 
         binding.imgCall.setOnClickListener {
             val channelName = "call_${System.currentTimeMillis()}"
-
             callingAudioCallApi(contactUserId.toInt(),binding.userName.text.toString(),userProfileImage)
         }
     }

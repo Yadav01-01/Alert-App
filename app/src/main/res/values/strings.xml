@@ -185,5 +185,9 @@
     <string name="apiData">data</string>
     <string name="apiMessahe">message</string>
     <string name="you_have_nt_added_any_contact_yet">You have,nt added any contact yet.</string>
-
+    <string name="view_respond">View Response</string>
+    <string name="response_by">Response By: %1$s</string>
+    <string name="no_response_text">No response text available</string>
+    <string name="response_text">Response Text</string>
+    <string name="close">Close</string>
 </resources>

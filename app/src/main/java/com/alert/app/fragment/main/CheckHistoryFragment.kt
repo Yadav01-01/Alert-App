@@ -20,12 +20,15 @@ import androidx.navigation.fragment.findNavController
 import com.alert.app.R
 import com.alert.app.activity.MainActivity
 import com.alert.app.adapter.CheckInHistoryListAdapter
+import com.alert.app.adapter.ResponseAdapter
 import com.alert.app.base.BaseApplication
 import com.alert.app.databinding.FragmentCheckHistoryBinding
 import com.alert.app.di.NetworkResult
 import com.alert.app.errormessage.AlertUtils
 import com.alert.app.errormessage.MessageClass
 import com.alert.app.listener.OnClickContact
+import com.alert.app.model.RespondModel
+import com.alert.app.model.ResponseModelParent
 import com.alert.app.model.checkhistory.AlertResponseSuccess
 import com.alert.app.model.checkhistory.CheckInHistoryAlertResponse
 import com.alert.app.model.checkhistory.CheckInHistoryAlertResponseData
@@ -40,6 +43,7 @@ class CheckHistoryFragment : Fragment(), OnClickContact {
 
     private lateinit var binding: FragmentCheckHistoryBinding
     private lateinit var adapter: CheckInHistoryListAdapter
+    private lateinit var respondAdapter : ResponseAdapter
     private lateinit var viewModel: CheckHistoryViewModel
     private val activeColor = "#0B0202"
     private val inactiveColor = "#777777"
@@ -81,7 +85,9 @@ class CheckHistoryFragment : Fragment(), OnClickContact {
 
         binding.layResponds.setOnClickListener {
             updateTabState(isCheckInTab = false)
-            getCheckHistoryAlerts("response")
+
+            getCheckInResponseAlerts("response")
+            //getCheckHistoryAlerts("response")
         }
 
         binding.backBtn.setOnClickListener {
@@ -90,6 +96,20 @@ class CheckHistoryFragment : Fragment(), OnClickContact {
 
         getCheckHistoryAlerts("check_in")
 
+    }
+
+    private fun getCheckInResponseAlerts(type: String){
+        if (BaseApplication.isOnline(requireContext())) {
+            BaseApplication.openDialog()
+            lifecycleScope.launch {
+                viewModel.checkInUserAlert(type).collect {
+                    BaseApplication.dismissDialog()
+                    handleApiResponse(it, type)
+                }
+            }
+        } else {
+            AlertUtils.showAlert(requireContext(), MessageClass.networkError, false)
+        }
     }
 
     private fun getCheckHistoryAlerts(type: String) {
@@ -124,17 +144,37 @@ class CheckHistoryFragment : Fragment(), OnClickContact {
     @SuppressLint("SetTextI18n")
     private fun handleSuccessApiResponse(data: String, type: String) {
         try {
-            val apiModel = Gson().fromJson(data, CheckInHistoryAlertResponse::class.java)
-            Log.d("@@@ addMea List ", "message :- $data")
-            if (apiModel.code == 200 && apiModel.status) {
-                if (apiModel.data != null) {
-                    showDataInUI(apiModel.data, type)
-                }/*else{
+            if(type.equals("check_in", true)) {
+                val apiModel = Gson().fromJson(data, CheckInHistoryAlertResponse::class.java)
+                Log.d("@@@ addMea List ", "message :- $data")
+                if (apiModel.code == 200 && apiModel.status) {
+                    if (apiModel.data != null) {
+                        showDataInUI(apiModel.data, type)
+                    }/*else{
                     showAlert(apiModel.message, false)
                 }*/
-            } else {
-                handleError(apiModel.code, apiModel.message)
+                } else {
+                    handleError(apiModel.code, apiModel.message)
+                }
             }
+            else{
+                val apiModel = Gson().fromJson(data, ResponseModelParent::class.java)
+
+                Log.d("@@@ addMea List ", "message :- $data")
+                if (apiModel.code == 200 && apiModel.status) {
+                    if (apiModel.data != null) {
+
+                        respondAdapter.updateData(apiModel.data)
+
+
+                    }/*else{
+                    showAlert(apiModel.message, false)
+                }*/
+                } else {
+                    handleError(apiModel.code, apiModel.message)
+                }
+            }
+
         } catch (e: Exception) {
             showAlert(e.message, false)
         }
@@ -174,6 +214,9 @@ class CheckHistoryFragment : Fragment(), OnClickContact {
     private fun setupAdapter() {
         adapter = CheckInHistoryListAdapter(requireContext(), type,dataSelfAlert, this)
         binding.rcyData.adapter = adapter
+        respondAdapter = ResponseAdapter(requireContext(), type,mutableListOf(), this)
+        binding.rcyDataRespond.adapter = respondAdapter
+
     }
 
     private fun updateTabState(isCheckInTab: Boolean) {
@@ -183,7 +226,16 @@ class CheckHistoryFragment : Fragment(), OnClickContact {
             checkIns.setTextColor(Color.parseColor(if (isCheckInTab) activeColor else inactiveColor))
             responds.setTextColor(Color.parseColor(if (isCheckInTab) inactiveColor else activeColor))
         }
-        adapter.listUpdate(if (isCheckInTab) "check_in" else "response")
+
+        if(isCheckInTab){
+            binding.rcyData.visibility = View.VISIBLE
+            binding.rcyDataRespond.visibility = View.GONE
+        }else{
+            binding.rcyData.visibility = View.GONE
+            binding.rcyDataRespond.visibility = View.VISIBLE
+        }
+
+        //adapter.listUpdate(if (isCheckInTab) "check_in" else "response")
     }
 
 
@@ -199,7 +251,9 @@ class CheckHistoryFragment : Fragment(), OnClickContact {
         }
 
         with(dialog) {
-            findViewById<ImageView>(R.id.img_close).setOnClickListener { dismiss() }
+            findViewById<ImageView>(R.id.img_close).setOnClickListener {
+                dismiss()
+            }
 
             val edText = findViewById<TextView>(R.id.ed_text)
             val tvAlertUserName = findViewById<TextView>(R.id.tvAlertUserName)

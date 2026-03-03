@@ -1,7 +1,7 @@
 buildscript {
 
     dependencies {
-        //  classpath("com.android.tools.build:gradle:8.0.2")
+
         classpath("com.android.tools.build:gradle:8.4.2")
         classpath ("com.google.firebase:firebase-crashlytics-gradle:2.9.9")
         classpath("com.google.dagger:hilt-android-gradle-plugin:2.52")

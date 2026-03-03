@@ -149,50 +149,6 @@ class ChatRepository @Inject constructor(private val firestore: FirebaseFirestor
             }
     }
 
-
-//    fun observeChatList(
-//        users: List<ChatUserModel>, myUserId: String
-//    ): Flow<List<ChatListItem>> = callbackFlow {
-//
-//        val chatIds = users.mapNotNull { it.chat_id }
-//
-//        if (chatIds.isEmpty()) {
-//            trySend(emptyList())
-//            close()
-//            return@callbackFlow
-//        }
-//
-//        val listener = firestore.collection("chats")
-//            .whereIn(FieldPath.documentId(), chatIds)
-//            .addSnapshotListener { snapshot, error ->
-//
-//                if (error != null || snapshot == null) {
-//                    trySend(emptyList())
-//                    return@addSnapshotListener
-//                }
-//                val chatMap = snapshot.documents.associateBy { it.id }
-//                val result = users.mapNotNull { user ->
-//                val chatDoc = chatMap[user.chat_id] ?: return@mapNotNull null
-//                    val isLiveLocation = chatDoc.getString("type") == "location"
-//                    ChatListItem(
-//                        chatId = user.chat_id!!,
-//                        userId = user.id!!,
-//                        fullName = user.full_name.orEmpty(),
-//                        profile = user.profile.orEmpty(),
-//                        lastMessage = chatDoc.getString("lastMessage"),
-//                        lastMessageTime = chatDoc.getTimestamp("lastMessageTime"), // ✅ FIX
-//                        unreadCount = chatDoc
-//                            .getLong("unreadCount_$myUserId")
-//                            ?.toInt() ?: 0,
-//                        isLiveLocation = isLiveLocation
-//                    )
-//                }.sortedByDescending { it.lastMessageTime?.toDate()?.time ?: 0 }
-//
-//                trySend(result)
-//            }
-//        awaitClose { listener.remove() }
-//    }
-
     fun observeChatList(
         users: List<ChatUserModel>,
         myUserId: String
