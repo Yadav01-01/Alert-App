@@ -70,23 +70,50 @@ class TutorialsFragment : Fragment() {
             loadTutorials()
         }
 
+        // Setup VideoView listeners
+        setupVideoViewListeners()
 
         loadTutorials()
 
 
 
         binding.btnPlay.setOnClickListener {
-            binding.video.start()
+            binding.btnPlay.visibility = View.GONE
             binding.ivUploadFeedItem.visibility = View.GONE
             binding.video.visibility = View.VISIBLE
-            binding.progess.visibility = View.GONE
-            binding.btnPlay.visibility = View.GONE
+            binding.progess.visibility = View.VISIBLE
         }
 
         binding.imgBack.setOnClickListener {
             findNavController().navigateUp()
         }
 
+    }
+
+    private fun setupVideoViewListeners() {
+        binding.video.setOnPreparedListener { mediaPlayer ->
+            binding.progess.visibility = View.GONE
+            mediaPlayer.start()
+            Log.d("@@@ VideoView", "Video prepared and started")
+        }
+
+        binding.video.setOnErrorListener { _, what, extra ->
+            Log.e("@@@ VideoView Error", "Error: $what, Extra: $extra")
+            binding.progess.visibility = View.GONE
+            binding.ivUploadFeedItem.visibility = View.VISIBLE
+            binding.video.visibility = View.GONE
+            binding.btnPlay.visibility = View.VISIBLE
+            showAlert("Video playback error. Please try again.", false)
+            true
+        }
+
+        binding.video.setOnCompletionListener {
+            Log.d("@@@ VideoView", "Video completed")
+            binding.progess.visibility = View.GONE
+            binding.ivUploadFeedItem.visibility = View.VISIBLE
+            binding.video.visibility = View.GONE
+            binding.btnPlay.visibility = View.VISIBLE
+        }
     }
 
     private fun loadTutorials() {
@@ -133,9 +160,17 @@ class TutorialsFragment : Fragment() {
     private fun showDataUi(data: Data) {
         try {
             data.url.let {
-                binding.video.visibility=View.GONE
-                binding.ivUploadFeedItem.visibility=View.VISIBLE
-                binding.btnPlay.visibility=View.GONE
+                binding.video.visibility = View.GONE
+                binding.ivUploadFeedItem.visibility = View.VISIBLE
+                binding.btnPlay.visibility = View.VISIBLE
+                binding.progess.visibility = View.GONE
+
+                // Pre-load video URI so it's ready when user clicks play
+                if (!data.url.isNullOrEmpty()) {
+                    binding.video.setVideoURI(Uri.parse(data.url))
+                    Log.d("@@@ VideoView", "Video URI pre-loaded: ${data.url}")
+                }
+
                 Glide.with(requireContext())
                     .load(data.url)
                     .error(R.drawable.img_not_found)
@@ -148,7 +183,8 @@ class TutorialsFragment : Fragment() {
                             isFirstResource: Boolean
                         ): Boolean {
                             binding.progess.visibility = View.GONE
-                            binding.btnPlay.visibility = View.GONE
+                            binding.btnPlay.visibility = View.VISIBLE
+                            Log.e("@@@ Glide Error", "Failed to load image: ${e?.message}")
                             return false
                         }
 
@@ -161,19 +197,20 @@ class TutorialsFragment : Fragment() {
                         ): Boolean {
                             binding.progess.visibility = View.GONE
                             binding.btnPlay.visibility = View.VISIBLE
-                            binding.video.setVideoURI(Uri.parse(data.url))
+                            Log.d("@@@ Glide", "Thumbnail loaded successfully")
                             return false
                         }
                     })
                     .into(binding.ivUploadFeedItem)
             }?: run {
                 binding.progess.visibility = View.GONE
-                binding.video.visibility=View.GONE
-                binding.ivUploadFeedItem.visibility=View.VISIBLE
-                binding.btnPlay.visibility=View.GONE
+                binding.video.visibility = View.GONE
+                binding.ivUploadFeedItem.visibility = View.VISIBLE
+                binding.btnPlay.visibility = View.GONE
             }
 
-        }catch (e:Exception){
+        } catch (e: Exception) {
+            Log.e("@@@ Exception", "Error in showDataUi: ${e.message}", e)
             showAlert(e.message.toString(), false)
         }
     }

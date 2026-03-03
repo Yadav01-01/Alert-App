@@ -36,9 +36,9 @@ class WatchOverMeViewModel @Inject constructor(private val repository: MainRepos
     }
 
     suspend fun liveLocation(
-
+userId : String
     ): Flow<NetworkResult<LiveLocationResponse>> {
-        return repository.liveLocation().onEach {
+        return repository.liveLocation(userId).onEach {
                 result ->
             _liveLocation.value = result
         }
@@ -49,6 +49,16 @@ class WatchOverMeViewModel @Inject constructor(private val repository: MainRepos
     ): Flow<NetworkResult<AllLiveJourneyResponse>> {
         return repository.getAllLiveLocation().onEach {   result ->
             _allLiveJourneys.value = result
+
+        }
+    }
+
+
+    suspend fun setAlertWrongPath(
+        journeyId : String,
+    ): Flow<NetworkResult<String>> {
+        return repository.setAlertWrongPath(journeyId).onEach {   result ->
+         //   _allLiveJourneys.value = result
 
         }
     }

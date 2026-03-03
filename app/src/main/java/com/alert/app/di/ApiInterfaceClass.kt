@@ -379,11 +379,25 @@ interface ApiInterfaceClass {
     ) : Response<JsonObject>
 
     @POST(ApiEndPoint.LIVE_LOCATION)
+
     suspend fun liveLocation(
+
     ) : Response<JsonObject>
 
     @POST(ApiEndPoint.GET_ALL_LIVE_LOCATION)
     suspend fun getAllLiveLocation(
+    ) : Response<JsonObject>
+
+
+    @POST(ApiEndPoint.SET_ALERT_WRONG_PATH)
+    @FormUrlEncoded
+    suspend fun setAlertWrongPath(
+        @Field("journey_id") journeyId : String,
+    ) : Response<JsonObject>
+
+    @POST(ApiEndPoint.GET_ALERT_WRONG_PATH)
+  //  @FormUrlEncoded
+    suspend fun getAlertWrongPath(
     ) : Response<JsonObject>
 
 

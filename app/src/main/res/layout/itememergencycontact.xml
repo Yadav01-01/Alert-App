@@ -41,16 +41,15 @@
             android:orientation="horizontal"
             android:weightSum="1">
 
-            <LinearLayout
+            <RelativeLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_toStartOf="@id/lay_end"
                 android:orientation="vertical">
 
                 <TextView
                     android:id="@+id/tvName"
                     android:layout_width="match_parent"
-                    android:layout_height="match_parent"
+                    android:layout_height="wrap_content"
                     android:drawablePadding="@dimen/_10sdp"
                     android:fontFamily="@font/urbanist_medium"
                     android:gravity="center|start"
@@ -60,9 +59,44 @@
                     android:textStyle="bold" />
 
                 <LinearLayout
+                    android:id="@+id/lay_end"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_alignParentEnd="true"
+                    android:layout_marginEnd="@dimen/_10sdp"
+                    android:orientation="vertical">
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:gravity="center"
+                        android:orientation="horizontal"
+                        tools:ignore="UselessParent">
+
+                        <ImageView
+                            android:id="@+id/imgChat"
+                            android:layout_width="@dimen/_20sdp"
+                            android:layout_height="@dimen/_20sdp"
+                            android:layout_marginEnd="@dimen/_5sdp"
+                            android:src="@drawable/chat_round_line_svgrepo_com" />
+
+                        <ImageView
+                            android:id="@+id/imgCall"
+                            android:layout_width="@dimen/_20sdp"
+                            android:layout_height="@dimen/_20sdp"
+                            android:layout_marginStart="@dimen/_5sdp"
+                            android:src="@drawable/chat_round_line_call" />
+
+                    </LinearLayout>
+
+                </LinearLayout>
+
+                <LinearLayout
+                    android:id="@+id/llMiles"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="@dimen/_5sdp"
+                    android:layout_below="@+id/tvName"
                     android:orientation="horizontal">
 
                     <TextView
@@ -99,41 +133,12 @@
                     android:fontFamily="@font/urbanist_medium"
                     android:gravity="center|start"
                     android:text="+91 000 0000"
+                    android:layout_below="@+id/llMiles"
                     android:textColor="@color/black"
                     android:textSize="@dimen/_10sdp" />
-            </LinearLayout>
+            </RelativeLayout>
 
-            <LinearLayout
-                android:id="@+id/lay_end"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_alignParentEnd="true"
-                android:orientation="vertical">
 
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:gravity="center"
-                    android:orientation="horizontal"
-                    tools:ignore="UselessParent">
-
-                    <ImageView
-                        android:id="@+id/imgChat"
-                        android:layout_width="@dimen/_20sdp"
-                        android:layout_height="@dimen/_20sdp"
-                        android:layout_marginEnd="@dimen/_5sdp"
-                        android:src="@drawable/chat_round_line_svgrepo_com" />
-
-                    <ImageView
-                        android:id="@+id/imgCall"
-                        android:layout_width="@dimen/_20sdp"
-                        android:layout_height="@dimen/_20sdp"
-                        android:layout_marginStart="@dimen/_5sdp"
-                        android:src="@drawable/chat_round_line_call" />
-
-                </LinearLayout>
-
-            </LinearLayout>
         </RelativeLayout>
 
     </LinearLayout>

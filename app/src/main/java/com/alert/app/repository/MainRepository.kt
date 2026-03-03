@@ -237,12 +237,16 @@ interface MainRepository {
         @Field("destination_longitude") destinationLongitude : String,
     ) : Flow<NetworkResult<JourneyStarted>>
 
-    suspend fun liveLocation() : Flow<NetworkResult<LiveLocationResponse>>
+    suspend fun liveLocation(userId : String) : Flow<NetworkResult<LiveLocationResponse>>
     suspend fun getAllLiveLocation() : Flow<NetworkResult<AllLiveJourneyResponse>>
 
     suspend fun blockToggleSelfAlert(
         @Field("alert_id") alertId :Int,
         @Field("is_blocked") isBlocked :Int
+    ) :Flow<NetworkResult<String>>
+
+    suspend fun setAlertWrongPath(
+        @Field("journey_id") journeyId : String,
     ) :Flow<NetworkResult<String>>
 
 }

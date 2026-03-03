@@ -816,7 +816,8 @@ class MainActivity : AppCompatActivity() {
         }
 
         tvLogout.setOnClickListener {
-            alertBoxLogOut()
+           // alertBoxLogOut()
+            showConfirmationDialog()
         }
     }
 
@@ -1020,5 +1021,70 @@ class MainActivity : AppCompatActivity() {
             binding.imgsetting.visibility = View.VISIBLE
         }
     }
+    private fun showConfirmationDialog() {
+        val dialog = Dialog(this).apply {
+            setContentView(R.layout.dialog_logout)
+            setCancelable(false)
+            window?.apply {
+                setBackgroundDrawable(ColorDrawable(Color.TRANSPARENT))
+                attributes = attributes?.apply { copyFrom(attributes) }
+                setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_STATE_ALWAYS_VISIBLE)
+            }
+        }
 
+        dialog.apply {
+            findViewById<TextView>(R.id.tvOK).setOnClickListener {
+                dismiss()
+
+                    userLogout()
+
+            }
+            findViewById<TextView>(R.id.tvNo).setOnClickListener { dismiss() }
+            findViewById<ImageView>(R.id.img_close).setOnClickListener { dismiss() }
+            show()
+        }
+    }
+
+    private fun userLogout() {
+        if (BaseApplication.isOnline(this)) {
+            BaseApplication.openDialog()
+            lifecycleScope.launch {
+                viewModel.userLogout().collect {
+                    BaseApplication.dismissDialog()
+                    when (it) {
+                        is NetworkResult.Success -> {
+                            it.data?.let {
+                                if (it.has(getString(R.string.apiCode)) && it.get(getString(R.string.apiCode)).asInt==200) {
+                                    sessionManagement.logOut()
+                                    navigateToLogin()
+                                }else{
+                                    Toast.makeText(
+                                        this@MainActivity,
+                                        it.get(getString(R.string.apiMessahe)).asString,
+                                        Toast.LENGTH_LONG
+                                    ).show()
+                                }
+                            }
+                        }
+                        is NetworkResult.Error -> {
+                            Toast.makeText(
+                                this@MainActivity,
+                                it.message.toString(),
+                                Toast.LENGTH_LONG
+                            ).show()
+                        }
+                    }
+                }
+            }
+        }else{
+            AlertUtils.showAlert(this@MainActivity, MessageClass.networkError, false)
+        }
+    }
+    private fun navigateToLogin() {
+        val intent=Intent(this, AuthActivity::class.java)
+        intent. putExtra("openScreen", "Login")
+        intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+        startActivity(intent)
+        finish()
+    }
 }

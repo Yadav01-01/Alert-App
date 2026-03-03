@@ -4,11 +4,8 @@ import android.annotation.SuppressLint
 import android.content.Intent
 import android.graphics.Color
 import android.os.Bundle
-import android.text.Editable
 import android.text.Html
-import android.text.TextWatcher
 import android.util.Log
-import androidx.fragment.app.Fragment
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -16,16 +13,13 @@ import android.widget.AdapterView
 import android.widget.Toast
 import androidx.activity.OnBackPressedCallback
 import androidx.core.widget.doAfterTextChanged
+import androidx.fragment.app.Fragment
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.lifecycleScope
 import androidx.navigation.fragment.findNavController
-import com.alert.app.BuildConfig
-import com.bumptech.glide.Glide
-import com.github.dhaval2404.imagepicker.ImagePicker
 import com.alert.app.R
 import com.alert.app.activity.MainActivity
 import com.alert.app.adapter.PlacesAutoCompleteAdapter
-import com.alert.app.base.AppConstant
 import com.alert.app.base.BaseApplication
 import com.alert.app.base.SessionManagement
 import com.alert.app.base.ValidationUtils
@@ -39,6 +33,8 @@ import com.alert.app.model.addressmodel.PlaceDetails
 import com.alert.app.viewmodel.profileviewmodel.UserProfileViewModel
 import com.alert.app.viewmodel.profileviewmodel.apiresponse.Data
 import com.alert.app.viewmodel.profileviewmodel.apiresponse.UserProfileModel
+import com.bumptech.glide.Glide
+import com.github.dhaval2404.imagepicker.ImagePicker
 import com.google.gson.Gson
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
@@ -49,11 +45,8 @@ import okhttp3.RequestBody.Companion.toRequestBody
 import java.io.File
 import java.util.regex.Pattern
 
-
-
 @AndroidEntryPoint
 class HomeProfileFragment : Fragment() {
-
     private var _binding: FragmentHomeProfileBinding? = null
     private val binding get() = _binding!!
     private lateinit var sessionManagement: SessionManagement
@@ -257,7 +250,8 @@ class HomeProfileFragment : Fragment() {
                     .error(R.drawable.user_img_icon)
                     .into(binding.userImg)
             }
-
+// here 2702
+           // checkEditable(false)
         } catch (e: Exception) {
             showAlert(e.message.toString(), false)
         }

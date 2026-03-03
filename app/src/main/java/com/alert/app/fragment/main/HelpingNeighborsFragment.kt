@@ -43,6 +43,7 @@ import com.alert.app.R
 import com.alert.app.activity.MainActivity
 import com.alert.app.adapter.AddressAdapter
 import com.alert.app.adapter.HelpingNeighborsAdapter
+import com.alert.app.adapter.NeighborsAcceptReqAdapter
 import com.alert.app.adapter.PlacesAutoCompleteAdapter
 import com.alert.app.base.AppConstant
 import com.alert.app.base.BaseApplication
@@ -108,6 +109,7 @@ class HelpingNeighborsFragment : Fragment() , OnClickContact, OnMapReadyCallback
     private lateinit var viewModel: HelpingNeighborViewModel
     private lateinit var openBottomSheetDialog: BottomSheetDialog
     private lateinit var adapter: HelpingNeighborsAdapter
+    private lateinit var adapter1: NeighborsAcceptReqAdapter
     private var selectedAlertId = -1
     private var selectedRelationId = -1
     private var relation: List<Relation> = mutableListOf()
@@ -150,7 +152,20 @@ class HelpingNeighborsFragment : Fragment() , OnClickContact, OnMapReadyCallback
     private fun initialize() {
 
         adapter=  HelpingNeighborsAdapter(requireContext(),getContactList,this)
+        adapter1 = NeighborsAcceptReqAdapter(
+            requireContext(),
+            getContactList,
+            object : OnClickContact {
+                override fun onClick(type: String, position: String) {
+                    if (type == "openProfile") {
+                        val clickedItem = getContactList[position.toInt()]
+                        // Yaha apna logic likho
+                    }
+                }
+            }
+        )
         binding.rcyData.adapter= adapter
+        binding.rcyData1.adapter= adapter1
 
         binding.btnAdd.setOnClickListener {
             alertBottom()
@@ -175,6 +190,16 @@ class HelpingNeighborsFragment : Fragment() , OnClickContact, OnMapReadyCallback
             getHelpingNeighbor(lat,lng)
 
          }
+        binding.tvRequest.setOnClickListener {
+            binding.layno.visibility = View.GONE
+            binding.tvTitle.visibility = View.GONE
+            binding.rcyData.visibility = View.GONE
+            binding.rcyData1.visibility = View.VISIBLE
+            binding.layCurrentLocation.visibility = View.GONE
+            binding.btnAddNow.visibility = View.GONE
+        }
+
+
 
     }
 
@@ -198,6 +223,7 @@ class HelpingNeighborsFragment : Fragment() , OnClickContact, OnMapReadyCallback
                 BaseApplication.dismissDialog()
                 showAlert(it.message, false)
                 adapter.update(mutableListOf<Contact>())
+                adapter1.update(mutableListOf<Contact>())
             }
 
             else ->{
@@ -246,6 +272,7 @@ class HelpingNeighborsFragment : Fragment() , OnClickContact, OnMapReadyCallback
                 binding.layCurrentLocation.visibility = View.VISIBLE
                 binding.btnAddNow.visibility = View.VISIBLE
                 adapter.update(getContactList)
+                adapter1.update(getContactList)
             } else {
                 binding.layno.visibility = View.VISIBLE
                 binding.tvTitle.visibility = View.GONE

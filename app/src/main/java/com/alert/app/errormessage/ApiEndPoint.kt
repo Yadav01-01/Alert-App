@@ -69,5 +69,7 @@ object ApiEndPoint {
     const val START_JOURNEY = "api/start_journey"
     const val LIVE_LOCATION = "api/live_location"
     const val GET_ALL_LIVE_LOCATION = "api/get_all_live_journey"
+    const val SET_ALERT_WRONG_PATH = "api/set_alert_wrong_path"
+    const val GET_ALERT_WRONG_PATH = "api/get_alert_wrong_path"
 
 }

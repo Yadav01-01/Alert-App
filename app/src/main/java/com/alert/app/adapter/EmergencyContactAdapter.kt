@@ -51,7 +51,15 @@ class EmergencyContactAdapter(
 
             // Set distance if available
             data.distanceMiles?.let {
-                holder.binding.textMilesAway.text = it.toString()
+                val distance = it.toString().toDoubleOrNull()
+
+                val formattedDistance = if (distance != null) {
+                    String.format("%.1f Miles Away", distance)
+                } else {
+                    "0 Miles Away"
+                }
+
+                holder.binding.textMilesAway.text = formattedDistance
             }
 
             // Set relation if available

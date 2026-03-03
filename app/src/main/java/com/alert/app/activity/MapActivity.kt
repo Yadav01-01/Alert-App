@@ -1,391 +1,121 @@
 package com.alert.app.activity
 
-import android.os.Bundle
-import android.os.Handler
-import android.os.Looper
+
+import android.annotation.SuppressLint
+import android.graphics.*
+import android.os.*
 import android.util.Log
+import android.view.LayoutInflater
+import android.view.View
+import android.widget.LinearLayout
+import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.lifecycleScope
-import com.alert.app.DirectionsApiService
-import com.alert.app.DirectionsResponse
 import com.alert.app.R
+import com.alert.app.base.SessionManagement
 import com.alert.app.di.NetworkResult
 import com.alert.app.viewmodel.watchovermeviewmodel.WatchOverMeViewModel
-import com.google.android.gms.maps.CameraUpdateFactory
-import com.google.android.gms.maps.GoogleMap
-import com.google.android.gms.maps.OnMapReadyCallback
-import com.google.android.gms.maps.SupportMapFragment
+import com.google.android.gms.maps.*
 import com.google.android.gms.maps.model.*
-import com.google.maps.android.PolyUtil
 import dagger.hilt.android.AndroidEntryPoint
-import kotlinx.coroutines.launch
-import retrofit2.Call
-import retrofit2.Callback
-import retrofit2.Response
-import retrofit2.Retrofit
-import retrofit2.converter.gson.GsonConverterFactory
-import androidx.lifecycle.lifecycleScope
-import com.google.android.gms.maps.model.*
-import kotlinx.coroutines.launch
-
+import kotlinx.coroutines.*
+import kotlinx.coroutines.flow.collect
+import okhttp3.OkHttpClient
+import okhttp3.Request
+import org.json.JSONObject
+import java.net.URL
+import kotlin.math.*
 
 @AndroidEntryPoint
 class MapActivity : AppCompatActivity(), OnMapReadyCallback {
 
     private lateinit var mMap: GoogleMap
     private lateinit var viewModel: WatchOverMeViewModel
-    private val handler = Handler(Looper.getMainLooper())
-    private lateinit var runnable: Runnable
 
     private var currentMarker: Marker? = null
     private var pickupMarker: Marker? = null
     private var destinationMarker: Marker? = null
     private var currentPolyline: Polyline? = null
 
-    private var currentLat = 0.0
-    private var currentLng = 0.0
-    private var pickupLat = 0.0
-    private var pickupLng = 0.0
-    private var destLat = 0.0
-    private var destLng = 0.0
-    private var journeyId = 0
-    private var routeDrawn = false
+    private var journeyId = ""
+    private var correctRoutePoints: List<LatLng> = emptyList()
+
+    private val handler = Handler(Looper.getMainLooper())
+    private var runnable: Runnable? = null
+
+    private val DEVIATION_THRESHOLD_METERS = 30.0
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_map)
 
-        // Get journeyId from intent
-        journeyId = intent.getStringExtra("journey_id")?.toIntOrNull() ?: 0
+        journeyId = intent.getStringExtra("journey_id") ?: ""
 
-        if (journeyId == 0) {
+        if (journeyId.isEmpty()) {
             Toast.makeText(this, "Invalid Journey ID", Toast.LENGTH_SHORT).show()
             finish()
             return
         }
 
-        Log.d("MapActivity", "Journey ID: $journeyId")
-
         viewModel = ViewModelProvider(this)[WatchOverMeViewModel::class.java]
-        val mapFragment = supportFragmentManager.findFragmentById(R.id.map) as SupportMapFragment
+
+        val mapFragment =
+            supportFragmentManager.findFragmentById(R.id.map) as SupportMapFragment
         mapFragment.getMapAsync(this)
-
-        // Fetch journey details
-        fetchJourneyDetails()
-    }
-
-    private fun fetchJourneyDetails() {
-        lifecycleScope.launch {
-            viewModel.getAllLiveLocation().collect { result ->
-                when (result) {
-                    is NetworkResult.Success -> {
-                        val journeys = result.data?.data?.journeys
-                        if (!journeys.isNullOrEmpty()) {
-                            // Find the specific journey by ID
-                            val journey = journeys.find { it.journeyId == journeyId }
-
-                            journey?.let {
-                                pickupLat = it.currentPickupLatitude.toDouble()
-                                pickupLng = it.currentPickupLongitude.toDouble()
-                                currentLat = it.userCurrentLatitude.toDouble()
-                                currentLng = it.userCurrentLongitude.toDouble()
-                                destLat = it.userDestinationLatitude.toDouble()
-                                destLng = it.userDestinationLongitude.toDouble()
-
-                                runOnUiThread {
-                                    setupMapWithLocations()
-                                    startLiveLocationUpdates()
-                                }
-                            } ?: run {
-                                Toast.makeText(this@MapActivity, "Journey not found", Toast.LENGTH_SHORT).show()
-                                finish()
-                            }
-                        }
-                    }
-                    is NetworkResult.Error -> {
-                        Toast.makeText(this@MapActivity, result.message, Toast.LENGTH_SHORT).show()
-                    }
-                    else -> {}
-                }
-            }
-        }
-    }
-
-    private fun setupMapWithLocations() {
-        val pickup = LatLng(pickupLat, pickupLng)
-        val destination = LatLng(destLat, destLng)
-        val current = LatLng(currentLat, currentLng)
-
-        // Add markers
-        pickupMarker = mMap.addMarker(
-            MarkerOptions()
-                .position(pickup)
-                .title("Pickup Location")
-                .icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_BLUE))
-        )
-
-        destinationMarker = mMap.addMarker(
-            MarkerOptions()
-                .position(destination)
-                .title("Destination")
-                .icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_GREEN))
-        )
-
-        currentMarker = mMap.addMarker(
-            MarkerOptions()
-                .position(current)
-                .title("Current Location")
-                .icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_RED))
-        )
-
-        // Zoom to show entire route
-        val boundsBuilder = LatLngBounds.builder()
-        boundsBuilder.include(pickup)
-        boundsBuilder.include(destination)
-        boundsBuilder.include(current)
-
-        mMap.moveCamera(CameraUpdateFactory.newLatLngBounds(boundsBuilder.build(), 100))
-
-        // Draw route from pickup to destination
-        fetchAndDrawRoute(pickup, destination)
-    }
-
-    private fun fetchAndDrawRoute(origin: LatLng, dest: LatLng) {
-        val url = "https://maps.googleapis.com/maps/api/directions/json?" +
-                "origin=${origin.latitude},${origin.longitude}" +
-                "&destination=${dest.latitude},${dest.longitude}" +
-                "&key=YOUR_GOOGLE_MAPS_API_KEY" // Replace with your API key
-
-        val request = Retrofit.Builder()
-            .baseUrl("https://maps.googleapis.com/")
-            .addConverterFactory(GsonConverterFactory.create())
-            .build()
-            .create(DirectionsApiService::class.java)
-            .getDirections(url)
-
-        request.enqueue(object : Callback<DirectionsResponse> {
-            override fun onResponse(call: Call<DirectionsResponse>, response: Response<DirectionsResponse>) {
-                if (response.isSuccessful) {
-                    val points = response.body()?.routes?.firstOrNull()?.overviewPolyline?.points
-                    points?.let {
-                        val decodedPath = PolyUtil.decode(it)
-
-                        // Remove old polyline if exists
-                        currentPolyline?.remove()
-
-                        // Draw new route
-                        currentPolyline = mMap.addPolyline(
-                            PolylineOptions()
-                                .addAll(decodedPath)
-                                .color(0xFF2196F3.toInt()) // Blue color
-                                .width(8f)
-                        )
-
-                        routeDrawn = true
-                    }
-                }
-            }
-
-            override fun onFailure(call: Call<DirectionsResponse>, t: Throwable) {
-                Log.e("MapActivity", "Route fetch failed", t)
-                Toast.makeText(this@MapActivity, "Failed to load route", Toast.LENGTH_SHORT).show()
-            }
-        })
-    }
-
-    private fun startLiveLocationUpdates() {
-        runnable = object : Runnable {
-            override fun run() {
-                lifecycleScope.launch {
-                    viewModel.liveLocation().collect { result ->
-                        when (result) {
-                            is NetworkResult.Success -> {
-                                val locationList = result.data?.data
-
-                                locationList?.let { list ->
-                                    // Find the location data for our journey
-                                    val locationData = list.find { it.journeyId == journeyId }
-
-                                    locationData?.let { data ->
-                                        val lat = data.currentLatitude?.toDoubleOrNull()
-                                        val lng = data.currentLongitude?.toDoubleOrNull()
-
-                                        if (lat != null && lng != null) {
-                                            val newPos = LatLng(lat, lng)
-
-                                            runOnUiThread {
-                                                // Update current location marker
-                                                if (currentMarker == null) {
-                                                    currentMarker = mMap.addMarker(
-                                                        MarkerOptions()
-                                                            .position(newPos)
-                                                            .title("Current Location")
-                                                            .icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_RED))
-                                                    )
-                                                } else {
-                                                    currentMarker?.position = newPos
-                                                }
-
-                                                // Animate camera to follow user
-                                                mMap.animateCamera(
-                                                    CameraUpdateFactory.newLatLngZoom(newPos, 16f)
-                                                )
-
-                                                // Optional: Show route status if available
-                                                data.routeStatus?.let { status ->
-                                                    Log.d("MapActivity", "Route Status: $status")
-                                                    // You can show this status in a TextView if needed
-                                                }
-                                            }
-                                        }
-                                    }
-                                }
-                            }
-                            is NetworkResult.Error -> {
-                                Log.e("MapActivity", "Live location error: ${result.message}")
-                            }
-                            else -> {}
-                        }
-                    }
-                }
-                handler.postDelayed(this, 5000) // Update every 5 seconds
-            }
-        }
-        handler.post(runnable)
     }
 
     override fun onMapReady(googleMap: GoogleMap) {
         mMap = googleMap
-
-        // Enable zoom controls
         mMap.uiSettings.isZoomControlsEnabled = true
-        mMap.uiSettings.isMyLocationButtonEnabled = true
+        fetchJourneyDetails()
     }
 
-    override fun onDestroy() {
-        super.onDestroy()
-        handler.removeCallbacks(runnable)
-    }
-}
+    // =====================================================
+    // FETCH JOURNEY DATA (ONLY SELECTED JOURNEY)
+    // =====================================================
 
-/*
-@AndroidEntryPoint
-class MapActivity : AppCompatActivity(), OnMapReadyCallback {
+    private fun fetchJourneyDetails() {
 
-    private lateinit var mMap: GoogleMap
-    private lateinit var viewModel: WatchOverMeViewModel
-    private val handler = Handler(Looper.getMainLooper())
-    private lateinit var runnable: Runnable
-
-    private var currentMarker: Marker? = null
-    private var pickupMarker: Marker? = null
-    private var destinationMarker: Marker? = null
-
-    private var currentLat = 0.0
-    private var currentLng = 0.0
-    private var destLat = 0.0
-    private var destLng = 0.0
-    private var journeyId = 0
-    private val token = "your_api_token_here"
-
-    override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
-        setContentView(R.layout.activity_map)
-        val journeyId = intent.getStringExtra("journey_id")
-
-        if (!journeyId.isNullOrEmpty()) {
-            Log.d("MapActivity", "Journey ID: $journeyId")
-
-            // Yaha se API call karo ya journey start logic likho
-        }
-        viewModel = ViewModelProvider(this)[WatchOverMeViewModel::class.java]
-        val mapFragment = supportFragmentManager.findFragmentById(R.id.map) as SupportMapFragment
-        mapFragment.getMapAsync(this)
-
-
-
-       // apiService = retrofit.create(ApiService::class.java)
-
-        fetchInitialJourney()
-    }
-
-    private fun fetchInitialJourney() {
         lifecycleScope.launch {
             viewModel.getAllLiveLocation().collect { result ->
-                when (result) {
-                    is NetworkResult.Success -> {
-                        val journeys = result.data?.data?.journeys
-                        if (!journeys.isNullOrEmpty()) {
-                            // You might want to select specific journey
-                            // For now taking first active journey
-                            val journey = journeys.firstOrNull()
-                            journey?.let {
-                                currentLat = it.userCurrentLatitude.toDouble()
-                                currentLng = it.userCurrentLongitude.toDouble()
-                                destLat = it.userDestinationLatitude.toDouble()
-                                destLng = it.userDestinationLongitude.toDouble()
-                                journeyId = it.journeyId
 
-                                runOnUiThread {
-                                    setupMapWithPickupAndDestination()
-                                    startLiveLocationUpdates()
-                                }
-                            }
-                        }
+                if (result is NetworkResult.Success) {
+
+                    val journey =
+                        result.data?.data?.journeys
+                            ?.find { it.journeyId.toString() == journeyId }
+
+                    journey?.let {
+
+                        val pickup = LatLng(
+                            it.currentPickupLatitude.toDouble(),
+                            it.currentPickupLongitude.toDouble()
+                        )
+
+                        val destination = LatLng(
+                            it.userDestinationLatitude.toDouble(),
+                            it.userDestinationLongitude.toDouble()
+                        )
+
+                        val current = LatLng(
+                            it.userCurrentLatitude.toDouble(),
+                            it.userCurrentLongitude.toDouble()
+                        )
+
+                        setupMarkers(pickup, destination, current)
+                        fetchAndDrawRoute(pickup, destination)
+                        startLiveLocationUpdates()
                     }
-
-                    is NetworkResult.Error -> {
-                        // Handle error
-                        Toast.makeText(this@MapActivity, result.message, Toast.LENGTH_SHORT).show()
-                    }
-
                 }
             }
         }
     }
-    private fun setupMapWithPickupAndDestination() {
-        val pickup = LatLng(currentLat, currentLng)
-        val destination = LatLng(destLat, destLng)
 
-        pickupMarker = mMap.addMarker(MarkerOptions().position(pickup).title("Pickup Location"))
-        destinationMarker = mMap.addMarker(MarkerOptions().position(destination).title("Destination").icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_GREEN)))
-
-        mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(pickup, 12f))
-
-        fetchAndDrawRoute(pickup, destination)
-    }
-
-    private fun fetchAndDrawRoute(origin: LatLng, dest: LatLng) {
-        val url = "https://maps.googleapis.com/maps/api/directions/json?" +
-                "origin=${origin.latitude},${origin.longitude}" +
-                "&destination=${dest.latitude},${dest.longitude}" +
-                "&key=YOUR_GOOGLE_MAPS_API_KEY"
-
-        val request = retrofit2.Retrofit.Builder()
-            .baseUrl("https://maps.googleapis.com/")
-            .addConverterFactory(GsonConverterFactory.create())
-            .build()
-            .create(DirectionsApiService::class.java)
-            .getDirections(url)
-
-        request.enqueue(object : Callback<DirectionsResponse> {
-            override fun onResponse(call: Call<DirectionsResponse>, response: Response<DirectionsResponse>) {
-                if (response.isSuccessful) {
-                    val points = response.body()?.routes?.firstOrNull()?.overviewPolyline?.points
-                    points?.let {
-                        val decodedPath = PolyUtil.decode(it)
-                        mMap.addPolyline(PolylineOptions().addAll(decodedPath).color(0xFF0000FF.toInt()).width(8f))
-                    }
-                }
-            }
-
-            override fun onFailure(call: Call<DirectionsResponse>, t: Throwable) {
-                t.printStackTrace()
-            }
-        })
-    }
+    // =====================================================
+    // LIVE LOCATION UPDATE (ONLY JOURNEY BASED)
+    // =====================================================
 
     private fun startLiveLocationUpdates() {
 
@@ -394,57 +124,28 @@ class MapActivity : AppCompatActivity(), OnMapReadyCallback {
 
                 lifecycleScope.launch {
 
-                    viewModel.liveLocation().collect { result ->
+                    viewModel.liveLocation(
+                        SessionManagement(this@MapActivity).getUserId().toString()
+                    ).collect { result ->
 
-                        when (result) {
+                        if (result is NetworkResult.Success) {
 
-                            is NetworkResult.Success -> {
+                            val locationData =
+                                result.data?.data
+                                    ?.find { it.journeyId.toString() == journeyId }
 
-                                val locationList = result.data?.data
+                            locationData?.let { data ->
 
-                                locationList?.let { list ->
+                                val lat = data.currentLatitude?.toDoubleOrNull()
+                                val lng = data.currentLongitude?.toDoubleOrNull()
 
-                                    // Find correct journey
-                                    val locationData = list.find {
-                                        it.journeyId == journeyId
-                                    }
+                                if (lat != null && lng != null) {
 
-                                    locationData?.let { data ->
+                                    val newPosition = LatLng(lat, lng)
 
-                                        val lat = data.currentLatitude?.toDoubleOrNull()
-                                        val lng = data.currentLongitude?.toDoubleOrNull()
-
-                                        if (lat != null && lng != null) {
-
-                                            val newPos = LatLng(lat, lng)
-
-                                            if (currentMarker == null) {
-                                                currentMarker = mMap.addMarker(
-                                                    MarkerOptions()
-                                                        .position(newPos)
-                                                        .title("Current Location")
-                                                        .icon(
-                                                            BitmapDescriptorFactory
-                                                                .defaultMarker(
-                                                                    BitmapDescriptorFactory.HUE_RED
-                                                                )
-                                                        )
-                                                )
-                                            } else {
-                                                currentMarker?.position = newPos
-                                            }
-
-                                            mMap.animateCamera(
-                                                CameraUpdateFactory
-                                                    .newLatLngZoom(newPos, 16f)
-                                            )
-                                        }
-                                    }
+                                    updateCurrentMarker(newPosition)
+                                    checkDeviation(newPosition)
                                 }
-                            }
-
-                            is NetworkResult.Error -> {
-                                // Optional error handling
                             }
                         }
                     }
@@ -454,100 +155,279 @@ class MapActivity : AppCompatActivity(), OnMapReadyCallback {
             }
         }
 
-        handler.post(runnable)
+        runnable?.let { handler.post(it) }
     }
 
-    */
-/*  private fun startLiveLocationUpdates() {
-        runnable = object : Runnable {
-            override fun run() {
-               *//*
+    // =====================================================
+    // UPDATE MARKER SMOOTHLY
+    // =====================================================
 
-    */
-/* apiService.getLiveLocation(token).enqueue(object : Callback<LiveLocationResponse> {
-                    override fun onResponse(call: Call<LiveLocationResponse>, response: Response<LiveLocationResponse>) {
-                        if (response.isSuccessful) {
-                            val data = response.body()?.data
-                            data?.let {
-                                val newLat = it.current_latitude.toDouble()
-                                val newLng = it.current_longitude.toDouble()
-                                val newPos = LatLng(newLat, newLng)
+    private fun updateCurrentMarker(newPosition: LatLng) {
 
-                                runOnUiThread {
-                                    if (currentMarker == null) {
-                                        currentMarker = mMap.addMarker(MarkerOptions().position(newPos).title("Current Location").icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_BLUE)))
-                                    } else {
-                                        currentMarker?.position = newPos
-                                    }
-                                    mMap.animateCamera(CameraUpdateFactory.newLatLngZoom(newPos, 14f))
-                                }
-                            }
-                        }
-                    }
+        if (currentMarker == null) {
 
-                    override fun onFailure(call: Call<LiveLocationResponse>, t: Throwable) {
-                        t.printStackTrace()
-                    }
-                })*//*
-*/
-/*
-                lifecycleScope.launch {
-                    viewModel.liveLocation().collect { result ->
-                        when (result) {
-                            is NetworkResult.Success -> {
-                                val locationData = result.data?.data
-                                locationData?.let {
-                                    // Check if this update is for our journey
-                                    if (it.journeyId == journeyId) {
-                                        val newLat = it.currentLatitude.toDouble()
-                                        val newLng = it.currentLongitude.toDouble()
-                                        val newPos = LatLng(newLat, newLng)
+            currentMarker = mMap.addMarker(
+                MarkerOptions()
+                    .position(newPosition)
+                    .icon(getCurrentIcon())
+                    .anchor(0.5f, 0.5f)
+            )
 
-                                        runOnUiThread {
-                                            if (currentMarker == null) {
-                                                currentMarker = mMap.addMarker(
-                                                    MarkerOptions()
-                                                        .position(newPos)
-                                                        .title("Current Location")
-                                                        .icon(
-                                                            BitmapDescriptorFactory.defaultMarker(
-                                                                BitmapDescriptorFactory.HUE_RED
-                                                            )
-                                                        )
-                                                )
-                                            } else {
-                                                currentMarker?.position = newPos
-                                            }
-                                            mMap.animateCamera(
-                                                CameraUpdateFactory.newLatLngZoom(
-                                                    newPos,
-                                                    16f
-                                                )
-                                            )
-                                        }
-                                    }
-                                }
-                            }
+        } else {
 
-                            is NetworkResult.Error -> {
-                                // Handle error silently or show toast
-                            }
+            currentMarker?.position = newPosition
+        }
 
-                        }
-                handler.postDelayed(this@MapActivity, 5000)
+        mMap.animateCamera(
+            CameraUpdateFactory.newLatLngZoom(newPosition, 16f)
+        )
+    }
+
+    // =====================================================
+    // SETUP MARKERS
+    // =====================================================
+
+    private fun setupMarkers(
+        pickup: LatLng,
+        destination: LatLng,
+        current: LatLng
+    ) {
+
+      /*  pickupMarker = mMap.addMarker(
+            MarkerOptions()
+                .position(pickup)
+                .icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_GREEN))
+        )  */
+        pickupMarker = mMap.addMarker(
+            MarkerOptions()
+                .position(pickup)
+                .icon(createCustomMarker("Pickup Spot", "", ""))
+                .anchor(0.5f, 1.5f)
+                .zIndex(3f)
+        )
+        pickupMarker?.tag = "PICKUP|Not started|0.0 mi"
+
+    /*    destinationMarker = mMap.addMarker(
+            MarkerOptions()
+                .position(destination)
+                .icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_RED))
+        )  */
+        destinationMarker = mMap.addMarker(
+            MarkerOptions()
+                .position(destination)
+                .icon(createCustomMarker("Destination", "", ""))
+                .anchor(0.5f, 1.5f)
+                .zIndex(3f)
+        )
+        destinationMarker?.tag = "DEST|-- min|-- mi"
+
+        currentMarker = mMap.addMarker(
+            MarkerOptions()
+                .position(current)
+                .icon(getCurrentIcon())
+        )
+
+        val bounds = LatLngBounds.builder()
+            .include(pickup)
+            .include(destination)
+            .include(current)
+            .build()
+
+        mMap.moveCamera(CameraUpdateFactory.newLatLngBounds(bounds, 120))
+    }
+
+    // =====================================================
+    // ROUTE DRAW
+    // =====================================================
+
+    private fun fetchAndDrawRoute(origin: LatLng, dest: LatLng) {
+
+        lifecycleScope.launch {
+
+            val route = getRoute(origin, dest)
+
+            if (route.isNotEmpty()) {
+
+                correctRoutePoints = route
+
+                currentPolyline?.remove()
+
+                currentPolyline = mMap.addPolyline(
+                    PolylineOptions()
+                        .addAll(route)
+                        .width(8f)
+                        .color(Color.parseColor("#0F87CD"))
+                )
             }
         }
-        handler.post(runnable)
     }
-        }}*//*
 
+    // =====================================================
+    // ROUTE DEVIATION CHECK
+    // =====================================================
+    private suspend fun getRoute(
+        origin: LatLng,
+        dest: LatLng
+    ): List<LatLng> = withContext(Dispatchers.IO) {
 
-    override fun onMapReady(googleMap: GoogleMap) {
-        mMap = googleMap
+        try {
+            val url =
+                "https://maps.googleapis.com/maps/api/directions/json" +
+                        "?origin=${origin.latitude},${origin.longitude}" +
+                        "&destination=${dest.latitude},${dest.longitude}" +
+                        "&mode=driving" +
+                        "&key=${getString(R.string.api_key)}"
+
+            val response = OkHttpClient().newCall(
+                Request.Builder().url(url).build()
+            ).execute()
+
+            if (response.isSuccessful) {
+                val json = JSONObject(response.body?.string() ?: "")
+                val routes = json.getJSONArray("routes")
+                if (routes.length() > 0) {
+                    val poly =
+                        routes.getJSONObject(0)
+                            .getJSONObject("overview_polyline")
+                            .getString("points")
+                    return@withContext decodePolyline(poly)
+                }
+            }
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
+        emptyList()
     }
+
+        private fun decodePolyline(encoded: String): List<LatLng> {
+        val poly = mutableListOf<LatLng>()
+        var index = 0
+        var lat = 0
+        var lng = 0
+
+        while (index < encoded.length) {
+            var b: Int
+            var shift = 0
+            var result = 0
+            do {
+                b = encoded[index++].code - 63
+                result = result or (b and 0x1f shl shift)
+                shift += 5
+            } while (b >= 0x20)
+            lat += if (result and 1 != 0) (result shr 1).inv() else result shr 1
+
+            shift = 0
+            result = 0
+            do {
+                b = encoded[index++].code - 63
+                result = result or (b and 0x1f shl shift)
+                shift += 5
+            } while (b >= 0x20)
+            lng += if (result and 1 != 0) (result shr 1).inv() else result shr 1
+
+            poly.add(LatLng(lat / 1E5, lng / 1E5))
+        }
+        return poly
+    }
+    private fun checkDeviation(current: LatLng) {
+
+        if (correctRoutePoints.isEmpty()) return
+
+        val minDistance =
+            correctRoutePoints.minOf { distanceMeters(current, it) }
+
+        if (minDistance > DEVIATION_THRESHOLD_METERS) {
+
+            currentMarker?.setIcon(
+                BitmapDescriptorFactory.defaultMarker(
+                    BitmapDescriptorFactory.HUE_ORANGE
+                )
+            )
+
+        } else {
+
+            currentMarker?.setIcon(getCurrentIcon())
+        }
+    }
+
+    private fun distanceMeters(p1: LatLng, p2: LatLng): Double {
+
+        val R = 6371000.0
+
+        val dLat = Math.toRadians(p2.latitude - p1.latitude)
+        val dLon = Math.toRadians(p2.longitude - p1.longitude)
+
+        val a = sin(dLat / 2).pow(2) +
+                cos(Math.toRadians(p1.latitude)) *
+                cos(Math.toRadians(p2.latitude)) *
+                sin(dLon / 2).pow(2)
+
+        val c = 2 * atan2(sqrt(a), sqrt(1 - a))
+
+        return R * c
+    }
+
+    private fun getCurrentIcon(): BitmapDescriptor {
+
+        val bmp =
+            BitmapFactory.decodeResource(resources, R.drawable.ic_curretpathicon)
+
+        return BitmapDescriptorFactory.fromBitmap(
+            Bitmap.createScaledBitmap(bmp, 90, 90, false)
+        )
+    }
+
+    @SuppressLint("MissingInflatedId")
+    private fun createCustomMarker(title: String, time: String = "", distance: String = ""): BitmapDescriptor? {
+
+        return try {
+            val markerView =
+                LayoutInflater.from(this).inflate(R.layout.layout_marker_info, null)
+
+            val llBlue = markerView.findViewById<LinearLayout>(R.id.llBlue)
+            val tvTimeView = markerView.findViewById<TextView>(R.id.tvTime)
+            val tvDistanceView = markerView.findViewById<TextView>(R.id.tvDistance)
+            val tvTitleView = markerView.findViewById<TextView>(R.id.tvTitle)
+
+            Log.d("MarkerDebug", "tvTime found: ${tvTimeView != null}")
+            Log.d("MarkerDebug", "tvDistance found: ${tvDistanceView != null}")
+            Log.d("MarkerDebug", "tvTitle found: ${tvTitleView != null}")
+            llBlue.visibility = View.VISIBLE
+            tvTimeView.visibility = View.GONE
+            llBlue.visibility = View.GONE
+            tvDistanceView?.text = time
+            tvDistanceView?.text = distance
+            tvTitleView?.text = title
+
+            tvTimeView?.setTextColor(Color.WHITE)
+            tvDistanceView?.setTextColor(Color.WHITE)
+            tvTitleView?.setTextColor(Color.BLACK)
+
+            markerView.measure(
+                View.MeasureSpec.makeMeasureSpec(0, View.MeasureSpec.UNSPECIFIED),
+                View.MeasureSpec.makeMeasureSpec(0, View.MeasureSpec.UNSPECIFIED)
+            )
+            markerView.layout(0, 0, markerView.measuredWidth, markerView.measuredHeight)
+
+            val bitmap = Bitmap.createBitmap(
+                markerView.measuredWidth,
+                markerView.measuredHeight,
+                Bitmap.Config.ARGB_8888
+            )
+            val canvas = Canvas(bitmap)
+            markerView.draw(canvas)
+
+            return BitmapDescriptorFactory.fromBitmap(bitmap)
+
+        } catch (e: Exception) {
+            Log.e("MarkerError", "Error creating marker: ${e.message}")
+            null
+        }
+    }
+
 
     override fun onDestroy() {
         super.onDestroy()
-        handler.removeCallbacks(runnable)
+        runnable?.let { handler.removeCallbacks(it) }
     }
-}*/
+}
