@@ -4,6 +4,8 @@ import androidx.lifecycle.ViewModel
 import com.alert.app.di.NetworkResult
 import com.alert.app.model.AddressModel
 import com.alert.app.model.helpingneighbormodel.CreateHelpingNeighbor
+import com.alert.app.model.helpingneighbormodel.NeighbourRequestResponse
+import com.alert.app.model.helpingneighbormodel.PendingInvitationsResponse
 import com.alert.app.repository.MainRepository
 import com.google.gson.JsonObject
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -54,6 +56,18 @@ class HelpingNeighborViewModel@Inject constructor(private val repository: MainRe
     ) : Flow<NetworkResult<String>> {
         return repository.deleteUserAddress(addressId).onEach {
 
+        }
+    }
+
+    suspend fun getNeighbourInvitation(): Flow<NetworkResult<PendingInvitationsResponse>>{
+        return repository.getNeighbourInvitation().onEach {
+    }
+    }
+
+
+    suspend fun respondNeighbourInvite(relationshipId : String,
+                                       response : String): Flow<NetworkResult<NeighbourRequestResponse>>{
+        return repository.respondNeighbourInvite(relationshipId,response).onEach {
         }
     }
 

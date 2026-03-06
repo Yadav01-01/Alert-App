@@ -66,6 +66,7 @@ class HomeProfileFragment : Fragment() {
     ): View { _binding = FragmentHomeProfileBinding.inflate(inflater, container, false)
       Log.d("TESTING_HOME_PROFILE","I AM INSIDE THE HOME PROFILE")
 
+
         return binding.root
     }
 
@@ -252,6 +253,7 @@ class HomeProfileFragment : Fragment() {
             }
 // here 2702
            // checkEditable(false)
+            checkEditable(false)
         } catch (e: Exception) {
             showAlert(e.message.toString(), false)
         }

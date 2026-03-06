@@ -12,6 +12,8 @@ import com.alert.app.model.ChatUserModel
 import com.alert.app.model.contact.UserContactRequest
 import com.alert.app.model.contact.UserEditContactRequest
 import com.alert.app.model.helpingneighbormodel.CreateHelpingNeighbor
+import com.alert.app.model.helpingneighbormodel.NeighbourRequestResponse
+import com.alert.app.model.helpingneighbormodel.PendingInvitationsResponse
 import com.alert.app.model.helpingneighbormodel.UserAddress
 import com.alert.app.model.map.UserLocationResponse
 import com.alert.app.model.notification.AlertModel
@@ -2286,19 +2288,17 @@ class MainRepositoryImpl @Inject constructor(private val apiInterface: ApiInterf
         }
     }
 
-    override suspend fun liveLocation(userId : String): Flow<NetworkResult<LiveLocationResponse>> = flow {
+    override suspend fun liveLocation(): Flow<NetworkResult<LiveLocationResponse>> = flow {
         try {
             apiInterface.liveLocation().apply {
                 if (isSuccessful) {
                     body()?.let { resp ->
                         if (resp.has("status") && resp.get("status").asBoolean) {
-                            val data = resp.get("data").asJsonObject
-                            val message = resp.get("message").asString
-                            // val call = data.get("call").asJsonObject
-                            val gson = Gson()
-                           val Journey =  gson.fromJson(resp, LiveLocationResponse::class.java)
 
-                            emit(NetworkResult.Success(Journey))
+                            val gson = Gson()
+                           val live =  gson.fromJson(resp, LiveLocationResponse::class.java)
+
+                            emit(NetworkResult.Success(live))
                         }
                         else {
                             emit(NetworkResult.Error(resp.get("message").asString))
@@ -2406,6 +2406,81 @@ class MainRepositoryImpl @Inject constructor(private val apiInterface: ApiInterf
                     body()?.let { resp ->
                         if (resp.has("status") && resp.get("status").asBoolean) {
                             emit(NetworkResult.Success(resp.get("message").asString))
+                        }
+                        else {
+                            emit(NetworkResult.Error(resp.get("message").asString))
+                        }
+                    } ?: emit(NetworkResult.Error(AppConstant.unKnownError))
+                }
+                else {
+                    try {
+                        val jsonObj = this.errorBody()?.string()?.let { JSONObject(it) }
+                        emit(
+                            NetworkResult.Error(
+                                jsonObj?.getString("message")
+                                    ?: AppConstant.unKnownError
+                            )
+                        )
+                    } catch (e: JSONException) {
+                        e.printStackTrace()
+                        emit(NetworkResult.Error(AppConstant.unKnownError))
+                    }
+                }
+            }
+        } catch (e: Exception) {
+            emit(NetworkResult.Error(e.message ?: ""))
+        }
+    }
+
+    override suspend fun getNeighbourInvitation(): Flow<NetworkResult<PendingInvitationsResponse>> = flow {
+        try {
+            apiInterface.getNeighbourInvitation().apply {
+                if (isSuccessful) {
+                    body()?.let { resp ->
+                        if (resp.has("status") && resp.get("status").asBoolean) {
+                            val gson = Gson()
+                            val response =  gson.fromJson(resp, PendingInvitationsResponse::class.java)
+
+                            emit(NetworkResult.Success(response))
+                        }
+                        else {
+                            emit(NetworkResult.Error(resp.get("message").asString))
+                        }
+                    } ?: emit(NetworkResult.Error(AppConstant.unKnownError))
+                }
+                else {
+                    try {
+                        val jsonObj = this.errorBody()?.string()?.let { JSONObject(it) }
+                        emit(
+                            NetworkResult.Error(
+                                jsonObj?.getString("message")
+                                    ?: AppConstant.unKnownError
+                            )
+                        )
+                    } catch (e: JSONException) {
+                        e.printStackTrace()
+                        emit(NetworkResult.Error(AppConstant.unKnownError))
+                    }
+                }
+            }
+        } catch (e: Exception) {
+            emit(NetworkResult.Error(e.message ?: ""))
+        }
+    }
+
+    override suspend fun respondNeighbourInvite(
+        relationshipId: String,
+        response: String
+    ): Flow<NetworkResult<NeighbourRequestResponse>> = flow{
+        try {
+            apiInterface.respondNeighbourInvite(relationshipId , response).apply {
+                if (isSuccessful) {
+                    body()?.let { resp ->
+                        if (resp.has("status") && resp.get("status").asBoolean) {
+                            val gson = Gson()
+                            val response =  gson.fromJson(resp, NeighbourRequestResponse::class.java)
+
+                            emit(NetworkResult.Success(response))
                         }
                         else {
                             emit(NetworkResult.Error(resp.get("message").asString))

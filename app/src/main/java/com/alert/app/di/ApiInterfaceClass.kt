@@ -400,10 +400,17 @@ interface ApiInterfaceClass {
     suspend fun getAlertWrongPath(
     ) : Response<JsonObject>
 
+    @POST(ApiEndPoint.GET_NEIGHBOUR_INVITATION)
+  //  @FormUrlEncoded
+    suspend fun getNeighbourInvitation(
+    ) : Response<JsonObject>
 
+    @POST(ApiEndPoint.RESPOND_NEIGHBOUR_INVITE)
+    @FormUrlEncoded
+    suspend fun respondNeighbourInvite(
+        @Field("relationship_id") relationshipId : String,
+        @Field("response") response : String
+    ) : Response<JsonObject>
 
-
-//    @GET(ApiEndPoint.USER_ADDRESS)
-//    suspend fun getUserAddress() : Response<JsonObject>
 
 }

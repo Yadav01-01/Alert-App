@@ -46,7 +46,7 @@
                     android:drawablePadding="@dimen/_10sdp"
                     android:fontFamily="@font/urbanist_medium"
                     android:gravity="center|start"
-                    android:text="Lorem ipsum dolor"
+                    android:text=""
                     android:visibility="gone"
                     android:textColor="#717984"
                     android:textSize="@dimen/_10sdp" />

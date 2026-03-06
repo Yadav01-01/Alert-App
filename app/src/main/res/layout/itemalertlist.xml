@@ -12,7 +12,7 @@
         android:fontFamily="@font/urbanist_medium"
         android:gravity="center"
         android:textStyle="bold"
-        android:text="1.Alert for Lorem ipsum dolor"
+        android:text="1.Alert for "
         android:textColor="@color/black"
         android:textSize="@dimen/_15sdp"/>
 

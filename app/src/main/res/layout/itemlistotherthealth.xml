@@ -95,7 +95,7 @@
             android:fontFamily="@font/urbanist_medium"
             android:gravity="center|start"
             android:layout_marginTop="@dimen/_5sdp"
-            android:text="Lorem Ipsum Lorem ipsum dolor sit amet, consectetur adipiscing elit. invitae non augue. Nullam interdum sem."
+            android:text=""
             android:textColor="#1E232C"
             android:textSize="@dimen/_10sdp"/>
 

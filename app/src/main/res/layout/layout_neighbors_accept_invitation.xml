@@ -1,0 +1,96 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content">
+
+    <LinearLayout
+        android:id="@+id/ll"
+        android:layout_width="match_parent"
+
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:weightSum="2">
+
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_weight="1.8"
+
+            android:layout_height="wrap_content">
+
+
+            <FrameLayout
+                android:layout_width="@dimen/_45sdp"
+                android:layout_height="@dimen/_45sdp">
+
+                <de.hdodenhof.circleimageview.CircleImageView
+                    android:id="@+id/profileImage"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    />
+
+                <ProgressBar
+                    android:id="@+id/imageProgress"
+                    android:layout_width="20dp"
+                    android:layout_height="20dp"
+                    android:layout_gravity="center"/>
+            </FrameLayout>
+
+            <TextView
+                android:id="@+id/textFullName"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginHorizontal="@dimen/_3sdp"
+                android:drawablePadding="@dimen/_10sdp"
+                android:fontFamily="@font/urbanist_medium"
+             android:layout_gravity="center_vertical"
+                android:text=""
+                android:textColor="@color/black"
+                android:textSize="@dimen/_13sdp" />
+        </LinearLayout>
+
+
+
+
+
+
+
+            <TextView
+                android:id="@+id/tv_view_Alert"
+                android:layout_width="wrap_content"
+                android:layout_height="@dimen/_25sdp"
+                android:layout_gravity="center"
+                android:layout_marginStart="@dimen/_5sdp"
+                android:layout_marginEnd="@dimen/_2sdp"
+                android:background="@drawable/delete_bg_button"
+                android:drawablePadding="@dimen/_10sdp"
+                android:fontFamily="@font/urbanist_medium"
+                android:gravity="center"
+                android:text="Accept"
+                android:textColor="#FFFFFF"
+                android:textSize="@dimen/_10sdp" />
+
+        <TextView
+            android:id="@+id/CancelButton"
+            android:layout_width="wrap_content"
+            android:layout_height="@dimen/_25sdp"
+            android:text="Cancel"
+            android:textColor="#000000"
+            android:layout_marginVertical="@dimen/_1sdp"
+            android:layout_marginStart="@dimen/_2sdp"
+            android:layout_gravity="center"
+            android:gravity="center"
+            android:background="@drawable/bg_no"/>
+
+
+    </LinearLayout>
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="@dimen/_2sdp"
+        android:layout_below="@+id/ll"
+        android:layout_marginTop="@dimen/_5sdp"
+        android:layout_marginBottom="@dimen/_5sdp"
+        android:background="#E5E5E5"/>
+
+</RelativeLayout>

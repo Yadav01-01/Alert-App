@@ -62,7 +62,7 @@
                     android:layout_marginHorizontal="@dimen/_35sdp"
                     android:layout_marginTop="@dimen/_20sdp"
                     android:fontFamily="@font/urbanist_medium"
-                    android:text="Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed vel mauris sed sapien bibendum rutrum vitae non augue. Nullam interdum sem ut tincidunt pharetra. Quisque sit amet elit turpis. "
+                    android:text="Keep your loved ones safe by adding emergency contacts. Quick access to help when you need it the most."
                     android:textAlignment="center"
                     android:textColor="#58585A"
                     android:textSize="@dimen/_13sdp" />

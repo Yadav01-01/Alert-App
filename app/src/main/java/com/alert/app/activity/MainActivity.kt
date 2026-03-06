@@ -600,7 +600,7 @@ class MainActivity : AppCompatActivity() {
         val currentUserId = sessionManagement.getUserId().toString()
 
         val chatMessages = mutableListOf<Message>()
-        val adapter = ChatAdapter(currentUserId)
+        val adapter = ChatAdapter(currentUserId,"AiBox")
 
         recyclerView.layoutManager = LinearLayoutManager(this)
         recyclerView.adapter = adapter
@@ -1035,7 +1035,6 @@ class MainActivity : AppCompatActivity() {
         dialog.apply {
             findViewById<TextView>(R.id.tvOK).setOnClickListener {
                 dismiss()
-
                     userLogout()
 
             }

@@ -29,6 +29,8 @@ class ConfirmationFragment : Fragment() {
 
         binding.tvaccept.setOnClickListener { showAlertBox("Accepted!", "Invitation Accept Successfully.", R.drawable.tick_icon) }
         binding.tvreject.setOnClickListener { showAlertBox("Rejected!", "You have Rejected the Invitation.", R.drawable.group_627) }
+
+
     }
 
     @SuppressLint("SetTextI18n")

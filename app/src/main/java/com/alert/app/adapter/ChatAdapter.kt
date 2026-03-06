@@ -23,7 +23,7 @@ import java.util.Calendar
 
 
 class ChatAdapter(
-    private val currentUserId: String
+    private val currentUserId: String, private var from: String = "main"
 ) : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
 
     sealed class ChatItem {
@@ -197,11 +197,20 @@ class ChatAdapter(
         fun bind(msg: Message) {
             tvTime.text = getTimeAgo(msg.timestamp)
 
-            Glide.with(itemView.context)
-                .load(receiverProfile)
-                .placeholder(R.drawable.img_not_found)
-                .error(R.drawable.img_not_found)
-                .into(imgProfile)
+            if (from != "AiBox"){
+                Glide.with(itemView.context)
+                    .load(receiverProfile)
+                    .placeholder(R.drawable.img_not_found)
+                    .error(R.drawable.img_not_found)
+                    .into(imgProfile)
+            }else{
+                Glide.with(itemView.context)
+                    .load(R.drawable.ai_bot_icon)
+                    .placeholder(R.drawable.ai_bot_icon)
+                    .error(R.drawable.ai_bot_icon)
+                    .into(imgProfile)
+            }
+
 
             if (msg.type == MessageType.TEXT) {
                 tvMessage.visibility = View.VISIBLE

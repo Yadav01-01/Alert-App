@@ -71,7 +71,7 @@
                 android:layout_height="wrap_content"
                 android:fontFamily="@font/urbanist_medium"
                 android:gravity="center|start"
-                android:text="Lorem Ipsum"
+                android:text=""
                 android:layout_marginTop="@dimen/_10sdp"
                 android:textColor="@color/black"
                 android:textSize="@dimen/_20sdp" />
@@ -90,7 +90,7 @@
                 android:layout_height="wrap_content"
                 android:fontFamily="@font/urbanist_medium"
                 android:gravity="center|start"
-                android:text="Lorem Ipsum"
+                android:text=""
                 android:layout_marginTop="@dimen/_10sdp"
                 android:textColor="@color/black"
                 android:textSize="@dimen/_20sdp" />

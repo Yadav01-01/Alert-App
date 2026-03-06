@@ -8,6 +8,8 @@ import com.alert.app.model.ChatUserModel
 import com.alert.app.model.contact.UserContactRequest
 import com.alert.app.model.contact.UserEditContactRequest
 import com.alert.app.model.helpingneighbormodel.CreateHelpingNeighbor
+import com.alert.app.model.helpingneighbormodel.NeighbourRequestResponse
+import com.alert.app.model.helpingneighbormodel.PendingInvitationsResponse
 import com.alert.app.model.map.UserLocationResponse
 import com.alert.app.model.notification.AlertModel
 import com.alert.app.model.selfAlert.CreateSelfAlertRequest
@@ -237,7 +239,7 @@ interface MainRepository {
         @Field("destination_longitude") destinationLongitude : String,
     ) : Flow<NetworkResult<JourneyStarted>>
 
-    suspend fun liveLocation(userId : String) : Flow<NetworkResult<LiveLocationResponse>>
+    suspend fun liveLocation() : Flow<NetworkResult<LiveLocationResponse>>
     suspend fun getAllLiveLocation() : Flow<NetworkResult<AllLiveJourneyResponse>>
 
     suspend fun blockToggleSelfAlert(
@@ -249,4 +251,17 @@ interface MainRepository {
         @Field("journey_id") journeyId : String,
     ) :Flow<NetworkResult<String>>
 
+    suspend fun getNeighbourInvitation(
+    ):Flow<NetworkResult<PendingInvitationsResponse>>
+
+    suspend fun respondNeighbourInvite(
+       relationshipId : String,
+         response : String
+    ) : Flow<NetworkResult<NeighbourRequestResponse>>
+/*
+suspend fun respondNeighbourInvite(
+        @Field("relationship_id") relationshipId : String,
+        @Field("response") response : String
+    )
+ */
 }

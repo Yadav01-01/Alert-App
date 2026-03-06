@@ -65,7 +65,7 @@
                 android:textColor="#58585A"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="@dimen/_10sdp"
-                android:text="Lorem Ipsum Lorem ipsum dolor sit \namet, consectetur adipiscing elit. \ninvitae non augue. Nullam interdum sem."/>
+                android:text="Stay healthy with timely reminders! Set alerts for medications, appointments, and wellness tips to keep your health on track."/>
 
             <TextView
                 android:layout_width="match_parent"

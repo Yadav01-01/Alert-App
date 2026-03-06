@@ -10,15 +10,30 @@
     <TextView
         android:id="@+id/tv_title"
         android:visibility="gone"
-        android:layout_width="match_parent"
+        android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_gravity="center"
+        android:layout_centerHorizontal="true"
         android:layout_marginTop="@dimen/_20sdp"
         android:fontFamily="@font/urbanist_bold"
         android:text="@string/helping_neighbors"
         android:textAlignment="center"
         android:textColor="@color/black"
-        android:textSize="@dimen/_20sdp" />
+        android:textSize="@dimen/_16sdp" />
+
+
+    <TextView
+        android:id="@+id/tvRequest"
+        android:layout_width="wrap_content"
+        android:textColor="@color/light_blue"
+        android:layout_height="wrap_content"
+        android:textSize="@dimen/_11sdp"
+        android:visibility="gone"
+        android:layout_marginTop="@dimen/_23sdp"
+        android:layout_marginEnd="@dimen/_5sdp"
+        android:layout_toEndOf="@+id/tv_title"
+        android:layout_marginStart="@dimen/_10sdp"
+        android:text="Requests"/>
 
     <LinearLayout
         android:id="@+id/lay_current_location"
@@ -71,16 +86,7 @@
             android:gravity="center|top|start"
             android:text="138 My Street, Kingston,  New York"/>
 
-        <TextView
-            android:id="@+id/tvRequest"
-            android:layout_width="0dp"
-            android:layout_weight="0.4"
-            android:textColor="@color/light_blue"
-            android:layout_height="wrap_content"
-            android:textSize="@dimen/_13sdp"
-            android:layout_marginStart="@dimen/_2sdp"
-            android:gravity="center|top|start"
-            android:text="Requests"/>
+
     </LinearLayout>
 
 
@@ -158,14 +164,55 @@
                 android:layout_marginTop="@dimen/_5sdp"
                 android:layout_height="wrap_content"/>
 
+        <RelativeLayout
+            android:id="@+id/llRequestLayout"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:layout_marginTop="@dimen/_5sdp"
+            android:visibility="gone"
+            android:orientation="vertical">
+
+            <TextView
+                android:id="@+id/textTitle"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:gravity="center_horizontal"
+                android:textAlignment="center"
+                android:textSize="@dimen/_22sdp"
+                android:textColor="@color/black"
+                android:fontFamily="@font/urbanist_semibold"
+                android:text="Neighbors Request List"/>
+
+            <View
+                android:id="@+id/viewTitle"
+                android:layout_width="match_parent"
+                android:layout_height="@dimen/_1sdp"
+                android:layout_marginTop="@dimen/_8sdp"
+                android:layout_below="@+id/textTitle"
+                android:layout_marginBottom="@dimen/_15sdp"
+                android:background="#000000"/>
+
             <androidx.recyclerview.widget.RecyclerView
                 android:id="@+id/rcy_data1"
                 app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager"
                 android:orientation="vertical"
                 android:layout_width="match_parent"
-                android:visibility="gone"
-                android:layout_marginTop="@dimen/_5sdp"
-                android:layout_height="wrap_content"/>
+                android:layout_height="match_parent"
+                android:layout_below="@+id/viewTitle"
+                android:visibility="gone"/>
+
+            <TextView
+                android:id="@+id/NoRequestFound"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:gravity="center"
+                android:textSize="@dimen/_22sdp"
+                android:layout_centerInParent="true"
+                android:textColor="@color/black"
+                android:fontFamily="@font/urbanist_semibold"
+                android:text="No Request Found"/>
+
+        </RelativeLayout>
 
         </LinearLayout>
     </ScrollView>

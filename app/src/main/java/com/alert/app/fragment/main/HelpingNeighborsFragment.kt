@@ -52,6 +52,7 @@ import com.alert.app.databinding.FragmentHelpingNeighborsBinding
 import com.alert.app.di.NetworkResult
 import com.alert.app.errormessage.AlertUtils
 import com.alert.app.errormessage.MessageClass
+import com.alert.app.listener.NeighborsAcceptDeclineListener
 import com.alert.app.listener.OnAddressClickListener
 import com.alert.app.listener.OnClickContact
 import com.alert.app.listener.OnPlacesDetailsListener
@@ -69,6 +70,7 @@ import com.alert.app.model.helpingneighbormodel.Contact
 import com.alert.app.model.helpingneighbormodel.CreateHelpingNeighbor
 import com.alert.app.model.helpingneighbormodel.GetNeighborModel
 import com.alert.app.model.helpingneighbormodel.GetNeighborModelData
+import com.alert.app.model.helpingneighbormodel.InvitationData
 import com.alert.app.viewmodel.helpingneighborviewmodel.HelpingNeighborViewModel
 import com.bumptech.glide.Glide
 import com.bumptech.glide.load.DataSource
@@ -118,6 +120,7 @@ class HelpingNeighborsFragment : Fragment() , OnClickContact, OnMapReadyCallback
     private lateinit var tvAlerts :MaterialAutoCompleteTextView
     private lateinit var tvAddress :TextView
     private val getContactList: MutableList<Contact> = mutableListOf()
+    private val getInvitationList: MutableList<InvitationData> = mutableListOf()
     private var latitude = ""
     private var longitude = ""
     private var currentLocation: Location? = null
@@ -154,18 +157,23 @@ class HelpingNeighborsFragment : Fragment() , OnClickContact, OnMapReadyCallback
         adapter=  HelpingNeighborsAdapter(requireContext(),getContactList,this)
         adapter1 = NeighborsAcceptReqAdapter(
             requireContext(),
-            getContactList,
-            object : OnClickContact {
+            getInvitationList,
+            object : NeighborsAcceptDeclineListener {
                 override fun onClick(type: String, position: String) {
-                    if (type == "openProfile") {
-                        val clickedItem = getContactList[position.toInt()]
-                        // Yaha apna logic likho
+                    if (type == "accept") {
+                        val clickedItem = getInvitationList[position.toInt()]
+                        respondNeighbourInvite(clickedItem.relationship_id.toString(),"1",position.toInt())
+                    }else{
+                        val clickedItem = getInvitationList[position.toInt()]
+                        respondNeighbourInvite(clickedItem.relationship_id.toString(),"0",position.toInt())
                     }
                 }
             }
         )
         binding.rcyData.adapter= adapter
         binding.rcyData1.adapter= adapter1
+
+        getNeighbourInvitation()
 
         binding.btnAdd.setOnClickListener {
             alertBottom()
@@ -193,8 +201,10 @@ class HelpingNeighborsFragment : Fragment() , OnClickContact, OnMapReadyCallback
         binding.tvRequest.setOnClickListener {
             binding.layno.visibility = View.GONE
             binding.tvTitle.visibility = View.GONE
+            binding.tvRequest.visibility = View.GONE
             binding.rcyData.visibility = View.GONE
-            binding.rcyData1.visibility = View.VISIBLE
+            binding.llRequestLayout.visibility = View.VISIBLE
+          //  binding.rcyData1.visibility = View.VISIBLE
             binding.layCurrentLocation.visibility = View.GONE
             binding.btnAddNow.visibility = View.GONE
         }
@@ -223,7 +233,7 @@ class HelpingNeighborsFragment : Fragment() , OnClickContact, OnMapReadyCallback
                 BaseApplication.dismissDialog()
                 showAlert(it.message, false)
                 adapter.update(mutableListOf<Contact>())
-                adapter1.update(mutableListOf<Contact>())
+
             }
 
             else ->{
@@ -268,14 +278,16 @@ class HelpingNeighborsFragment : Fragment() , OnClickContact, OnMapReadyCallback
             if (getContactList.size > 0) {
                 binding.rcyData.visibility = View.VISIBLE
                 binding.tvTitle.visibility = View.VISIBLE
+                binding.tvRequest.visibility = View.VISIBLE
                 binding.layno.visibility = View.GONE
                 binding.layCurrentLocation.visibility = View.VISIBLE
                 binding.btnAddNow.visibility = View.VISIBLE
                 adapter.update(getContactList)
-                adapter1.update(getContactList)
+               // adapter1.update(getInvitationList)
             } else {
                 binding.layno.visibility = View.VISIBLE
                 binding.tvTitle.visibility = View.GONE
+                binding.tvRequest.visibility = View.GONE
                 binding.rcyData.visibility = View.GONE
                 binding.layCurrentLocation.visibility = View.GONE
                 binding.btnAddNow.visibility = View.GONE
@@ -1135,6 +1147,75 @@ class HelpingNeighborsFragment : Fragment() , OnClickContact, OnMapReadyCallback
 
     }
 
+
+    private fun getNeighbourInvitation() {
+        lifecycleScope.launch {
+            viewModel.getNeighbourInvitation().collect { result ->
+                when (result) {
+
+                    is NetworkResult.Success -> {
+                        result.data?.let { response ->
+                            getInvitationList.clear()
+
+                            response.data?.let {
+                                getInvitationList.addAll(it)
+                            }
+                            if (response.data.isNotEmpty()){
+                                binding.rcyData1.visibility = View.VISIBLE
+                                binding.NoRequestFound.visibility = View.GONE
+                            }else{
+                                binding.rcyData1.visibility = View.GONE
+                                binding.NoRequestFound.visibility = View.VISIBLE
+                            }
+                        /*    if (response.data.isNotEmpty()) {
+                                adapter1.update(response.data.toMutableList())
+                            } else {*/
+                                adapter1.update(getInvitationList)
+                          //  }
+
+                        }
+                    }
+
+                    is NetworkResult.Error -> {
+                        BaseApplication.alertError(
+                            requireContext(),
+                            result.message.toString(),
+                            false
+                        )
+                    }
+
+                    else -> {}
+                }
+            }
+        }
+    }
+
+    private fun respondNeighbourInvite(relationshipId : String,
+                                       response : String,position: Int) {
+        lifecycleScope.launch {
+            viewModel.respondNeighbourInvite(relationshipId,response).collect { result ->
+                when (result) {
+
+                    is NetworkResult.Success -> {
+                        result.data?.let { response ->
+                            getHelpingNeighbor(latitude.toDouble(),longitude.toDouble())
+
+                        }
+                    }
+
+                    is NetworkResult.Error -> {
+                        BaseApplication.alertError(
+                            requireContext(),
+                            result.message.toString(),
+                            false
+                        )
+                    }
+
+                    else -> {}
+                }
+            }
+        }
+    }
 
 
 }

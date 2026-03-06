@@ -45,7 +45,7 @@
                 android:id="@+id/ed_text"
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
-                android:hint="Lorem Ipsum Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed vel mauris sed sapien bibendum rutrum vitae non augue. Nullam interdum sem."
+                android:hint="Enter your response here..."
                 android:textColor="@color/light_black"
                 android:gravity="start|top"
                 android:inputType="textMultiLine"

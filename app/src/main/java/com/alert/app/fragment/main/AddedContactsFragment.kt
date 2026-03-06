@@ -414,7 +414,7 @@ class AddedContactsFragment : Fragment() , ContactClick, OnClickEventDropDownTyp
     }
 
     override fun onClick(data: String, contact: Contact,pos: Int) {
-        getAlert(contact)
+       // getAlert(contact)
     }
 
     private fun getAlert(contact: Contact) {
@@ -427,7 +427,7 @@ class AddedContactsFragment : Fragment() , ContactClick, OnClickEventDropDownTyp
                         is NetworkResult.Success -> {
                             it.data?.let {
                                 //nikunj
-                         /*       if (it.has(getString(R.string.apiCode)) && it.get(getString(R.string.apiCode)).asInt==200) {
+                             if (it.has(getString(R.string.apiCode)) && it.get(getString(R.string.apiCode)).asInt==200) {
                                   //  openAlertBox(it.getAsJsonObject("data").asJsonObject)
                                 }else{
                                     Toast.makeText(
@@ -435,7 +435,7 @@ class AddedContactsFragment : Fragment() , ContactClick, OnClickEventDropDownTyp
                                         it.get(getString(R.string.apiMessahe)).asString,
                                         Toast.LENGTH_LONG
                                     ).show()
-                                }*/
+                                }
                             }
                         }
                         is NetworkResult.Error -> {

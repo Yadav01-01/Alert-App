@@ -30,10 +30,15 @@ class HelpingNeighborsAdapter(var context: Context, var getContactList: MutableL
 
         val data = getContactList[position]
 
-        if (data.first_name!=null){
-            if (data.last_name!=null){
-                holder.binding.textFullName.text=data.first_name.toString()+" "+data.last_name.toString()
-            }
+        //if (data.first_name!=null){
+          //  if (data.last_name!=null){
+               // holder.binding.textFullName.text= data.first_name?:"" +" "+data.last_name?:""
+          //  }
+       // }
+        holder.binding.textFullName.text = if (data.last_name.isNullOrBlank()) {
+            data.first_name
+        } else {
+            "${data.first_name} ${data.last_name}".trim()
         }
 
         if (data.created_at!=null){

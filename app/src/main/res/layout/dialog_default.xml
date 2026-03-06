@@ -42,7 +42,7 @@
             android:id="@+id/tv_text"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="Lorem Ipsum Lorem ipsum dolor \nsit amet, consectetur adipiscing \nelit. Sed vel mauris sed sapien \nbibendum rutrum vitae non augue. \nNullam interdum sem."
+            android:text="Sending an alert will notify your emergency contacts immediately. You can choose to include your current location for faster assistance."
             android:textColor="@color/light_black"
             android:layout_gravity="center"
             android:layout_marginTop="@dimen/_5sdp"

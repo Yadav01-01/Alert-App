@@ -36,9 +36,9 @@ class WatchOverMeViewModel @Inject constructor(private val repository: MainRepos
     }
 
     suspend fun liveLocation(
-userId : String
+
     ): Flow<NetworkResult<LiveLocationResponse>> {
-        return repository.liveLocation(userId).onEach {
+        return repository.liveLocation().onEach {
                 result ->
             _liveLocation.value = result
         }

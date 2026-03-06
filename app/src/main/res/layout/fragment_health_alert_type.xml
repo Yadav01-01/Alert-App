@@ -67,7 +67,7 @@
                 android:textColor="#58585A"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="@dimen/_10sdp"
-                android:text="Lorem Ipsum Lorem ipsum dolor sit amet, consectetur adipiscing elit. invitae non augue. Nullam interdum sem."/>
+                android:text="Select how long you want to be alerted about your health status. Choose from various time intervals to match your needs."/>
 
 
             <LinearLayout
